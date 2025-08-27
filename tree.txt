@@ -1,0 +1,101 @@
+velcrafting-portfolio/
+├── public/
+│   ├── images/
+│   │   └── logo.png
+│   └── resume.pdf
+│
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── globals.css
+│   │   │
+│   │   ├── about/
+│   │   │   └── page.tsx
+│   │   ├── contact/
+│   │   │   └── page.tsx
+│   │   ├── projects/
+│   │   │   ├── page.tsx
+│   │   │   └── [slug]/
+│   │   │       └── page.tsx
+│   │   ├── writing/
+│   │   │   ├── page.tsx
+│   │   │   └── [slug]/
+│   │   │       └── page.tsx
+│   │   ├── labs/
+│   │   │   ├── page.tsx
+│   │   │   └── [slug]/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── api/
+│   │   │   └── contact/
+│   │   │       └── route.ts
+│   │   └── og/
+│   │       └── route.tsx
+│   │
+│   ├── components/
+│   │   ├── ui/                      # Reusable, presentation-first primitives
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── CopyToClipboard.tsx
+│   │   │   ├── DataTable.tsx
+│   │   │   ├── Drawer.tsx
+│   │   │   ├── IconButton.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── MetricTile.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Progress.tsx
+│   │   │   ├── Skeleton.tsx
+│   │   │   ├── Steps.tsx
+│   │   │   ├── Tabs.tsx
+│   │   │   ├── ThemeProvider.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── Toast.tsx
+│   │   │   ├── Tooltip.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── layout/                  # Shell/structure bits
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── CaseStudyLayout.tsx
+│   │   │   ├── StickyTOC.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── home/                    # Landing page-only components
+│   │   │   ├── Hero.tsx
+│   │   │   ├── KPISection.tsx
+│   │   │   ├── LatestStrip.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── projects/                # Project listing and detail
+│   │   │   ├── ProjectCard.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── contact/                 # Contact & scheduling
+│   │   │   ├── ContactForm.tsx
+│   │   │   ├── ScheduleEmbed.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   └── index.ts                 # master barrel exporting everything above
+│   │
+│   ├── config/
+│   │   └── site.ts
+│   │
+│   ├── content/
+│   │   ├── projects/
+│   │   │   └── ledger-defensive-comms.mdx
+│   │   └── writing/
+│   │       └── ai-moderation-trends.mdx
+│   │
+│   ├── lib/
+│   │   ├── mdx.ts
+│   │   └── seo.ts
+│   │
+│   └── styles/
+│       └── prose.css
+│
+├── .env.example
+├── next.config.mjs
+├── package.json
+├── tsconfig.json
+└── README.md

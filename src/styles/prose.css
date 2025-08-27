@@ -1,0 +1,215 @@
+/* src/styles/prose.css */
+
+/* Base rhythm and colors */
+.prose {
+  --sp: 1rem;
+  --sp-lg: 1.25rem;
+  --sp-xl: 1.75rem;
+
+  color: var(--foreground);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* Headings */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--foreground);
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-top: var(--sp-xl);
+  margin-bottom: var(--sp);
+}
+
+.prose h1 { font-size: clamp(2rem, 3.2vw, 2.75rem); }
+.prose h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
+.prose h3 { font-size: clamp(1.25rem, 1.8vw, 1.5rem); }
+.prose h4 { font-size: 1.125rem; }
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre,
+.prose table {
+  margin-top: var(--sp);
+  margin-bottom: var(--sp);
+  color: var(--muted);
+}
+
+/* Lead text */
+.prose .lead {
+  color: var(--foreground);
+  font-size: 1.075rem;
+  line-height: 1.7;
+}
+
+/* Links */
+.prose a {
+  color: var(--foreground);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.prose a:hover {
+  opacity: 0.85;
+}
+
+/* Strong/Emphasis */
+.prose strong { color: var(--foreground); font-weight: 700; }
+.prose em { color: var(--foreground); opacity: 0.9; }
+
+/* Lists */
+.prose ul { list-style: disc; padding-left: 1.25rem; }
+.prose ol { list-style: decimal; padding-left: 1.25rem; }
+.prose li + li { margin-top: 0.25rem; }
+
+/* Blockquote */
+.prose blockquote {
+  border-left: 3px solid #404040;
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+  background: rgba(255,255,255,0.02);
+  border-radius: 0.25rem;
+}
+
+/* Code inline */
+.prose code {
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.925em;
+  background: rgba(255,255,255,0.04);
+  padding: 0.15em 0.4em;
+  border-radius: 0.3rem;
+  color: #f5f5f5;
+}
+
+/* Preformatted code blocks */
+.prose pre {
+  background: #0b0b0b;
+  border: 1px solid #262626;
+  border-radius: 0.75rem;
+  padding: 1rem 1.125rem;
+  overflow-x: auto;
+}
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  color: #e6e6e6;
+}
+
+/* KBD keys */
+.prose kbd {
+  background: #111;
+  border: 1px solid #333;
+  border-bottom-width: 2px;
+  border-radius: 0.375rem;
+  padding: 0.15rem 0.4rem;
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.85em;
+  color: #eaeaea;
+}
+
+/* HR */
+.prose hr {
+  border: 0;
+  border-top: 1px solid #262626;
+  margin: var(--sp-lg) 0;
+}
+
+/* Tables */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.prose thead th {
+  text-align: left;
+  color: #fafafa;
+  border-bottom: 1px solid #333;
+  padding: 0.5rem 0.5rem;
+}
+.prose tbody td {
+  border-top: 1px solid #222;
+  padding: 0.5rem 0.5rem;
+  color: #d6d6d6;
+}
+.prose tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Images and figures */
+.prose img,
+.prose video,
+.prose canvas,
+.prose iframe {
+  display: block;
+  max-width: none;
+  border-radius: 0.75rem;
+}
+.prose figure { margin: var(--sp-lg) 0; }
+.prose figcaption {
+  color: #a3a3a3;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* Small text */
+.prose small { color: #a3a3a3; font-size: 0.875rem; }
+
+/* Anchor jump offset for sticky headers if you add TOC */
+.prose :target {
+  scroll-margin-top: 80px;
+}
+
+/* Light mode tweaks */
+@media (prefers-color-scheme: light) {
+  .prose { color: #171717; }
+  .prose p,
+  .prose ul,
+  .prose ol,
+  .prose blockquote,
+  .prose pre,
+  .prose table { color: #262626; }
+
+  .prose a { color: #4338ca; }
+  .prose a:hover { color: #3730a3; }
+
+  .prose blockquote {
+    border-left-color: #e5e7eb;
+    background: rgba(0,0,0,0.02);
+  }
+  .prose code { background: rgba(0,0,0,0.045); color: #111827; }
+  .prose pre { background: #0d0f12; color: #e5e7eb; border-color: #1f2937; }
+  .prose thead th { border-bottom-color: #e5e7eb; }
+  .prose tbody td { border-top-color: #ececec; }
+}
+
+.prose figure { margin: 1.25rem 0; }
+.prose figcaption { text-align: center; font-size: 0.9rem; color: #9ca3af; }
+.prose img { background: #0a0a0a; }
+
+/* Pretty code base */
+.prose pre { overflow-x: auto; border: 1px solid #262626; background: #0a0a0a; }
+.prose pre code { display: grid; counter-reset: line; }
+
+/* Line highlighting */
+.prose [data-highlighted-line] { background: rgba(255,255,255,0.04); }
+
+/* Diff tokens */
+.prose [data-line-diff="+"] { background: rgba(16,185,129,0.08); }
+.prose [data-line-diff="-"] { background: rgba(239,68,68,0.08); }
+
+/* Optional line numbers. Add `showLineNumbers` to the fence meta if you want them. */
+.prose pre[data-line-numbers] code > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2ch;
+  margin-right: 1rem;
+  color: #6b7280;
+  text-align: right;
+}

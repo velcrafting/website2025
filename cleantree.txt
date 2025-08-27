@@ -1,0 +1,373 @@
+.
+├── .DS_Store
+├── .env
+├── .env.example
+├── .gitignore
+├── .next
+│   ├── app-build-manifest.json
+│   ├── build-manifest.json
+│   ├── cache
+│   │   ├── .rscinfo
+│   │   ├── chrome-devtools-workspace-uuid
+│   │   ├── images
+│   │   │   ├── DD4LCquW_rZUWZbQ6OgHpHmELiP75pfum21-g4AkhTk
+│   │   │   │   └── 60.1756233620890.ICLRZe9QEoMjOajpkGGyCCP5IgsYuKiNHAlSmt0A6Z4.Vy8iYTBlYmEtMTk4ZTc5YjFlZDki.webp
+│   │   │   ├── FSCfp5_pX6JRtMxO17Tm8y9eUKbv2sXgBjr4aC-P5X8
+│   │   │   │   └── 60.1756233620884.Q5zUIhUx-U94yU1oJ8hu0-CEGth65fX72ujxW_WaTOE.Vy8iMjFhOC0xOThlNzljOTNjZiI.webp
+│   │   │   ├── GJ1YThdF64yTGHw3h1X2sPqzsnO4NcpUcmYRzKRnx68
+│   │   │   │   └── 60.1756233620862.Y1V4un7chJvLNNBmFZvGxqZCuQOrj_FHU0Bo9VN3Xdo.Vy8iOWMwLTE5OGU3OTg4MGU2Ig.webp
+│   │   │   ├── It6WGGO4hE3ni2R2e3gigZD9WQ-tThaK_6lvuAzkuh0
+│   │   │   │   └── 60.1756233684092.BhHmOGxFF1DkA3i3vfS1E6l1ZysYnnX2wP3zpuoxEV4.Vy8iMWZkOTI4LTE5OGUyOTllZGRiIg.webp
+│   │   │   ├── LOfC3g4UbeoB7xg5WXvkGiZfLtGVQEHNHyEC6nE6uqI
+│   │   │   │   └── 60.1756233620879.djhJPsb9TVIwxcrOriM3PgKzhieWVBqYBPPqUFS8vPw.Vy8iNGEyMDAtMTk4ZTJmNzYwNWUi.webp
+│   │   │   ├── R09qaSdo0CXpHMB5eEEUHSLtQVSStRp236Al9pxyxBE
+│   │   │   │   └── 60.1756233620884.cl0n_YDuTkXAjpcWDmX_ZxFeY0vZKTb0-fsFu4rN07M.Vy8iMWNiMC0xOThlNzljMzAzNCI.webp
+│   │   │   ├── YGpefYcJQU9hnqu654k3oyWZip_dCy-VSRJ2QBe-X2w
+│   │   │   │   └── 60.1756233620883.aY5u7V8QmYHEWARv0qBaBFFZyZg7-u6g-mI-pM8XQ5I.Vy8iZGM3NS0xOThlNzliZGFkMSI.webp
+│   │   │   ├── fDsB6j8exX6RVdWTH4GrPt4LuafFXDrYJNJMIUVK4Dg
+│   │   │   │   └── 60.1756233620863.NaSFne7fLWCnRJJQaUkhQLKAX3ZB9Q8rwXlvPzkFozs.Vy8iMzZhOC0xOThlNzlmYWUyZiI.webp
+│   │   │   └── pTOQ_7lKPDCd61hXh3arCpBBao4jbs4dcTK_F-FZyWI
+│   │   │       ├── 60.1756172140545.ro0mU8u2bD6jMd-5ABtdHIEs16ITLczwFjoHHzQNak8.Vy8iMWZkOTI4LTE5OGUyOTllZGRiIg.webp
+│   │   │       └── 60.1756178390384.ro0mU8u2bD6jMd-5ABtdHIEs16ITLczwFjoHHzQNak8.Vy8iMWZkOTI4LTE5OGUyOTllZGRiIg.webp
+│   │   ├── next-devtools-config.json
+│   │   ├── swc
+│   │   │   └── plugins
+│   │   │       └── macos_aarch64_18.0.0
+│   │   └── webpack
+│   │       ├── client-development
+│   │       │   ├── 0.pack.gz
+│   │       │   ├── 1.pack.gz
+│   │       │   ├── 10.pack.gz
+│   │       │   ├── 11.pack.gz
+│   │       │   ├── 12.pack.gz
+│   │       │   ├── 13.pack.gz
+│   │       │   ├── 14.pack.gz
+│   │       │   ├── 15.pack.gz
+│   │       │   ├── 16.pack.gz
+│   │       │   ├── 17.pack.gz
+│   │       │   ├── 18.pack.gz
+│   │       │   ├── 19.pack.gz
+│   │       │   ├── 2.pack.gz
+│   │       │   ├── 3.pack.gz
+│   │       │   ├── 4.pack.gz
+│   │       │   ├── 5.pack.gz
+│   │       │   ├── 6.pack.gz
+│   │       │   ├── 7.pack.gz
+│   │       │   ├── 8.pack.gz
+│   │       │   ├── 9.pack.gz
+│   │       │   ├── index.pack.gz
+│   │       │   └── index.pack.gz.old
+│   │       ├── client-development-fallback
+│   │       │   ├── 0.pack.gz
+│   │       │   └── index.pack.gz
+│   │       └── server-development
+│   │           ├── 0.pack.gz
+│   │           ├── 1.pack.gz
+│   │           ├── 10.pack.gz
+│   │           ├── 11.pack.gz
+│   │           ├── 12.pack.gz
+│   │           ├── 13.pack.gz
+│   │           ├── 14.pack.gz
+│   │           ├── 15.pack.gz
+│   │           ├── 16.pack.gz
+│   │           ├── 17.pack.gz
+│   │           ├── 18.pack.gz
+│   │           ├── 19.pack.gz
+│   │           ├── 2.pack.gz
+│   │           ├── 20.pack.gz
+│   │           ├── 21.pack.gz
+│   │           ├── 22.pack.gz
+│   │           ├── 23.pack.gz
+│   │           ├── 3.pack.gz
+│   │           ├── 4.pack.gz
+│   │           ├── 5.pack.gz
+│   │           ├── 6.pack.gz
+│   │           ├── 7.pack.gz
+│   │           ├── 8.pack.gz
+│   │           ├── 9.pack.gz
+│   │           ├── index.pack.gz
+│   │           └── index.pack.gz.old
+│   ├── package.json
+│   ├── prerender-manifest.json
+│   ├── react-loadable-manifest.json
+│   ├── routes-manifest.json
+│   ├── server
+│   │   ├── app
+│   │   │   ├── _not-found
+│   │   │   │   ├── page.js
+│   │   │   │   └── page_client-reference-manifest.js
+│   │   │   ├── about
+│   │   │   │   ├── page.js
+│   │   │   │   └── page_client-reference-manifest.js
+│   │   │   ├── contact
+│   │   │   │   ├── page.js
+│   │   │   │   └── page_client-reference-manifest.js
+│   │   │   ├── favicon.ico
+│   │   │   │   └── route.js
+│   │   │   ├── page.js
+│   │   │   └── page_client-reference-manifest.js
+│   │   ├── app-paths-manifest.json
+│   │   ├── interception-route-rewrite-manifest.js
+│   │   ├── middleware-build-manifest.js
+│   │   ├── middleware-manifest.json
+│   │   ├── middleware-react-loadable-manifest.js
+│   │   ├── next-font-manifest.js
+│   │   ├── next-font-manifest.json
+│   │   ├── pages-manifest.json
+│   │   ├── server-reference-manifest.js
+│   │   ├── server-reference-manifest.json
+│   │   ├── vendor-chunks
+│   │   │   ├── @swc.js
+│   │   │   ├── clsx.js
+│   │   │   ├── esprima.js
+│   │   │   ├── extend-shallow.js
+│   │   │   ├── gray-matter.js
+│   │   │   ├── is-extendable.js
+│   │   │   ├── kind-of.js
+│   │   │   ├── lucide-react.js
+│   │   │   ├── next.js
+│   │   │   ├── section-matter.js
+│   │   │   ├── strip-bom-string.js
+│   │   │   └── styled-jsx.js
+│   │   └── webpack-runtime.js
+│   ├── static
+│   │   ├── css
+│   │   │   └── app
+│   │   │       └── layout.css
+│   │   ├── development
+│   │   │   ├── _buildManifest.js
+│   │   │   └── _ssgManifest.js
+│   │   ├── media
+│   │   │   ├── 569ce4b8f30dc480-s.p.woff2
+│   │   │   ├── 747892c23ea88013-s.woff2
+│   │   │   ├── 8d697b304b401681-s.woff2
+│   │   │   ├── 93f479601ee12b01-s.p.woff2
+│   │   │   ├── 9610d9e46709d722-s.woff2
+│   │   │   ├── KaTeX_AMS-Regular.1608a09b.woff
+│   │   │   ├── KaTeX_AMS-Regular.4aafdb68.ttf
+│   │   │   ├── KaTeX_AMS-Regular.a79f1c31.woff2
+│   │   │   ├── KaTeX_Caligraphic-Bold.b6770918.woff
+│   │   │   ├── KaTeX_Caligraphic-Bold.cce5b8ec.ttf
+│   │   │   ├── KaTeX_Caligraphic-Bold.ec17d132.woff2
+│   │   │   ├── KaTeX_Caligraphic-Regular.07ef19e7.ttf
+│   │   │   ├── KaTeX_Caligraphic-Regular.55fac258.woff2
+│   │   │   ├── KaTeX_Caligraphic-Regular.dad44a7f.woff
+│   │   │   ├── KaTeX_Fraktur-Bold.9f256b85.woff
+│   │   │   ├── KaTeX_Fraktur-Bold.b18f59e1.ttf
+│   │   │   ├── KaTeX_Fraktur-Bold.d42a5579.woff2
+│   │   │   ├── KaTeX_Fraktur-Regular.7c187121.woff
+│   │   │   ├── KaTeX_Fraktur-Regular.d3c882a6.woff2
+│   │   │   ├── KaTeX_Fraktur-Regular.ed38e79f.ttf
+│   │   │   ├── KaTeX_Main-Bold.b74a1a8b.ttf
+│   │   │   ├── KaTeX_Main-Bold.c3fb5ac2.woff2
+│   │   │   ├── KaTeX_Main-Bold.d181c465.woff
+│   │   │   ├── KaTeX_Main-BoldItalic.6f2bb1df.woff2
+│   │   │   ├── KaTeX_Main-BoldItalic.70d8b0a5.ttf
+│   │   │   ├── KaTeX_Main-BoldItalic.e3f82f9d.woff
+│   │   │   ├── KaTeX_Main-Italic.47373d1e.ttf
+│   │   │   ├── KaTeX_Main-Italic.8916142b.woff2
+│   │   │   ├── KaTeX_Main-Italic.9024d815.woff
+│   │   │   ├── KaTeX_Main-Regular.0462f03b.woff2
+│   │   │   ├── KaTeX_Main-Regular.7f51fe03.woff
+│   │   │   ├── KaTeX_Main-Regular.b7f8fe9b.ttf
+│   │   │   ├── KaTeX_Math-BoldItalic.572d331f.woff2
+│   │   │   ├── KaTeX_Math-BoldItalic.a879cf83.ttf
+│   │   │   ├── KaTeX_Math-BoldItalic.f1035d8d.woff
+│   │   │   ├── KaTeX_Math-Italic.5295ba48.woff
+│   │   │   ├── KaTeX_Math-Italic.939bc644.ttf
+│   │   │   ├── KaTeX_Math-Italic.f28c23ac.woff2
+│   │   │   ├── KaTeX_SansSerif-Bold.8c5b5494.woff2
+│   │   │   ├── KaTeX_SansSerif-Bold.94e1e8dc.ttf
+│   │   │   ├── KaTeX_SansSerif-Bold.bf59d231.woff
+│   │   │   ├── KaTeX_SansSerif-Italic.3b1e59b3.woff2
+│   │   │   ├── KaTeX_SansSerif-Italic.7c9bc82b.woff
+│   │   │   ├── KaTeX_SansSerif-Italic.b4c20c84.ttf
+│   │   │   ├── KaTeX_SansSerif-Regular.74048478.woff
+│   │   │   ├── KaTeX_SansSerif-Regular.ba21ed5f.woff2
+│   │   │   ├── KaTeX_SansSerif-Regular.d4d7ba48.ttf
+│   │   │   ├── KaTeX_Script-Regular.03e9641d.woff2
+│   │   │   ├── KaTeX_Script-Regular.07505710.woff
+│   │   │   ├── KaTeX_Script-Regular.fe9cbbe1.ttf
+│   │   │   ├── KaTeX_Size1-Regular.e1e279cb.woff
+│   │   │   ├── KaTeX_Size1-Regular.eae34984.woff2
+│   │   │   ├── KaTeX_Size1-Regular.fabc004a.ttf
+│   │   │   ├── KaTeX_Size2-Regular.57727022.woff
+│   │   │   ├── KaTeX_Size2-Regular.5916a24f.woff2
+│   │   │   ├── KaTeX_Size2-Regular.d6b476ec.ttf
+│   │   │   ├── KaTeX_Size3-Regular.9acaf01c.woff
+│   │   │   ├── KaTeX_Size3-Regular.a144ef58.ttf
+│   │   │   ├── KaTeX_Size3-Regular.b4230e7e.woff2
+│   │   │   ├── KaTeX_Size4-Regular.10d95fd3.woff2
+│   │   │   ├── KaTeX_Size4-Regular.7a996c9d.woff
+│   │   │   ├── KaTeX_Size4-Regular.fbccdabe.ttf
+│   │   │   ├── KaTeX_Typewriter-Regular.6258592b.woff
+│   │   │   ├── KaTeX_Typewriter-Regular.a8709e36.woff2
+│   │   │   ├── KaTeX_Typewriter-Regular.d97aaf4a.ttf
+│   │   │   └── ba015fad6dcf6784-s.woff2
+│   │   └── webpack
+│   │       ├── 3ee78c8da6914740.webpack.hot-update.json
+│   │       ├── 61cbfa1df6c18884.webpack.hot-update.json
+│   │       ├── 633457081244afec._.hot-update.json
+│   │       ├── 84373d30ba61deee.webpack.hot-update.json
+│   │       ├── 85d720397d18be90.webpack.hot-update.json
+│   │       ├── a890d795a838afd7.webpack.hot-update.json
+│   │       ├── app
+│   │       │   ├── layout.3ee78c8da6914740.hot-update.js
+│   │       │   └── layout.85d720397d18be90.hot-update.js
+│   │       ├── webpack.3ee78c8da6914740.hot-update.js
+│   │       ├── webpack.61cbfa1df6c18884.hot-update.js
+│   │       ├── webpack.84373d30ba61deee.hot-update.js
+│   │       ├── webpack.85d720397d18be90.hot-update.js
+│   │       └── webpack.a890d795a838afd7.hot-update.js
+│   ├── trace
+│   └── types
+│       ├── app
+│       │   ├── about
+│       │   │   └── page.ts
+│       │   ├── contact
+│       │   │   └── page.ts
+│       │   ├── layout.ts
+│       │   └── page.ts
+│       ├── cache-life.d.ts
+│       ├── package.json
+│       ├── routes.d.ts
+│       └── validator.ts
+├── .vscode
+│   └── settings.json
+├── README.md
+├── cleantree.txt
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── public
+│   ├── Steven_Pajewski_Resume.pdf
+│   ├── about
+│   │   └── logos
+│   │       ├── comcast.png
+│   │       ├── crimson-odyssey.png
+│   │       ├── ledger.png
+│   │       ├── mike-maroone.png
+│   │       ├── nutel.png
+│   │       ├── randstad.png
+│   │       └── velcrafting.png
+│   ├── avatar.png
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── logo.svg
+│   ├── next.svg
+│   ├── projects
+│   ├── vercel.svg
+│   ├── window.svg
+│   └── writing
+│       └── demo-showcase
+│           ├── fig-1.png
+│           ├── fig-2.png
+│           ├── fig-3.png
+│           └── hero.png
+├── src
+│   ├── app
+│   │   ├── about
+│   │   │   └── page.tsx
+│   │   ├── api
+│   │   │   └── contact
+│   │   │       └── route.ts
+│   │   ├── contact
+│   │   │   └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── labs
+│   │   │   ├── [slug]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── og
+│   │   │   └── route.tsx
+│   │   ├── page.tsx
+│   │   ├── projects
+│   │   │   ├── [slug]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── providers.tsx
+│   │   └── writing
+│   │       ├── [slug]
+│   │       │   └── page.tsx
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── about
+│   │   │   ├── highlight.tsx
+│   │   │   └── timeline.tsx
+│   │   ├── contact
+│   │   │   ├── ContactForm.tsx
+│   │   │   ├── ScheduleEmbed.tsx
+│   │   │   └── index.ts
+│   │   ├── home
+│   │   │   ├── Hero.tsx
+│   │   │   ├── KPISection.tsx
+│   │   │   ├── LatestStrip.tsx
+│   │   │   └── index.ts
+│   │   ├── index.ts
+│   │   ├── layout
+│   │   │   ├── CaseStudyLayout.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── StickyTOC.tsx
+│   │   │   └── index.ts
+│   │   ├── mdx
+│   │   │   ├── Callout.tsx
+│   │   │   ├── ContentImage.tsx
+│   │   │   ├── Figure.tsx
+│   │   │   ├── Gallery.tsx
+│   │   │   ├── MdxClient.tsx
+│   │   │   └── mdx-components.tsx
+│   │   ├── projects
+│   │   │   ├── ProjectCard.tsx
+│   │   │   ├── ProjectKPISection.tsx
+│   │   │   └── index.ts
+│   │   ├── ui
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── CopyToClipboard.tsx
+│   │   │   ├── DataTable.tsx
+│   │   │   ├── Drawer.tsx
+│   │   │   ├── IconButton.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── MetricTile.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Progress.tsx
+│   │   │   ├── Skeleton.tsx
+│   │   │   ├── Steps.tsx
+│   │   │   ├── Tabs.tsx
+│   │   │   ├── ThemeProvider.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── Toast.tsx
+│   │   │   ├── Tooltip.tsx
+│   │   │   └── index.ts
+│   │   └── writing
+│   │       ├── WritingCard.tsx
+│   │       ├── WritingKPISection.tsx
+│   │       └── index.ts
+│   ├── config
+│   │   └── site.ts
+│   ├── content
+│   │   ├── projects
+│   │   │   ├── demo-showcase.mdx
+│   │   │   └── ledger-defensive-comms.mdx
+│   │   └── writing
+│   │       ├── ai-moderation-trends.mdx
+│   │       └── demo-showcase.mdx
+│   ├── lib
+│   │   ├── content.ts
+│   │   ├── mdx.ts
+│   │   └── seo.ts
+│   ├── styles
+│   │   └── prose.css
+│   └── types
+│       ├── config.d.ts
+│       └── content.ts
+├── tree.txt
+└── tsconfig.json
+
+74 directories, 297 files

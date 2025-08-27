@@ -1,0 +1,115 @@
+---
+title: MDX Feature Showcase
+summary: A compact tour of frontmatter, KPIs, images, code, tables, callouts, footnotes, and emoji.
+hero: "/writing/demo-showcase/hero.png"
+ogImage: "/writing/demo-showcase/hero.png"
+date: 2025-05-31
+kpi:
+  - value: "70%"
+    label: "Better readability"
+  - value: "100+"
+    label: "Articles"
+  - value: "Global"
+    label: "SEO values"
+tags: [demo, docs]
+---
+
+import Figure from "@/components/mdx/Figure";
+import Gallery from "@/components/mdx/Gallery";
+import Callout from "@/components/mdx/Callout";
+
+# Headings are linkable :tada:
+
+Short intro with **bold**, _italic_, `inline code`, and ~~strikethrough~~.  
+Plain URLs auto-link: https://nextjs.org. Emoji shortcodes render :rocket:.
+
+<Callout type="note" title="Frontmatter">
+This page renders with frontmatter stripped from the body and exposed as `frontmatter`.
+</Callout>
+
+> Blockquotes work when you need to pull a thought out of the stream.[^quote]
+
+---
+
+## Task list and table (GFM)
+
+- [x] Frontmatter exported
+- [x] KPIs render from `frontmatter.kpi`
+- [x] GFM tables and task lists
+- [ ] Ship a second case study
+
+| Metric         | Before | After | Δ    |
+| -------------- | -----: | ----: | ---: |
+| Response time  | 120 ms |  36 ms| −70% |
+| Alerts handled |  0.6M  |  1.1M | +83% |
+
+## Images
+
+### Markdown image upgraded by `img` mapping
+
+![Dashboard hero](/writing/demo-showcase/hero.png)
+
+### Rich figure with caption
+
+<Figure
+  src="/writing/demo-showcase/fig-1.png"
+  alt="Classifier pipeline"
+  caption="End-to-end moderation flow from ingest to action"
+/>
+
+### Quick gallery
+
+<Gallery images={[
+  { src: "/writing/demo-showcase/fig-1.png", alt: "Pipeline" , caption: "Pipeline" },
+  { src: "/writing/demo-showcase/fig-2.png", alt: "Alerts", caption: "Alerts" },
+  { src: "/writing/demo-showcase/fig-3.png", alt: "optical illusions", caption: "Trippy" },
+]} />
+
+## Code blocks with titles, highlights, and line numbers
+
+```ts title="utils/score.ts" {1,4-6} showLineNumbers
+// TypeScript example
+export function normalizeScore(x: number, min = 0, max = 100) {
+  if (max === min) return 0;
+  const clamped = Math.min(Math.max(x, min), max);
+  return (clamped - min) / (max - min);
+}
+
+- old behavior: returned raw values
++ new behavior: returns normalized [0..1]
+
+<Callout type="tip" title="Authoring"> Keep prose in Markdown. Sprinkle JSX when you need captions, galleries, or interactive bits. </Callout>
+
+Footnotes support both inline and reference styles. Here’s an inline one.^[Inline footnotes keep flow tight.]
+And here’s a reference footnote.1
+
+
+## 3) Image sizes that “just work”
+You’ve set `Figure` to serve `sizes="(min-width: 1024px) 860px, 100vw"`. To be crisp on modern screens, provide at least 2× that width for raster assets.
+
+Recommended source asset sizes:
+- OG image: exactly 1200×630. PNG or JPEG. Keep under ~600 KB.
+- Article hero: 1720–2000 px wide. 16:9 or 3:2. JPEG for photos, PNG for UI.
+- Inline figure: 1400–1800 px wide. Match the content aspect ratio. PNG for charts/UI; JPEG for photos.
+- Gallery tiles: 800–1200 px on the long edge.
+- Avatar: 640×640.
+- Logos/icons: SVG whenever possible.
+
+Format guidance:
+- Photographic: JPEG (quality ~75–82).
+- UI, diagrams, sharp edges: PNG or SVG.
+- Never upscale tiny sources. Compress with `squoosh.app` or `sharp`.
+
+If you want more precise art direction, bump the `sizes` in `Figure`:
+
+```tsx
+// Figure.tsx (optional tweak)
+<Image
+  src={src}
+  alt={alt}
+  width={width}
+  height={height}
+  sizes="(min-width: 1280px) 1024px, (min-width: 1024px) 860px, 100vw"
+  priority={priority}
+  className="h-auto w-full rounded-xl border border-neutral-800"
+/>

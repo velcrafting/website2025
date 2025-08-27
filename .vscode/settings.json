@@ -1,0 +1,12 @@
+{
+  // Use PostCSS mode so @plugin/@theme/@apply parse correctly
+  "files.associations": {
+    "*.css": "postcss"
+  },
+
+  // Turn on PostCSS validation, turn off the plain CSS linter noise
+  "postcss.validate": true,
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false
+}
