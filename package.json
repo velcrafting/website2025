@@ -2,6 +2,7 @@
   "name": "velcrafting-portfolio",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
@@ -9,8 +10,12 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=20 <21"
+  },
   "dependencies": {
     "@calcom/embed-react": "^1.5.3",
+    "@mdx-js/react": "^3.1.0",
     "@vercel/kv": "^3.0.0",
     "@vercel/og": "latest",
     "clsx": "latest",
@@ -22,12 +27,11 @@
     "react": "latest",
     "react-countup": "^6.5.3",
     "react-dom": "latest",
-    "resend": "latest"
+    "resend": "latest",
+    "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
-    "@mdx-js/loader": "^3.1.0",
-    "@mdx-js/react": "^3.1.0",
-    "@next/mdx": "^15.5.0",
+    "@next/mdx": "^15.5.2",
     "@tailwindcss/postcss": "^4.1.12",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^24.3.0",
@@ -50,8 +54,6 @@
     "remark-math": "^6.0.0",
     "remark-mdx-frontmatter": "^5.2.0",
     "shiki": "^3.11.0",
-    "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
-  },
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
+  }
 }

@@ -1,13 +1,16 @@
 // next.config.ts
+import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+
 import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
+import remarkFootnotes from "remark-footnotes";
+import remarkEmoji from "remark-gemoji";
+
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
-import remarkFootnotes from "remark-footnotes";
-import remarkEmoji from "remark-gemoji";
 
 const prettyCodeOptions = {
   theme: { dark: "github-dark", light: "github-light" },
@@ -27,16 +30,23 @@ const withMDX = createMDX({
     ],
     rehypePlugins: [
       rehypeSlug,
-      rehypeAutolinkHeadings,
+      [
+        rehypeAutolinkHeadings,
+        {
+          behavior: "wrap",
+          properties: { className: ["anchor"] },
+        },
+      ],
       [rehypePrettyCode, prettyCodeOptions],
     ],
   },
 });
 
-const base: import("next").NextConfig = {
+const config: NextConfig = {
   pageExtensions: ["ts", "tsx", "md", "mdx"],
-  outputFileTracingRoot: process.cwd(),
   experimental: { mdxRs: false },
+  // Optional. Helps Vercel tracing when repo is in a subfolder locally.
+  outputFileTracingRoot: process.cwd(),
 };
 
-export default withMDX(base);
+export default withMDX(config);

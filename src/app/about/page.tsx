@@ -1,5 +1,4 @@
 // src/app/about/page.tsx
-import Link from "next/link";
 import Highlight from "@/components/about/highlight";
 import Timeline from "@/components/about/timeline";
 
