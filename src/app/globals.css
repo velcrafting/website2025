@@ -63,7 +63,15 @@ body {
 }
 
 /* Light theme override via class on <html> */
-html.light { color-scheme: light; }
+html.light {
+  color-scheme: light;
+  --background: #fafafa;
+  --surface:    #111111;
+  --foreground: #e7e7e7;
+  --muted:      #9a9a9a;
+  --ring:       255 255 255;
+  --border:     34 34 34;
+}
 html.light body {
   background:
     radial-gradient(1200px 600px at 75% 0%, rgba(0,0,0,0.05), transparent 60%),
