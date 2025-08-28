@@ -10,6 +10,7 @@
 
 import Image from "next/image";
 import clsx from "clsx";
+import { Card } from "../ui";
 
 type EmploymentType = "Full-time" | "Contract" | "Self-employed";
 
@@ -37,25 +38,29 @@ const RAW_ENTRIES: Entry[] = [
     summary:
       "Established first Defensive Communications function; frameworks for brand trust, misinformation response, and community mobilization across Reddit, Discord, X, YouTube, and TikTok.",
     highlights: [
-      "Reduced response times by 70% in 2025 via workflows and approved playbooks",
-      "Shipped cross-functional FAQ/brand-response database used by PR, Support, and affiliates",
-      "Co-created AI phishing detection projected to deliver 1M+ proactive alerts annually",
-      "Launched Community Notes and workshops that doubled social reach year over year",
+      "Built the department’s foundation from scratch (playbooks, workflows, vendor partnerships)",
+      "Reduced response times by 70% via streamlined workflows and approved messaging playbooks",
+      "Designed and deployed cross‑functional FAQ/brand‑response database (AppSheet) used by PR, Support, Social, and affiliates",
+      "Directed global moderation strategy, overseeing vendors moderating millions of interactions across Reddit, Discord, and X",
+      "Co‑developed AI‑powered phishing detection projected to deliver 1M+ proactive alerts annually",
+      "Launched Community Notes and education‑first initiatives; doubled social reach YoY and improved brand credibility",
+      "Partnered with executives and cross‑functional leaders to align rapid‑response strategies during launches and sensitive events",
     ],
   },
   {
     company: "Self-employed",
-    role: "Independent Consultant, Developer, and Project Lead",
+    role: "Developer & Project Lead — velcrafting.com",
     employmentType: "Self-employed",
     remote: true,
     logo: "/about/logos/velcrafting.png",
     start: "2021-04-01",
     summary:
-      "AI tools, Web3/NFT experiences, and community ops. Mini-game platforms, tokenomics, smart contracts, and workflow tooling.",
+      "Independent consultant building open‑source tools, platforms, and blockchain systems with tokenomics. Led community ops and strategy.",
     highlights: [
-      "Clients: Pluid, RISE/SEI Cubz, Community First, Chum Chums, Titanforge, 1Kin Labs, Fierce Modeling, Fudderverse",
-      "Blockchain integrations and competitive systems",
-      "Whitepapers, specs, analysis, and GTM materials",
+      "Create AI‑driven tools and products to optimize workflows",
+      "Build Web3 platforms, tokenomics, smart contracts, and mini‑game systems",
+      "Lead digital event coordination and strategic content for community engagement",
+      "Marketing and brand building support for startups and Web3 communities",
     ],
   },
   {
@@ -67,7 +72,12 @@ const RAW_ENTRIES: Entry[] = [
     start: "2023-08-01",
     end: "2024-03-01",
     summary:
-      "Figma-driven collateral, AI tutor-agent prototype, and process docs that improved team efficiency.",
+      "Delivered AI tutor‑agent prototype and integrated design into full‑stack workflow to improve team efficiency.",
+    highlights: [
+      "Developed educational AI tutor‑agent for finance team",
+      "Introduced Figma into full‑stack workflow for development and creative teams",
+      "Authored technical process documentation to ease onboarding to new tools",
+    ],
   },
   {
     company: "Crimson Odyssey",
@@ -89,7 +99,7 @@ const RAW_ENTRIES: Entry[] = [
     start: "2018-06-01",
     end: "2021-04-01",
     summary:
-      "Consolidated five sites into a unified cloud domain; network, phones, and workstation upgrades with zero downtime.",
+      "Managed IT operations across five locations and led enterprise infrastructure upgrades (cloud domain, network, VoIP).",
   },
   {
     company: "Comcast",
@@ -178,7 +188,7 @@ function diffYM(startISO: string, endISO?: string) {
 export default function Timeline({ className }: { className?: string }) {
   return (
     <section className={clsx("space-y-4", className)} aria-labelledby="timeline-title">
-      <h2 id="timeline-title" className="text-lg font-semibold text-white">Timeline</h2>
+      <h2 id="timeline-title" className="text-lg font-semibold text-neutral-900 dark:text-white">Timeline</h2>
       <ol className="space-y-3">
         {ENTRIES.map((item) => {
           const start = fmtMMMYYYY(item.start);
@@ -186,7 +196,8 @@ export default function Timeline({ className }: { className?: string }) {
           const span = diffYM(item.start, item.end);
           return (
             <li key={`${item.company}-${item.role}-${item.start}`}>
-              <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+              <div className="rounded-xl border p-4 bg-white border-neutral-200 dark:border-neutral-800 dark:bg-neutral-900/60">
+                <Card>
                 <div className="flex items-start gap-3">
                   {item.logo ? (
                     <div className="shrink-0">
@@ -201,8 +212,8 @@ export default function Timeline({ className }: { className?: string }) {
                   ) : null}
 
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white">{item.role}</div>
-                    <div className="text-xs text-neutral-400">
+                    <div className="text-sm font-semibold text-neutral-900 dark:text-white">{item.role}</div>
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400">
                       {item.company}
                       {item.employmentType ? ` · ${item.employmentType}` : ""}
                       {item.remote ? " · Remote" : item.location ? ` · ${item.location}` : ""}
@@ -212,11 +223,11 @@ export default function Timeline({ className }: { className?: string }) {
                     </div>
 
                     {item.summary ? (
-                      <p className="mt-2 text-sm text-neutral-300">{item.summary}</p>
+                      <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">{item.summary}</p>
                     ) : null}
 
                     {item.highlights?.length ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-300">
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700 dark:text-neutral-300">
                         {item.highlights.map((h, i) => (
                           <li key={i}>{h}</li>
                         ))}
@@ -224,6 +235,7 @@ export default function Timeline({ className }: { className?: string }) {
                     ) : null}
                   </div>
                 </div>
+                </Card>
               </div>
             </li>
           );

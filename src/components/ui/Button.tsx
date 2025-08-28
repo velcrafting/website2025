@@ -21,9 +21,9 @@ export function buttonClasses({
     variant === "default" &&
       "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200",
     variant === "outline" &&
-      "border border-white/20 bg-white/5 text-white hover:bg-white/10",
+      "border bg-white text-neutral-900 hover:bg-neutral-50 border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800",
     variant === "ghost" &&
-      "text-white/90 hover:bg-white/10",
+      "text-neutral-900 hover:bg-neutral-100 dark:text-white/90 dark:hover:bg-white/10",
     variant === "accent" &&
       "text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 shadow-md hover:shadow-lg",
     className

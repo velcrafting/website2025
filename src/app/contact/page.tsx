@@ -3,7 +3,7 @@ import { ScheduleEmbed, ContactForm } from "@/components/contact";
 
 export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-12 space-y-12">
+    <div className="mx-auto px-6 py-12 space-y-12">
       <section id="contact">
         <h1 className="mb-2 text-2xl font-semibold">Send a message</h1>
         <p className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">

@@ -80,7 +80,7 @@ export default function StickyTOC() {
     setActiveId(id);
   };
 
-  return (
+ return (
     <nav className="text-md">
       <ul className="space-y-1">
         {heads.map((h) => {
@@ -92,8 +92,12 @@ export default function StickyTOC() {
                 onClick={onClick(h.id)}
                 className={[
                   "block rounded px-2 py-1 transition-colors",
-                  h.level === 3 ? "pl-5 text-neutral-500" : "pl-2",
-                  active ? "bg-neutral-800 text-white" : "text-neutral-300 hover:bg-neutral-800 hover:text-white",
+                  h.level === 3
+                    ? "pl-5 text-neutral-500 dark:text-neutral-400"
+                    : "pl-2",
+                  active
+                    ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-white"
+                    : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white",
                 ].join(" ")}
               >
                 {h.text}

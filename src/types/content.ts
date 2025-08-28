@@ -26,6 +26,7 @@ export type Frontmatter = {
   hero?: string;      // e.g., "/writing/<slug>/hero.jpg" (see size notes above)
   ogImage?: string;   // 1200x630 recommended
   tags?: string[];    // 2–6 lowercase labels
+  featured?: boolean; // show in Featured strips on listing pages
 };
 
 export type Doc<T = Record<string, unknown>> = {

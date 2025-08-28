@@ -16,3 +16,4 @@ export { ToastProvider, useToast } from "./Toast";
 export { default as Progress } from "./Progress";
 export { default as Steps } from "./Steps";
 export { default as CopyToClipboard } from "./CopyToClipboard";
+export { default as GradientIcon } from "./GradientIcon";

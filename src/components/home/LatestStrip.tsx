@@ -64,9 +64,9 @@ function Column({
               <li key={slug}>
                 <Link
                   href={href}
-                  className="block rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 transition hover:bg-neutral-800/70"
+                  className="block rounded-xl border p-4 transition bg-white hover:bg-neutral-100 border-neutral-200 dark:border-neutral-800 dark:bg-neutral-900/60 dark:hover:bg-neutral-800/70 text-left"
                 >
-                  <div className="text-base font-semibold text-white leading-snug">
+                  <div className="text-base font-semibold text-neutral-900 dark:text-white leading-snug">
                     {titleText}
                   </div>
                   {dateText ? (
@@ -75,7 +75,7 @@ function Column({
                     </div>
                   ) : null}
                   {summary ? (
-                    <div className="mt-1.5 text-sm text-neutral-400">
+                    <div className="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
                       {summary}
                     </div>
                   ) : null}
@@ -102,7 +102,7 @@ export default function LatestStrip({
 
   return (
     <section className="mt-4">
-      <h2 className="text-2xl font-semibold text-white">Latest</h2>
+      <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Latest</h2>
       <div className="mt-6 grid gap-6 lg:grid-cols-3 text-center">
         <Column title="Projects" hrefPrefix="/projects" docs={proj} />
         <Column title="Writing" hrefPrefix="/writing" docs={write} />

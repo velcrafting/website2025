@@ -55,7 +55,7 @@ export default function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className={`overflow-x-auto rounded-md border dark:border-neutral-800 ${className}`}>
+    <div className={`overflow-x-auto rounded-md border border-neutral-200 dark:border-neutral-800 ${className}`}>
       <table className="min-w-full text-sm">
         <thead className="bg-neutral-50 dark:bg-neutral-900">
           <tr>
@@ -74,7 +74,7 @@ export default function DataTable<T extends Record<string, unknown>>({
         </thead>
         <tbody>
           {sorted.map((row, i) => (
-            <tr key={i} className="border-t dark:border-neutral-800">
+            <tr key={i} className="border-t border-neutral-200 dark:border-neutral-800">
               {columns.map((c) => {
                 const value = row[c.key] as T[keyof T];
                 return (

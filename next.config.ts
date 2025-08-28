@@ -7,21 +7,21 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import remarkFootnotes from "remark-footnotes";
 import remarkEmoji from "remark-gemoji";
+import remarkCodeTitles from "remark-code-titles";
 
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import rehypePrettyCode from "rehype-pretty-code";
-
-const prettyCodeOptions = {
-  theme: { dark: "github-dark", light: "github-light" },
-  keepBackground: false,
-  defaultLang: "ts",
-};
+import rehypePrism from "rehype-prism-plus";
+// Note: removed rehype-pretty-code (Shiki) to avoid potential
+// build/dev hangs and simplify the MDX pipeline. If you want
+// syntax highlighting later, consider rehype-highlight or
+// re-adding rehype-pretty-code with a pinned Shiki version.
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
   options: {
     remarkPlugins: [
+      remarkCodeTitles,
       remarkGfm,
       remarkFrontmatter,
       [remarkMdxFrontmatter, { name: "frontmatter" }],
@@ -37,7 +37,7 @@ const withMDX = createMDX({
           properties: { className: ["anchor"] },
         },
       ],
-      [rehypePrettyCode, prettyCodeOptions],
+      [rehypePrism, { showLineNumbers: true }],
     ],
   },
 });

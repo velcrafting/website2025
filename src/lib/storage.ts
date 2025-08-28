@@ -6,6 +6,7 @@ export interface Store {
   hincrby(hash: string, field: string, by: number): Promise<void>;
   getNumber(key: string): Promise<number>;
   getHistogram(hash: string, size: number): Promise<number[]>;
+  hgetall?(hash: string): Promise<Record<string, number>>;
 }
 
 // Fallback memory store for local dev (no envs)
@@ -28,6 +29,12 @@ class MemoryStore implements Store {
     const h = this.hashes.get(hash) ?? new Map<string, number>();
     return Array.from({ length: size }, (_, i) => h.get(String(i)) ?? 0);
   }
+  async hgetall(hash: string) {
+    const h = this.hashes.get(hash) ?? new Map<string, number>();
+    const out: Record<string, number> = {};
+    for (const [k, v] of h.entries()) out[k] = v;
+    return out;
+  }
 }
 
 // Decide which backend to use
@@ -47,6 +54,12 @@ export const store: Store = hasKV
       async getHistogram(hash, size) {
         const h = (await kv.hgetall<Record<string, number>>(hash)) ?? {};
         return Array.from({ length: size }, (_, i) => Number(h[String(i)] ?? 0));
+      },
+      async hgetall(hash) {
+        const h = (await kv.hgetall<Record<string, number>>(hash)) ?? {};
+        const out: Record<string, number> = {};
+        for (const [k, v] of Object.entries(h)) out[k] = Number(v ?? 0);
+        return out;
       },
     }
   : new MemoryStore();

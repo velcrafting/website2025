@@ -18,8 +18,8 @@ export default function Card({
     <div
       className={clsx(
         "relative rounded-2xl border p-5 transition mt-4",
-        // base tones
-        "bg-white dark:bg-neutral-900",
+  // base tones
+  "bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100",
         // borders
         variant === "outline" && "border-neutral-200 dark:border-neutral-800 shadow-sm",
         variant === "soft" &&

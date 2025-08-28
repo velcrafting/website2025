@@ -1,6 +1,6 @@
 // src/components/hero/HeroRipple.tsx
 "use client";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /* =========================
    TWEAKABLE CONFIG
@@ -49,6 +49,23 @@ const CFG = {
   // Accent palette (Spotify greens)
   ACCENT_COLORS: ["#1DB954", "#1ed760", "#89f0b3"],
 };
+
+
+
+// Accent green gradients for hero (dark + light variants)
+const ACCENT_BG_STOPS_DARK = [
+  { at: 0.0, color: "#04171a" },
+  { at: 0.35, color: "#083827" },
+  { at: 0.70, color: "#0b5a33" },
+  { at: 1.0, color: "#072b1a" },
+];
+
+const ACCENT_BG_STOPS_LIGHT = [
+  { at: 0.0, color: "#f0fff6" },
+  { at: 0.35, color: "#e6fff3" },
+  { at: 0.70, color: "#dcffee" },
+  { at: 1.0, color: "#f7fff7" },
+];
 
 /* ===== helpers ===== */
 type RGB = { r: number; g: number; b: number };
@@ -103,9 +120,10 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
   const lastEmitRef = useRef(0);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
   const hadActivityRef = useRef(false);
+  const [isLight, setIsLight] = useState(false);
 
   // size canvas to DPR
-  const resize = () => {
+  const resize = useCallback(() => {
     const canvas = canvasRef.current, wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const dprRaw = window.devicePixelRatio || 1;
@@ -116,14 +134,24 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
     canvas.width = w; canvas.height = h;
     canvas.style.width = `${Math.max(1, Math.floor(rect.width))}px`;
     canvas.style.height = `${height}px`;
-  };
+  }, [height]);
 
   useEffect(() => {
     resize();
     const onResize = () => resize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [height]);
+  }, [height, resize]);
+
+  // watch <html> for theme class changes so the hero can adapt
+  useEffect(() => {
+    const doc = document.documentElement;
+    const update = () => setIsLight(doc.classList.contains("light"));
+    update();
+    const mo = new MutationObserver(update);
+    mo.observe(doc, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
 
   // input → ripples
   useEffect(() => {
@@ -184,9 +212,12 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
 
     const drawBackground = () => {
       const w = canvas.width, h = canvas.height;
+      // Use an accent green gradient for the hero; pick light/dark variant
+      const stops = isLight ? ACCENT_BG_STOPS_LIGHT : ACCENT_BG_STOPS_DARK;
       const bg = ctx.createLinearGradient(0, 0, 0, h);
-      for (const s of CFG.BG_STOPS) bg.addColorStop(s.at, s.color);
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+      for (const s of stops) bg.addColorStop(s.at, s.color);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
       if (CFG.SCANLINE_ALPHA > 0) {
         ctx.globalAlpha = CFG.SCANLINE_ALPHA;
         ctx.fillStyle = "#000";
@@ -276,19 +307,19 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
 
     animRef.current = requestAnimationFrame(draw);
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, []);
+  }, [isLight]);
 
   return (
     <div
       ref={wrapRef}
-      className={["relative w-full overflow-hidden rounded-2xl border border-neutral-800 shadow-2xl shadow-black/30", className].join(" ")}
+      className={["relative w-full overflow-hidden rounded-2xl border shadow-2xl shadow-black/30 border-neutral-200 dark:border-neutral-800", className].join(" ")}
       style={{ height }}
       aria-label="Ripple hero"
     >
       {/* top accent glow to match separators */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#1DB954] via-[#1ed760] to-[#1DB954] opacity-80" />
       <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-hidden="true" />
-      <div className="relative z-10 flex h-full flex-col items-start justify-center p-8">{children}</div>
+  <div className="relative z-10 flex h-full flex-col items-start justify-center p-8 text-neutral-900 dark:text-white" style={{ color: 'var(--foreground)' }}>{children}</div>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-10 mix-blend-overlay"

@@ -5,7 +5,7 @@ import type { MDXComponents } from "mdx/types";
 import { mdxComponents } from "./mdx-components";
 
 type MDXComponent = React.ComponentType<{ components?: MDXComponents }>;
-type Props = { slug: string; dir?: "projects" | "writing" };
+type Props = { slug: string; dir?: "projects" | "writing" | "labs" };
 
 export default function MdxClient({ slug, dir = "projects" }: Props) {
   const [Comp, setComp] = useState<MDXComponent | null>(null);
@@ -18,6 +18,8 @@ export default function MdxClient({ slug, dir = "projects" }: Props) {
         import(`@/content/projects/${slug}.mdx`) as Promise<{ default: MDXComponent }>,
       writing: () =>
         import(`@/content/writing/${slug}.mdx`) as Promise<{ default: MDXComponent }>,
+      labs: () =>
+        import(`@/content/labs/${slug}.mdx`) as Promise<{ default: MDXComponent }>,
     } as const;
 
     loaders[dir]()

@@ -13,7 +13,7 @@ function fmDate(fm: unknown): string {
 }
 
 export async function loadMDX<T extends object = Record<string, unknown>>(
-  dir: "projects" | "writing"
+  dir: "projects" | "writing" | "labs"
 ): Promise<Doc<T>[]> {
   const base = path.join(process.cwd(), "src", "content", dir);
 

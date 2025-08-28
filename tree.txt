@@ -1,101 +1,118 @@
 velcrafting-portfolio/
+├── README.md # Project overview, setup, pages, and architecture
+├── package.json # Scripts and dependencies
+├── package-lock.json # Locked dependency graph
+├── tsconfig.json # TS config
+├── eslint.config.mjs # ESLint config
+├── next.config.ts # Next.js + MDX configuration
+├── tree.txt # Descriptive tree for quick codebase orientation
+├── cleantree.txt # Snapshot of a full tree (includes build artifacts)
 ├── public/
-│   ├── images/
-│   │   └── logo.png
-│   └── resume.pdf
-│
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   ├── globals.css
-│   │   │
-│   │   ├── about/
-│   │   │   └── page.tsx
-│   │   ├── contact/
-│   │   │   └── page.tsx
-│   │   ├── projects/
-│   │   │   ├── page.tsx
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx
-│   │   ├── writing/
-│   │   │   ├── page.tsx
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx
-│   │   ├── labs/
-│   │   │   ├── page.tsx
-│   │   │   └── [slug]/
-│   │   │       └── page.tsx
-│   │   │
-│   │   ├── api/
-│   │   │   └── contact/
-│   │   │       └── route.ts
-│   │   └── og/
-│   │       └── route.tsx
-│   │
-│   ├── components/
-│   │   ├── ui/                      # Reusable, presentation-first primitives
-│   │   │   ├── Badge.tsx
-│   │   │   ├── Button.tsx
-│   │   │   ├── Card.tsx
-│   │   │   ├── CopyToClipboard.tsx
-│   │   │   ├── DataTable.tsx
-│   │   │   ├── Drawer.tsx
-│   │   │   ├── IconButton.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── MetricTile.tsx
-│   │   │   ├── Modal.tsx
-│   │   │   ├── Progress.tsx
-│   │   │   ├── Skeleton.tsx
-│   │   │   ├── Steps.tsx
-│   │   │   ├── Tabs.tsx
-│   │   │   ├── ThemeProvider.tsx
-│   │   │   ├── ThemeToggle.tsx
-│   │   │   ├── Toast.tsx
-│   │   │   ├── Tooltip.tsx
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── layout/                  # Shell/structure bits
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── CaseStudyLayout.tsx
-│   │   │   ├── StickyTOC.tsx
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── home/                    # Landing page-only components
-│   │   │   ├── Hero.tsx
-│   │   │   ├── KPISection.tsx
-│   │   │   ├── LatestStrip.tsx
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── projects/                # Project listing and detail
-│   │   │   ├── ProjectCard.tsx
-│   │   │   └── index.ts
-│   │   │
-│   │   ├── contact/                 # Contact & scheduling
-│   │   │   ├── ContactForm.tsx
-│   │   │   ├── ScheduleEmbed.tsx
-│   │   │   └── index.ts
-│   │   │
-│   │   └── index.ts                 # master barrel exporting everything above
-│   │
-│   ├── config/
-│   │   └── site.ts
-│   │
-│   ├── content/
-│   │   ├── projects/
-│   │   │   └── ledger-defensive-comms.mdx
-│   │   └── writing/
-│   │       └── ai-moderation-trends.mdx
-│   │
-│   ├── lib/
-│   │   ├── mdx.ts
-│   │   └── seo.ts
-│   │
-│   └── styles/
-│       └── prose.css
-│
-├── .env.example
-├── next.config.mjs
-├── package.json
-├── tsconfig.json
-└── README.md
+│  ├── favicon.ico # Site icon
+│  ├── robots.txt # SEO crawl hints
+│  ├── avatar.png # Sidebar avatar
+│  ├── Steven_Pajewski_Resume.pdf # Linked in Home/Sidebar
+│  ├── about/logos/*.png # Logos used on About page
+│  ├── writing/demo-showcase/* # Example post assets
+│  └── *.svg # UI icons/assets
+└── src/
+   ├── app/
+   │  ├── layout.tsx # Root layout: fixed Sidebar + scrollable main
+   │  ├── providers.tsx # Client providers (Theme, Toast)
+   │  ├── globals.css # Global styles (Tailwind v4)
+   │  ├── page.tsx # Home page: hero, KPIs, highlights, testimonials, latest
+   │  ├── about/page.tsx # About page: skills, timeline, highlights
+   │  ├── contact/page.tsx # Contact: form and schedule embed
+   │  ├── projects/page.tsx # Projects listing: search, tags, sort, featured
+   │  ├── projects/[slug]/page.tsx # Project detail: MDX via CaseStudyLayout + related
+   │  ├── writing/page.tsx # Writing listing: search, tags, sort, featured
+   │  ├── writing/[slug]/page.tsx # Writing detail with SEO metadata
+   │  ├── labs/page.tsx # Labs listing: experiments/prototypes
+   │  ├── labs/[slug]/page.tsx # Labs detail: MDX via CaseStudyLayout + related
+   │  ├── art/page.tsx # Art landing + instructions + canvas client
+   │  ├── art/ArtClient.tsx # Interactive canvas: physics, modes, and rendering
+   │  ├── art/components/SidebarArtPanel.tsx # Rail controls for art: mode, pick, sliders
+   │  ├── art/components/CountdownOverlay.tsx # 3‑2‑1‑GO overlay during battle countdown
+   │  ├── art/components/WinnerOverlay.tsx # Results overlay with all‑time winners
+   │  ├── art/utils/physics.ts # Physics step, collisions, fragments, particles
+   │  ├── art/utils/render.ts # Canvas drawing helpers (shapes, gradients)
+   │  ├── art/utils/influence.ts # Mouse gravity/orbit force application
+   │  ├── api/event/route.ts # Anonymous visit/click event ingestion with KV rate‑limiting
+   │  ├── api/state/route.ts # Public histogram and counters for art/state
+   │  ├── api/contact/route.ts # Contact email via Resend (dry‑runs if not configured)
+   │  ├── api/art/winner/route.ts # Tally/read all‑time art winners in KV
+   │  └── og/route.tsx # Safe Open Graph image generator (Edge runtime)
+   │
+   ├── components/
+   │  ├── layout/
+   │  │  ├── Sidebar.tsx # App navigation, social, and contextual panels
+   │  │  ├── StickyTOC.tsx # Auto‑built in‑page table of contents for MDX pages
+   │  │  └── CaseStudyLayout.tsx # Detail layout with hero, tags, KPI, related grid
+   │  ├── listing/
+   │  │  ├── ContentCard.tsx # Content card with tags, featured badge
+   │  │  ├── FilterBar.tsx # Search box, tag chips, sorting, view toggle
+   │  │  └── FeaturedStrip.tsx # Horizontal “featured” content carousel
+   │  ├── mdx/
+   │  │  ├── MdxClient.tsx # Client loader for compiled MDX by slug
+   │  │  ├── mdx-components.tsx # MDX component mapping (img→ContentImage, Figure, Gallery)
+   │  │  ├── ContentImage.tsx # Upgraded <img> with Next/Image semantics
+   │  │  ├── Figure.tsx # Image with caption and sizing helpers
+   │  │  └── Gallery.tsx # Simple image gallery for MDX
+   │  ├── home/
+   │  │  ├── Hero.tsx # Landing hero content
+   │  │  ├── KPISection.tsx # Home KPI tiles
+   │  │  └── LatestStrip.tsx # Mixed latest content strip
+   │  ├── projects/
+   │  │  ├── ProjectCard.tsx # Project card variant
+   │  │  └── ProjectKPISection.tsx # KPI tiles sourced from frontmatter
+   │  ├── writing/
+   │  │  ├── WritingCard.tsx # Writing card variant
+   │  │  └── WritingKPISection.tsx # Optional KPI tiles for articles
+   │  ├── contact/
+   │  │  ├── ContactForm.tsx # Contact form UI + fetch to API
+   │  │  └── ScheduleEmbed.tsx # Calendar embed block
+   │  └── ui/
+   │     ├── index.ts # Barrel export for UI kit pieces
+   │     ├── Button.tsx # Button variants (outline, accent, sizes)
+   │     ├── Card.tsx # Container with subtle borders/shadows
+   │     ├── Input.tsx # Text input with label and error styling
+   │     ├── IconButton.tsx # Icon‑only button used in footer actions
+   │     ├── GradientIcon.tsx # Animated gradient icon wrapper used on hover
+   │     ├── Separator.tsx # Themed line/gradient separators
+   │     ├── Skeleton.tsx # Loading skeleton blocks
+   │     ├── Modal.tsx # Accessible modal wrapper
+   │     ├── Drawer.tsx # Slide‑in drawer
+   │     ├── Tabs.tsx # Tabs control
+   │     ├── Tooltip.tsx # Tooltip primitive
+   │     ├── Progress.tsx # Progress bar
+   │     ├── Badge.tsx # Badge/pill labels
+   │     ├── Toast.tsx # Toast provider + toasts
+   │     ├── ThemeProvider.tsx # Theme context (light/dark)
+   │     ├── ThemeToggle.tsx # Theme toggle switch
+   │     ├── DataTable.tsx # Generic table with basic styling
+   │     ├── CopyToClipboard.tsx # Copy helper with toast feedback
+   │     ├── Steps.tsx # Numbered steps component
+   │     ├── MetricTile.tsx # KPI metric tile
+   │     └── HeroRipple.tsx # Decorative ripple background for hero
+   │
+   ├── content/
+   │  ├── writing/*.mdx # Writing entries (frontmatter + MDX)
+   │  ├── projects/*.mdx # Project case studies (frontmatter + MDX)
+   │  └── labs/*.mdx # Labs/experiments (frontmatter + MDX)
+   │
+   ├── lib/
+   │  ├── mdx.ts # Load MDX from a folder + parse frontmatter
+   │  ├── content.ts # Aggregate content across sections with typed frontmatter
+   │  ├── storage.ts # Vercel KV store adapter with in‑memory fallback
+   │  ├── seo.ts # Metadata helpers for titles + OG
+   │  └── prng.ts # Deterministic PRNG helpers (utility)
+   │
+   ├── config/
+   │  └── site.ts # Site‑wide links and author info
+   │
+   ├── styles/
+   │  └── prose.css # MDX/Prose and code highlighting styles
+   │
+   └── types/
+      ├── content.ts # Shared content/frontmatter types
+      └── config.d.ts # Ambient type for config imports

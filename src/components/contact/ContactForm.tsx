@@ -60,7 +60,7 @@ export default function ContactForm() {
         placeholder="Message"
         rows={6}
         required
-        className="w-full rounded-md border px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-neutral-700"
+        className="w-full rounded-md border px-3 py-2 bg-transparent focus:outline-white focus:ring-2 focus:ring-neutral-700"
       />
 
       <Button type="submit" disabled={state === "sending"}>
