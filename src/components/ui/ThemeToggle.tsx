@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTheme } from "./ThemeProvider";
 
 export default function ThemeToggle({ className = "" }: { className?: string }) {
-  const { theme, resolved, setTheme } = useTheme();
+  const { resolved, setTheme } = useTheme();
 
   const label = useMemo(() => (resolved === "light" ? "Light" : "Dark"), [resolved]);
 

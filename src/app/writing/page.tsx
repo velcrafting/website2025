@@ -5,7 +5,7 @@ import ContentCard from "@/components/listing/ContentCard";
 import FilterBar from "@/components/listing/FilterBar";
 import FeaturedStrip from "@/components/listing/FeaturedStrip";
 
-export default async function Page({ searchParams }: { searchParams?: Promise<{ tag?: string; q?: string; sort?: string }> }) {
+export default async function Page({ searchParams }: { searchParams?: Promise<{ tag?: string; q?: string; sort?: string; view?: string }> }) {
   const params = (await searchParams) ?? {};
   const tag = params.tag?.toLowerCase();
   const docs = await loadMDX<Frontmatter>("writing");

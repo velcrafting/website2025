@@ -17,7 +17,7 @@ import Separator from "@/components/ui/Separator";
 import { Card, GradientIcon } from "../ui";
 import dynamic from "next/dynamic";
 const SidebarArtPanel = dynamic(() => import("@/app/art/components/SidebarArtPanel"), { ssr: false });
-import ThemeToggle from "@/components/ui/ThemeToggle";
+// import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
