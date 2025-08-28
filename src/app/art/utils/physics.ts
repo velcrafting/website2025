@@ -196,7 +196,7 @@ export function step(
           const relSpeed = Math.hypot(rvx, rvy);
           const sizeFactor = Math.min(a.r, c.r) / Math.max(a.r, c.r);
           const base = 2.0 * (0.75 + sizeFactor * 0.5);
-          const sf = (opts as any).shatterFactor ?? 1.0;
+          const sf = opts.shatterFactor ?? 1.0;
           const shatterThreshold = Math.max(0.6, base * sf);
           if (relSpeed > shatterThreshold) {
             const removeJ = a.r <= c.r ? i : j;

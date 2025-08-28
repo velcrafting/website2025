@@ -6,7 +6,6 @@ velcrafting-portfolio/
 ├── eslint.config.mjs # ESLint config
 ├── next.config.ts # Next.js + MDX configuration
 ├── tree.txt # Descriptive tree for quick codebase orientation
-├── cleantree.txt # Snapshot of a full tree (includes build artifacts)
 ├── public/
 │  ├── favicon.ico # Site icon
 │  ├── robots.txt # SEO crawl hints
