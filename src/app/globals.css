@@ -62,6 +62,18 @@ body {
   color: var(--foreground);
 }
 
+/* Tablet typography bump: iPad Air/Pro can feel zoomed out.
+   Increase base font-size more aggressively on tablet sizes. */
+@media (min-width: 820px) and (max-width: 1023px) {
+  html { font-size: 18px; } /* small tablets / narrow landscape */
+}
+@media (min-width: 820px) and (max-width: 1024px) and (orientation: portrait) {
+  html { font-size: 19px; } /* portrait iPad Air/Pro */
+}
+@media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+  html { font-size: 18px; } /* iPad Pro landscape */
+}
+
 /* Light theme override via class on <html> */
 html.light {
   color-scheme: light;
@@ -155,6 +167,13 @@ html.light .btn:hover {
 :where(a, button, [role="button"], .btn):focus-visible {
   outline: 2px solid rgb(var(--ring));
   outline-offset: 2px;
+}
+
+/* Ensure nested scroll works smoothly on iPad (momentum + vertical pan) */
+.scroll-area {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* ====== Light theme component overrides ====== */

@@ -51,10 +51,13 @@ export default function Drawer({ open, onClose, side = "right", title, children 
   const panelTranslate = open ? "translate-x-0" : off;
   const backdropState = open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none";
 
+  // Do not render at all when closed — avoids invisible overlay blocking taps
+  if (!open) return null;
+
   return (
     <div
       className="fixed inset-0 z-50"
-      aria-hidden={!open}
+      aria-hidden={false}
       role="presentation"
     >
       {/* Backdrop */}

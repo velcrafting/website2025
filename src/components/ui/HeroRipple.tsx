@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
    TWEAKABLE CONFIG
    ========================= */
 const CFG = {
-  HEIGHT_PX: 350,
+  // Baseline minimum height; container can grow beyond this
+  HEIGHT_PX: 420,
 
   // Vertical background gradient (top→bottom)
   BG_STOPS: [
@@ -109,10 +110,15 @@ function sampleBg(yNorm: number): RGB {
 const tint = (c: RGB, t: number) => mix(c, { r: 255, g: 255, b: 255 }, clamp01(t));
 const shade = (c: RGB, t: number) => mix(c, { r: 0, g: 0, b: 0 }, clamp01(t));
 
-type Props = { height?: number; className?: string; children?: React.ReactNode };
+type Props = {
+  height?: number;
+  className?: string;
+  children?: React.ReactNode;
+  contentAlign?: "start" | "center" | "end"; // vertical alignment
+};
 type Ripple = { x: number; y: number; t0: number };
 
-export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", children }: Props) {
+export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", children, contentAlign = "center" }: Props) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ripplesRef = useRef<Ripple[]>([]);
@@ -129,18 +135,26 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
     const dprRaw = window.devicePixelRatio || 1;
     const dpr = Number.isFinite(dprRaw) ? Math.min(Math.max(dprRaw, 1), CFG.DPR_MAX) : 1;
     const rect = wrap.getBoundingClientRect();
-    const w = Math.max(1, Math.floor(rect.width * dpr));
-    const h = Math.max(1, Math.floor(height * dpr));
+    const cssWidth = Math.max(1, Math.floor(rect.width));
+    // Use the actual container height (which may exceed the min height)
+    const cssHeight = Math.max(height, Math.floor(rect.height));
+    const w = Math.max(1, Math.floor(cssWidth * dpr));
+    const h = Math.max(1, Math.floor(cssHeight * dpr));
     canvas.width = w; canvas.height = h;
-    canvas.style.width = `${Math.max(1, Math.floor(rect.width))}px`;
-    canvas.style.height = `${height}px`;
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
   }, [height]);
 
   useEffect(() => {
     resize();
     const onResize = () => resize();
+    const ro = new ResizeObserver(() => resize());
+    if (wrapRef.current) ro.observe(wrapRef.current);
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      ro.disconnect();
+    };
   }, [height, resize]);
 
   // watch <html> for theme class changes so the hero can adapt
@@ -312,14 +326,22 @@ export default function HeroRipple({ height = CFG.HEIGHT_PX, className = "", chi
   return (
     <div
       ref={wrapRef}
-      className={["relative w-full overflow-hidden rounded-2xl border shadow-2xl shadow-black/30 border-neutral-200 dark:border-neutral-800", className].join(" ")}
-      style={{ height }}
+      className={["relative w-full overflow-hidden rounded-2xl border shadow-2xl shadow-black/30 border-neutral-200 dark:border-neutral-800 touch-pan-y", className].join(" ")}
+      style={{ minHeight: height }}
       aria-label="Ripple hero"
     >
       {/* top accent glow to match separators */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#1DB954] via-[#1ed760] to-[#1DB954] opacity-80" />
       <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-hidden="true" />
-  <div className="relative z-10 flex h-full flex-col items-start justify-center p-8 text-neutral-900 dark:text-white" style={{ color: 'var(--foreground)' }}>{children}</div>
+      <div
+        className={[
+          "relative z-10 flex h-full max-w-full flex-col items-start p-6 sm:p-8 text-neutral-900 dark:text-white text-pretty",
+          contentAlign === "start" ? "justify-start" : contentAlign === "end" ? "justify-end" : "justify-center",
+        ].join(" ")}
+        style={{ color: 'var(--foreground)' }}
+      >
+        {children}
+      </div>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-10 mix-blend-overlay"

@@ -4,6 +4,14 @@ import type { Frontmatter } from "@/types/content";
 import ContentCard from "@/components/listing/ContentCard";
 import FilterBar from "@/components/listing/FilterBar";
 import FeaturedStrip from "@/components/listing/FeaturedStrip";
+import { buildMetadata } from "@/lib/seo";
+
+export const generateMetadata = () =>
+  buildMetadata({
+    title: "Writing",
+    description: "Notes and essays on communications, AI, and community systems.",
+    canonicalPath: "/writing",
+  });
 
 export default async function Page({ searchParams }: { searchParams?: Promise<{ tag?: string; q?: string; sort?: string; view?: string }> }) {
   const params = (await searchParams) ?? {};

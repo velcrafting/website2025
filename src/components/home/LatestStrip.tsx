@@ -102,7 +102,7 @@ export default function LatestStrip({
 
   return (
     <section className="mt-4">
-      <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Latest</h2>
+      <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Latest Writings & Projects</h2>
       <div className="mt-6 grid gap-6 lg:grid-cols-3 text-center">
         <Column title="Projects" hrefPrefix="/projects" docs={proj} />
         <Column title="Writing" hrefPrefix="/writing" docs={write} />

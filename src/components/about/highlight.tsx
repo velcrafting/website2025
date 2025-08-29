@@ -22,20 +22,20 @@ export default function Highlight({
       )}
       aria-labelledby="about-highlight-title"
     >
-      <h2 id="about-highlight-title" className="text-lg font-semibold">About</h2>
+      <h2 id="about-highlight-title" className="text-lg font-semibold">About ✨</h2>
 
       {variant === "compact" ? (
         <>
           <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
-            Strategic communications and technology leader specializing in brand reputation defense,
-            misinformation management, and AI‑driven community strategy. I turn complexity into clear,
-            defensible action across high‑stakes moments.
+            Strategic communications and technology leader specializing in <em>brand reputation defense</em>,
+            <em> misinformation management</em>, and <span className="underline decoration-emerald-400/40 underline-offset-2">AI‑driven community strategy</span>.
+            I turn complexity into clear, <strong>defensible action</strong> across high‑stakes moments.
           </p>
 
           <ul className="mt-3 list-disc pl-5 space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
-            <li>Built Ledger’s Defensive Communications function from 0→1; now scaling globally.</li>
-            <li>Reduced response times by 70% via workflows and approved playbooks.</li>
-            <li>Co‑developed AI phishing detection projected to deliver 1M+ proactive alerts annually.</li>
+            <li>Built Ledger’s <strong>Defensive Communications</strong> function from <strong>0→1</strong>; now scaling globally.</li>
+            <li>Reduced response times by <strong>70%</strong> via workflows and approved playbooks.</li>
+            <li>Co‑developed <em>AI phishing detection</em> projected to deliver <strong>1M+</strong> proactive alerts annually.</li>
           </ul>
 
           <div className="mt-4">
@@ -47,23 +47,24 @@ export default function Highlight({
       ) : (
         <>
           <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
-            Strategic communications and technology leader focused on brand reputation defense, misinformation
-            management, and AI integration. I build functions from inception into global programs, bridging product,
-            marketing, legal, and customer success to deliver unified, defensible messaging.
+            Strategic communications and technology leader focused on <em>brand reputation defense</em>,
+            <em> misinformation management</em>, and <span className="underline decoration-emerald-400/40 underline-offset-2">AI integration</span>.
+            I build functions from inception into <strong>global programs</strong>, bridging product, marketing, legal, and customer success
+            to deliver unified, defensible messaging.
           </p>
 
           <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
-            I design scalable frameworks that combine human moderation, automation, and AI to safeguard reputation,
+            I design <strong>scalable frameworks</strong> that combine <em>human moderation, automation, and AI</em> to safeguard reputation,
             strengthen community trust, and drive product adoption. Experienced in PLG motions through community
             intelligence, technical advocacy, and user enablement.
           </p>
 
-          <h3 className="mt-5 text-sm font-semibold">Career highlights</h3>
+          <h3 className="mt-5 text-sm font-semibold">Career Highlights 🔥</h3>
           <ul className="mt-2 space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
-            <li>Established Ledger’s Defensive Communications department from 0→1, now scaling globally.</li>
-            <li>Launched education‑first initiatives and Community Notes that increased social reach year‑over‑year.</li>
-            <li>Built cross‑functional knowledge systems that empower rapid, credible response.</li>
-            <li>Previously led enterprise IT modernization; now applying that rigor to AI, Web3, and comms.</li>
+            <li>Established Ledger’s <strong>Defensive Communications</strong> department from <strong>0→1</strong>, now scaling globally.</li>
+            <li>Launched education‑first initiatives and <em>Community Notes</em> that increased social reach year‑over‑year.</li>
+            <li>Built cross‑functional <span className="underline decoration-sky-400/40 underline-offset-2">knowledge systems</span> that empower rapid, credible response.</li>
+            <li>Previously led <em>enterprise IT modernization</em>; now applying that rigor to AI, Web3, and comms.</li>
           </ul>
 
           <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-300">

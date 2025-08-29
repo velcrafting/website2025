@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 export const runtime = "nodejs";
 
-type ContactPayload = { name?: string; email: string; message: string };
+type ContactPayload = { name?: string; email: string; subject?: string; message: string };
 
 const CONFIG = {
   key: process.env.RESEND_API_KEY,
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as Partial<ContactPayload>;
     const name = body.name?.trim() || "Anonymous";
     const email = body.email?.trim();
+    const subject = body.subject?.trim() || `Portfolio contact: ${name}`;
     const message = body.message?.toString();
 
     if (!email || !message) {
@@ -43,8 +44,8 @@ export async function POST(req: Request) {
     const { error } = await resend.emails.send({
       from: `Portfolio <${CONFIG.from}>`,
       to: [CONFIG.to],
-      replyTo: email,
-      subject: `Portfolio contact: ${name}`,
+      replyTo: email ? `${name} <${email}>` : undefined,
+      subject,
       text: `${email}\n\n${message}`,
     });
 

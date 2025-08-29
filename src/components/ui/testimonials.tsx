@@ -65,7 +65,7 @@ export default function Testimonials({
         <Separator variant="gradient" accentClass={accentClass} />
 
         <div
-          className="relative px-5 py-6 sm:px-7 sm:py-8"
+          className="relative px-5 py-6 sm:px-7 sm:py-8 before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(80%_60%_at_10%_0%,rgba(32,174,125,0.10),transparent_60%)]"
           onMouseEnter={() => (pausedRef.current = true)}
           onMouseLeave={() => {
             pausedRef.current = false;
@@ -80,13 +80,13 @@ export default function Testimonials({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
-              className="text-base leading-relaxed text-neutral-700 dark:text-neutral-200"
+              className="text-base sm:text-lg md:text-xl leading-relaxed italic text-neutral-800 dark:text-neutral-100"
             >
-              <span className="select-none align-top text-2xl text-neutral-400 dark:text-neutral-500">“</span>
+              <span className="select-none align-top text-3xl sm:text-4xl mr-1 align-middle text-neutral-300 dark:text-neutral-500">“</span>
               {active.quote}
-              <span className="select-none align-top text-2xl text-neutral-400 dark:text-neutral-500">”</span>
+              <span className="select-none align-top text-3xl sm:text-4xl ml-1 align-middle text-neutral-300 dark:text-neutral-500">”</span>
 
-              <footer className="mt-4 flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
+              <footer className="mt-5 flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400 not-italic">
                 {active.avatarUrl ? (
                   <div className="h-9 w-9 overflow-hidden rounded-full ring-1 ring-neutral-300 dark:ring-neutral-800">
                     <Image
@@ -103,7 +103,7 @@ export default function Testimonials({
                       href={active.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-neutral-900 hover:underline dark:text-white"
+                      className="font-medium text-neutral-900 hover:underline underline-offset-4 dark:text-white"
                     >
                       {active.author}
                     </a>
@@ -118,13 +118,13 @@ export default function Testimonials({
 
           {/* Controls */}
           {items.length > 1 && (
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-5 flex items-center justify-between">
               <div className="flex gap-2">
                 <button
                   type="button"
                   aria-label="Previous testimonial"
                   onClick={prev}
-                  className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  className="rounded-full border border-neutral-300 bg-white/70 px-3 py-1 text-sm text-neutral-700 backdrop-blur hover:bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-300 dark:hover:bg-neutral-800/70"
                 >
                   ←
                 </button>
@@ -132,7 +132,7 @@ export default function Testimonials({
                   type="button"
                   aria-label="Next testimonial"
                   onClick={next}
-                  className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  className="rounded-full border border-neutral-300 bg-white/70 px-3 py-1 text-sm text-neutral-700 backdrop-blur hover:bg-white/90 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-300 dark:hover:bg-neutral-800/70"
                 >
                   →
                 </button>
@@ -145,10 +145,10 @@ export default function Testimonials({
                     aria-label={`Show testimonial ${i + 1}`}
                     onClick={() => setIndex(i)}
                     className={clsx(
-                      "h-2.5 w-2.5 rounded-full transition",
+                      "h-2.5 w-2.5 rounded-full transition shadow-sm",
                       i === index
                         ? "bg-neutral-900 dark:bg-white"
-                        : "bg-neutral-300 hover:bg-neutral-400 dark:bg-neutral-700 dark:hover:bg-neutral-500"
+                        : "bg-neutral-300/80 hover:bg-neutral-400 dark:bg-neutral-700/80 dark:hover:bg-neutral-500"
                     )}
                   />
                 ))}

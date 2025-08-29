@@ -9,12 +9,14 @@ export function buildMetadata(opts: {
   title: string;
   description?: string;
   ogImage?: string;
+  canonicalPath?: string; // e.g. "/writing/my-post"
 }): Metadata {
   const fullTitle = titleize(opts.title);
   const og = opts.ogImage ?? `/og?title=${encodeURIComponent(opts.title)}`;
   return {
     title: fullTitle,
     description: opts.description,
+    alternates: opts.canonicalPath ? { canonical: opts.canonicalPath } : undefined,
     openGraph: {
       title: fullTitle,
       description: opts.description,

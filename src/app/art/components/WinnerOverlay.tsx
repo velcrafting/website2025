@@ -68,11 +68,16 @@ export default function WinnerOverlay({
   if (!visible) return null;
   const shapes: ShapeKind[] = ["circle", "square", "triangle", "star"];
   return (
-    <div className="pointer-events-auto absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-      <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-neutral-900/70 p-6 shadow-xl">
-        <h2 className="mb-2 text-xl font-semibold">Battle Results</h2>
+    <div
+      className="pointer-events-auto absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Battle results"
+    >
+      <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-neutral-900/70 p-4 sm:p-6 shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+        <h2 className="mb-2 text-lg sm:text-xl font-semibold">Battle Results</h2>
         <div className="mb-3 text-sm opacity-80">Shapes</div>
-        <div className="mb-4 grid grid-cols-4 gap-4">
+        <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {shapes.map((s) => (
             <CountTile key={s} kind={s} value={counts?.[s] ?? 0} />
           ))}
@@ -88,11 +93,11 @@ export default function WinnerOverlay({
                 const color = s === "circle" ? "#9b87f5" : s === "square" ? "#60a5fa" : s === "triangle" ? "#34d399" : "#f59e0b";
                 return (
                   <div key={s} className="flex items-center gap-2">
-                    <div className="w-16 text-xs capitalize opacity-70">{s}</div>
+                    <div className="w-14 sm:w-16 text-xs capitalize opacity-70">{s}</div>
                     <div className="h-2 flex-1 rounded bg-white/10">
                       <div className="h-full rounded" style={{ width: pct + '%', backgroundColor: color }} />
                     </div>
-                    <div className="w-10 text-right text-xs tabular-nums">{v}</div>
+                    <div className="w-8 sm:w-10 text-right text-xs tabular-nums">{v}</div>
                   </div>
                 );
               })}
@@ -101,15 +106,15 @@ export default function WinnerOverlay({
         )}
         <div className="mb-4">
           <div className="text-sm opacity-80">Winner</div>
-          <div className="mt-1 flex items-center gap-2 text-lg font-semibold capitalize">
+          <div className="mt-1 flex items-center gap-2 text-base sm:text-lg font-semibold capitalize">
             {winner ?? "None"}
           </div>
         </div>
-        <div className="mb-6 text-sm">
+        <div className="mb-6 text-sm text-pretty">
           You guessed <span className="font-medium capitalize">{guess ?? "(no pick)"}</span> —
           {guess ? (guess === winner ? " congratulations!" : " better luck next time.") : " pick next time!"}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <span className="text-sm opacity-70">Try again? Pick and start:</span>
           {shapes.map((s) => (
             <Button
@@ -121,10 +126,10 @@ export default function WinnerOverlay({
               {s}
             </Button>
           ))}
-          <Button className="ml-auto" size="sm" variant="accent" disabled={!selection} onClick={onStart}>
+          <Button className="sm:ml-auto w-full sm:w-auto" size="sm" variant="accent" disabled={!selection} onClick={onStart}>
             Start Next Battle
           </Button>
-          <Button size="sm" variant="outline" onClick={onReset}>Reset board</Button>
+          <Button className="w-full sm:w-auto" size="sm" variant="outline" onClick={onReset}>Reset board</Button>
         </div>
       </div>
     </div>

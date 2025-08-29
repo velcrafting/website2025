@@ -3,6 +3,14 @@ import type { Frontmatter } from "@/types/content";
 import ContentCard from "@/components/listing/ContentCard";
 import FilterBar from "@/components/listing/FilterBar";
 import FeaturedStrip from "@/components/listing/FeaturedStrip";
+import { buildMetadata } from "@/lib/seo";
+
+export const generateMetadata = () =>
+  buildMetadata({
+    title: "Projects",
+    description: "Case studies and shipped work across communications, AI systems, and product.",
+    canonicalPath: "/projects",
+  });
 
 export default async function Page({ searchParams }: { searchParams?: Promise<{ tag?: string; q?: string; sort?: string; view?: string }> }) {
   const params = (await searchParams) ?? {};

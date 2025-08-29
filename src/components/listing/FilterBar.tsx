@@ -69,11 +69,11 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
             className="bg-white dark:bg-neutral-900"
           />
         </div>
-        <div className="shrink-0 flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
           <label htmlFor="sort" className="text-xs text-neutral-600 dark:text-neutral-400">Sort</label>
           <select
             id="sort"
-            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900"
+            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900 min-w-[120px]"
             value={sort}
             onChange={(e) => onApply({ sort: e.target.value })}
           >
@@ -84,7 +84,7 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
           <label htmlFor="view" className="ml-2 text-xs text-neutral-600 dark:text-neutral-400">View</label>
           <select
             id="view"
-            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900"
+            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900 min-w-[110px]"
             value={view}
             onChange={(e) => onApply({ view: e.target.value })}
           >

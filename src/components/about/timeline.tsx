@@ -188,7 +188,7 @@ function diffYM(startISO: string, endISO?: string) {
 export default function Timeline({ className }: { className?: string }) {
   return (
     <section className={clsx("space-y-4", className)} aria-labelledby="timeline-title">
-      <h2 id="timeline-title" className="text-lg font-semibold text-neutral-900 dark:text-white">Timeline</h2>
+      <h2 id="timeline-title" className="text-lg font-semibold text-neutral-900 dark:text-white">Career Timeline 🗓️</h2>
       <ol className="space-y-3">
         {ENTRIES.map((item) => {
           const start = fmtMMMYYYY(item.start);
@@ -219,7 +219,11 @@ export default function Timeline({ className }: { className?: string }) {
                       {item.remote ? " · Remote" : item.location ? ` · ${item.location}` : ""}
                     </div>
                     <div className="mt-0.5 text-xs text-neutral-500">
-                      {start} to {end} {span ? `• ${span}` : ""}
+                      {start} – {item.end ? (
+                        end
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">{end}</span>
+                      )} {span ? `• ${span}` : ""}
                     </div>
 
                     {item.summary ? (

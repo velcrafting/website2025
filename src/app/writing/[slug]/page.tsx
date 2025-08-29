@@ -5,6 +5,7 @@ import { CaseStudyLayout } from "@/components/layout";
 import MdxClient from "@/components/mdx/MdxClient";
 import type { Frontmatter } from "@/types/content";
 import { buildMetadata } from "@/lib/seo";
+import Script from "next/script";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!doc) return {};
   const fm = doc.frontmatter;
   const og = fm.ogImage || fm.hero || undefined;
-  return buildMetadata({ title: fm.title, description: fm.summary, ogImage: og });
+  return buildMetadata({ title: fm.title, description: fm.summary, ogImage: og, canonicalPath: `/writing/${slug}` });
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -43,6 +44,19 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   return (
     <CaseStudyLayout frontmatter={doc.frontmatter} related={scored}>
+      <Script id="ld-breadcrumb-writing" type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000" },
+              { "@type": "ListItem", position: 2, name: "Writing", item: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/writing` },
+              { "@type": "ListItem", position: 3, name: doc.frontmatter.title, item: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/writing/${slug}` },
+            ],
+          }),
+        }}
+      />
       <MdxClient slug={slug} dir="writing" />
     </CaseStudyLayout>
   );
