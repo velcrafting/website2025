@@ -47,6 +47,18 @@ const config: NextConfig = {
   experimental: { mdxRs: false },
   // Optional. Helps Vercel tracing when repo is in a subfolder locally.
   outputFileTracingRoot: process.cwd(),
+  async rewrites() {
+    return [
+      {
+        source: "/labs/qr-lab",
+        destination: "https://velcrafting.github.io/qr-lab/index.html",
+      },
+      {
+        source: "/labs/qr-lab/:path*",
+        destination: "https://velcrafting.github.io/qr-lab/:path*",
+      },
+    ];
+  },
 };
 
 export default withMDX(config);
