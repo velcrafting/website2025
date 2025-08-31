@@ -11,10 +11,12 @@ const OWNER = process.env.NEXT_PUBLIC_MICROS_OWNER || "velcrafting";
 
 async function isMicroSlug(slug: string): Promise<boolean> {
   try {
-    // Heuristic: micro sites publish lab.json at their root
-    const url = `https://${OWNER}.github.io/${slug}/lab.json`;
-    const res = await fetch(url, { method: "HEAD", cache: "force-cache" });
-    return res.ok;
+    // Prefer lab.json, but fall back to index.html to be resilient
+    const base = `https://${OWNER}.github.io/${slug}`;
+    const headLab = await fetch(`${base}/lab.json`, { method: "HEAD", cache: "force-cache" });
+    if (headLab.ok) return true;
+    const headIndex = await fetch(`${base}/index.html`, { method: "HEAD", cache: "force-cache" });
+    return headIndex.ok;
   } catch {
     return false;
   }
@@ -41,4 +43,3 @@ export default async function middleware(req: Request) {
 
   return NextResponse.next();
 }
-
