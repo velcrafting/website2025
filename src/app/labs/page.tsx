@@ -1,5 +1,5 @@
 import { loadMDX } from "@/lib/mdx";
-import type { Frontmatter } from "@/types/content";
+import type { Doc, Frontmatter } from "@/types/content";
 import ContentCard from "@/components/listing/ContentCard";
 import FilterBar from "@/components/listing/FilterBar";
 import FeaturedStrip from "@/components/listing/FeaturedStrip";
@@ -18,7 +18,22 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
   const tag = params.tag?.toLowerCase();
   const docsMdx = await loadMDX<Frontmatter>("labs");
   const docsMicros = await loadMicros();
-  const docs = [...docsMdx, ...docsMicros];
+  const docsMap = new Map<string, Doc<Frontmatter>>();
+  docsMicros.forEach((doc) => docsMap.set(doc.slug, doc));
+  docsMdx.forEach((doc) => {
+    const existing = docsMap.get(doc.slug);
+    docsMap.set(
+      doc.slug,
+      existing
+        ? {
+            slug: doc.slug,
+            frontmatter: { ...existing.frontmatter, ...doc.frontmatter },
+            content: doc.content,
+          }
+        : doc,
+    );
+  });
+  const docs = Array.from(docsMap.values());
 
   if (!docs.length) {
     return (
