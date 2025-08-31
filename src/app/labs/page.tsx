@@ -61,7 +61,14 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
       <FeaturedStrip items={featured} base="/labs" />
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((d) => (
-          <ContentCard key={d.slug} doc={d} href={`/labs/${d.slug}`} tagBase="/labs" variant={view === "compact" ? "compact" : "default"} />
+          <ContentCard
+            key={d.slug}
+            doc={d}
+            href={`/labs/${d.slug}`}
+            tagBase="/labs"
+            variant={view === "compact" ? "compact" : "default"}
+            hardLink={docsMicros.some((m) => m.slug === d.slug)}
+          />
         ))}
       </div>
     </div>

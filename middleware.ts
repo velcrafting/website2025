@@ -38,7 +38,8 @@ export default async function middleware(req: Request) {
   // If the slug looks like a known micro (has lab.json on GH Pages), rewrite to our proxy
   if (await isMicroSlug(slug)) {
     const target = new URL(`/labs/micro/${slug}/${tail.join("/")}`, url.origin);
-    return NextResponse.redirect(target);
+    // Keep the original URL visible while serving proxy content
+    return NextResponse.rewrite(target);
   }
 
   return NextResponse.next();
