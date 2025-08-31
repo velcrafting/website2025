@@ -4,6 +4,7 @@ import ContentCard from "@/components/listing/ContentCard";
 import FilterBar from "@/components/listing/FilterBar";
 import FeaturedStrip from "@/components/listing/FeaturedStrip";
 import { buildMetadata } from "@/lib/seo";
+import { loadMicros } from "@/lib/micros";
 
 export const generateMetadata = () =>
   buildMetadata({
@@ -15,7 +16,9 @@ export const generateMetadata = () =>
 export default async function Page({ searchParams }: { searchParams?: Promise<{ tag?: string; q?: string; sort?: string; view?: string }> }) {
   const params = (await searchParams) ?? {};
   const tag = params.tag?.toLowerCase();
-  const docs = await loadMDX<Frontmatter>("labs");
+  const docsMdx = await loadMDX<Frontmatter>("labs");
+  const docsMicros = await loadMicros();
+  const docs = [...docsMdx, ...docsMicros];
 
   if (!docs.length) {
     return (

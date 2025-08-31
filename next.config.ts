@@ -47,12 +47,25 @@ const config: NextConfig = {
   experimental: { mdxRs: false },
   // Optional. Helps Vercel tracing when repo is in a subfolder locally.
   outputFileTracingRoot: process.cwd(),
+  async redirects() {
+    return [
+      // Ensure trailing slash so relative asset URLs resolve under /labs/qr-lab/
+      { source: "/labs/qr-lab", destination: "/labs/qr-lab/", permanent: true },
+    ];
+  },
   async rewrites() {
     return [
+      // exact without trailing slash
       {
         source: "/labs/qr-lab",
         destination: "https://velcrafting.github.io/qr-lab/index.html",
       },
+      // explicit trailing slash variant (some requests include the slash)
+      {
+        source: "/labs/qr-lab/",
+        destination: "https://velcrafting.github.io/qr-lab/index.html",
+      },
+      // wildcard for nested assets/paths
       {
         source: "/labs/qr-lab/:path*",
         destination: "https://velcrafting.github.io/qr-lab/:path*",
