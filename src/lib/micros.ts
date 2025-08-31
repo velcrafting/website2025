@@ -11,6 +11,9 @@ type RegistryRow = {
   tags?: string[];
 };
 
+type GitHubRepo = { name?: string };
+type LabJson = { title?: string; summary?: string; desc?: string; tags?: unknown };
+
 async function tryFetch(url: string, init?: RequestInit) {
   try {
     const res = await fetch(url, { ...init, cache: "force-cache", next: { revalidate: 1800 } });
@@ -36,10 +39,12 @@ export async function loadMicros(): Promise<Doc<Frontmatter>[]> {
       headers: { Accept: "application/vnd.github+json" },
     });
     if (reposRes) {
-      const repos = await reposRes.json();
-      rows = await Promise.all(
-        (Array.isArray(repos) ? repos : []).map(async (r: any) => ({ slug: r.name }))
-      );
+      const reposUnknown = (await reposRes.json()) as unknown;
+      if (Array.isArray(reposUnknown)) {
+        rows = (reposUnknown as GitHubRepo[])
+          .map((r) => (typeof r.name === "string" && r.name ? { slug: r.name } : null))
+          .filter((x): x is RegistryRow => !!x);
+      }
     }
   }
 
@@ -51,13 +56,18 @@ export async function loadMicros(): Promise<Doc<Frontmatter>[]> {
       const base = `https://${OWNER}.github.io/${slug}`;
       const labRes = await tryFetch(`${base}/lab.json`, { headers: { Accept: "application/json" } });
       if (!labRes) return;
-      let lab: any = {};
-      try { lab = await labRes.json(); } catch {}
+      let lab: LabJson = {};
+      try {
+        const parsed = (await labRes.json()) as unknown;
+        if (parsed && typeof parsed === "object") lab = parsed as LabJson;
+      } catch {}
       const fm: Frontmatter = {
         title: lab.title || title || slug.replace(/[-_]+/g, " ").replace(/\b\w/g, (m: string) => m.toUpperCase()),
         summary: lab.summary || desc || lab.desc || undefined,
         hero: `/labs/${slug}/thumbnail.svg`,
-        tags: Array.isArray(lab.tags) ? lab.tags : (Array.isArray(tags) ? tags : []),
+        tags: Array.isArray(lab.tags)
+          ? (lab.tags.filter((t): t is string => typeof t === "string"))
+          : (Array.isArray(tags) ? tags : []),
       };
       docs.push({ slug, frontmatter: fm, content: "" });
     })
@@ -66,4 +76,3 @@ export async function loadMicros(): Promise<Doc<Frontmatter>[]> {
   // Latest first by best effort (lab.json updated or default)
   return docs.sort((a, b) => (b.frontmatter.title || "").localeCompare(a.frontmatter.title || ""));
 }
-
