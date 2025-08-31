@@ -20,11 +20,15 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const docs = await loadMDX<Frontmatter>("labs");
   const doc = docs.find((d) => d.slug === slug);
-  if (!doc || !doc.frontmatter?.title) {
-    // Fallback: proxy any unrecognised slug to the generic micro-site handler.
-    // The proxy will return a 404 if the micro does not exist.
-    return redirect(`/labs/micro/${slug}/`);
+ if (!doc || !doc.frontmatter?.title) {
+    // Fallback: redirect to the GitHub Pages micro-site for any slug
+    // that doesn't have a corresponding MDX doc. This avoids hitting the
+    // generic proxy route, which could lead to redirect loops if the micro
+    // site navigates back to `/labs/${slug}`.
+    const owner = process.env.NEXT_PUBLIC_MICROS_OWNER || "velcrafting";
+    return redirect(`https://${owner}.github.io/${slug}/`);
   }
+
 
   const tags = new Set((doc.frontmatter.tags ?? []).map((t) => t.toLowerCase()));
   const related = docs
