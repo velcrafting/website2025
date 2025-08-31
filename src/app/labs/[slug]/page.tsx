@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import {redirect } from "next/navigation";
 import { loadMDX } from "@/lib/mdx";
 import { CaseStudyLayout } from "@/components/layout";
 import MdxClient from "@/components/mdx/MdxClient";
@@ -21,19 +21,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const docs = await loadMDX<Frontmatter>("labs");
   const doc = docs.find((d) => d.slug === slug);
   if (!doc || !doc.frontmatter?.title) {
-    // Fallback: if this slug corresponds to a micro hosted on GitHub Pages,
-    // redirect to the internal proxy so client navigation works.
-    const owner = process.env.NEXT_PUBLIC_MICROS_OWNER || "velcrafting";
-    const base = `https://${owner}.github.io/${slug}`;
-    try {
-      const resLab = await fetch(`${base}/lab.json`, { method: "HEAD", cache: "no-store" });
-      if (resLab.ok) return redirect(`/labs/micro/${slug}/`);
-      const resIdx = await fetch(`${base}/index.html`, { method: "HEAD", cache: "no-store" });
-      if (resIdx.ok) return redirect(`/labs/micro/${slug}/`);
-    } catch {
-      // ignore; fall through to notFound
-    }
-    return notFound();
+    // Fallback: proxy any unrecognised slug to the generic micro-site handler.
+    // The proxy will return a 404 if the micro does not exist.
+    return redirect(`/labs/micro/${slug}/`);
   }
 
   const tags = new Set((doc.frontmatter.tags ?? []).map((t) => t.toLowerCase()));
