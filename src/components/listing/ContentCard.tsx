@@ -15,6 +15,26 @@ type Props = {
 
 export default function ContentCard({ doc, href, tagBase, variant = "default", hardLink = false }: Props) {
   const { frontmatter } = doc;
+  const isSvg = frontmatter.hero?.toLowerCase().endsWith(".svg");
+  const HeroImage = frontmatter.hero
+    ? isSvg
+      ? (
+          <img
+            src={frontmatter.hero}
+            alt={frontmatter.title}
+            className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
+          />
+        )
+      : (
+          <Image
+            src={frontmatter.hero}
+            alt={frontmatter.title}
+            fill
+            sizes="(min-width: 1024px) 360px, 100vw"
+            className="object-cover transition-transform group-hover:scale-[1.03]"
+          />
+        )
+    : null;
   return (
     <div
       className="group card-hover-gradient relative block overflow-hidden rounded-2xl border border-neutral-200 bg-white/80 p-3 shadow-sm transition hover:-translate-y-[2px] hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900/70"
@@ -24,27 +44,29 @@ export default function ContentCard({ doc, href, tagBase, variant = "default", h
         <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">FEATURED</span>
       ) : null}
 
-      {frontmatter.hero ? (
+      {HeroImage ? (
         hardLink ? (
-          <a href={href} className={variant === "compact" ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg" : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"}>
-            <Image
-              src={frontmatter.hero}
-              alt={frontmatter.title}
-              fill
-              sizes="(min-width: 1024px) 360px, 100vw"
-              className="object-cover transition-transform group-hover:scale-[1.03]"
-            />
+          <a
+            href={href}
+            className={
+              variant === "compact"
+                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
+                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
+            }
+          >
+            {HeroImage}
             <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/5" />
           </a>
         ) : (
-          <Link href={href} className={variant === "compact" ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg" : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"}>
-            <Image
-              src={frontmatter.hero}
-              alt={frontmatter.title}
-              fill
-              sizes="(min-width: 1024px) 360px, 100vw"
-              className="object-cover transition-transform group-hover:scale-[1.03]"
-            />
+          <Link
+            href={href}
+            className={
+              variant === "compact"
+                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
+                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
+            }
+          >
+            {HeroImage}
             <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/5" />
           </Link>
         )

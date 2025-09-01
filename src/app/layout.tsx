@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     template: "%s · Steven Pajewski",
   },
   description: "Portfolio",
+  icons: { icon: "/logo.svg" },
   openGraph: {
     siteName: "Steven Pajewski",
     type: "website",

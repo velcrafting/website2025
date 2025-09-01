@@ -9,7 +9,7 @@ import { loadMicros } from "@/lib/micros";
 export const generateMetadata = () =>
   buildMetadata({
     title: "Labs",
-    description: "Experimental prototypes and WIP tools.",
+    description: "Free, open-source utilities for everyday use. No paywalls, no friction. Just tools to help you get things done.",
     canonicalPath: "/labs",
   });
 
@@ -70,8 +70,8 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
 
   return (
     <div className="w-full py-10">
-      <h1 className="text-2xl font-semibold">Labs{tag ? ` · #${tag}` : ""}</h1>
-      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Experimental prototypes and WIP tools.</p>
+      <h1 className="text-2xl font-semibold">Tools & Utilities{tag ? ` · #${tag}` : ""}</h1>
+      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Free, open-source utilities for everyday use. No paywalls, no friction. Just tools to help you get things done.</p>
       <FilterBar allTags={allTags} placeholder="Search labs..." />
       <FeaturedStrip items={featured} base="/labs" />
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

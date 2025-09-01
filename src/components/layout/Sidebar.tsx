@@ -7,7 +7,10 @@ import { SITE } from "@/config/site";
 import {
   Github, Linkedin, Mail, FileText,
   Home, FolderKanban, FlaskConical, PenSquare, User2, CalendarClock,
-  Brush
+  Brush,
+  LucideToolCase,
+  ToolCase,
+  LucideHammer
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -24,7 +27,7 @@ const nav = [
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/writing", label: "Writing", icon: PenSquare },
-  { href: "/labs", label: "Case Studies", icon: FlaskConical },
+  { href: "/labs", label: "Tools", icon: LucideHammer },
   { href: "/contact", label: "Contact", icon: CalendarClock },
     { href: "/art", label: "Something Different", icon: Brush },
 ];

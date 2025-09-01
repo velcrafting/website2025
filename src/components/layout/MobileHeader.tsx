@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Drawer from "@/components/ui/Drawer";
-import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, FlaskConical, PenSquare, User2, CalendarClock, Brush } from "lucide-react";
+import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, FlaskConical, PenSquare, User2, CalendarClock, Brush, LucideHammer } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
 import { GradientIcon } from "@/components/ui";
 import { SITE } from "@/config/site";
@@ -18,7 +18,7 @@ const nav = [
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/writing", label: "Writing", icon: PenSquare },
-  { href: "/labs", label: "Case Studies", icon: FlaskConical },
+  { href: "/labs", label: "Tools", icon: LucideHammer },
   { href: "/contact", label: "Contact", icon: CalendarClock },
   { href: "/art", label: "Something Different", icon: Brush },
 ];
