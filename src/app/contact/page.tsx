@@ -1,5 +1,5 @@
 // src/app/contact/page.tsx
-import { ScheduleEmbed, ContactForm } from "@/components/contact";
+import { ScheduleEmbed, ContactForm, NewsletterForm } from "@/components/contact";
 import { ChevronDown } from "lucide-react";
 import { buildMetadata } from "@/lib/seo";
 
@@ -39,6 +39,21 @@ export default function Page() {
           </div>
           <div className="mt-4">
             <ScheduleEmbed />
+          </div>
+        </details>
+      </section>
+
+      <section id="newsletter">
+        <details className="group rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-4">
+          <summary className="flex cursor-pointer items-center justify-between list-none">
+            <h2 className="text-2xl font-semibold">Join the newsletter</h2>
+            <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            Get occasional updates on new writing and projects.
+          </div>
+          <div className="mt-4">
+            <NewsletterForm />
           </div>
         </details>
       </section>

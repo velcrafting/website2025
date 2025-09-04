@@ -28,7 +28,7 @@
     "react": "latest",
     "react-countup": "^6.5.3",
     "react-dom": "latest",
-    "resend": "latest",
+    "resend": "^6.0.2",
     "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
