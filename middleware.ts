@@ -1,10 +1,12 @@
 // src/middleware.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
   matcher: [
     // Existing Labs proxy handling
     "/labs/:path*",
+    // Admin dashboard and APIs
+    "/admin/:path*",
     // Admin-ish newsletter endpoints (server-only use via curl/Postman)
     "/api/newsletter/:path*",
   ],
@@ -12,6 +14,7 @@ export const config = {
 
 const OWNER = process.env.NEXT_PUBLIC_MICROS_OWNER || "velcrafting";
 const ADMIN_KEY = process.env.ADMIN_KEY;
+const ADMIN_COOKIE = "admin";
 
 /* -------- Labs helpers (unchanged) -------- */
 async function isMicroSlug(slug: string): Promise<boolean> {
@@ -37,9 +40,22 @@ const ADMIN_NEWSLETTER_PREFIXES = new Set<string>([
   "/api/newsletter/subscription",
 ]);
 
-export default async function middleware(req: Request) {
-  const url = new URL(req.url);
+export default async function middleware(req: NextRequest) {
+  const url = req.nextUrl;
   const { pathname } = url;
+
+  /* ---------- Protect admin pages ---------- */
+  if (pathname.startsWith("/admin")) {
+    if (pathname === "/admin/login" || pathname === "/admin/login/") {
+      return NextResponse.next();
+    }
+    const cookie = req.cookies.get(ADMIN_COOKIE)?.value;
+    if (!ADMIN_KEY || cookie !== ADMIN_KEY) {
+      url.pathname = "/admin/login";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
 
   /* ---------- Guard newsletter admin APIs with x-admin-key ---------- */
   if (pathname.startsWith("/api/newsletter/")) {

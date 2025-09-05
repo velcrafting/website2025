@@ -19,7 +19,8 @@ Modern, content‑driven portfolio built with Next.js 15 (App Router), MDX conte
 - Art (`/art`): “Bouncing Universe” interactive canvas. Shapes represent visits. Hover to influence orbits. Two modes:
   - Sandbox: shapes loop and respawn over time.
   - Battle: pick a winner; a black hole grows until one shape type remains (≤ 60s). Results tally anonymously over time. The sidebar panel lets you pick a shape, tune mouse influence, asteroid volume, and FPS.
-- Contact (`/contact`): Simple contact form (Resend email integration if env vars are set) and scheduling embed.
+  - Contact (`/contact`): Simple contact form (Resend email integration if env vars are set) and scheduling embed.
+  - Admin (`/admin`): Private dashboard for creating MDX articles and drafting or sending newsletters. When logged in, the sidebar exposes quick links to these admin tools.
 
 ## Content Authoring
 
@@ -64,12 +65,14 @@ Copy `.env.example` → `.env` (or `.env.local`). All are optional; sensible fal
 - Contact email: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`
 - KV store: `KV_REST_API_URL`, `KV_REST_API_TOKEN` (enables persistent analytics and art tallies)
 - Site URL: `NEXT_PUBLIC_SITE_URL` (used for metadata base and OG routes)
+- Admin login: `ADMIN_USERNAME`, `ADMIN_KEY`
 
 ## Scripts
 
 - `dev` — Next dev
 - `dev:webpack` — Next dev without Turbopack
 - `build`, `start`, `lint`, `typecheck`
+- `commit-content.mjs` — helper to commit MDX content changes
 
 ## Repository Structure
 
@@ -79,4 +82,3 @@ See `tree.txt` for a descriptive, per‑file overview of the codebase.
 
 - Turbopack issues: run `npm run dev:webpack`.
 - Stuck caches: delete `.next` then restart the dev server.
-

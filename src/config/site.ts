@@ -1,9 +1,10 @@
+// src/config/site.ts (or wherever)
 export const SITE = {
-  name: "Steven Pajewski",
-  email: "spajewski@outlook.com",
+  name: "Velcrafting",
+  email: "hello@velcrafting.com",
   resumeUrl: "/Steven_Pajewski_Resume.pdf",
   links: {
     linkedin: "https://linkedin.com/in/spajewski",
-    github: "https://github.com/velcrafting/"
-  }
-};
+    github: "https://github.com/velcrafting/",
+  },
+} as const;

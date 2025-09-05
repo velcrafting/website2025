@@ -9,21 +9,36 @@ import "@/styles/prose.css";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.velcrafting.com";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Steven Pajewski",
-    template: "%s · Steven Pajewski",
+    default: "Velcrafting",
+    template: "%s · Velcrafting",
   },
-  description: "Portfolio",
+  description:
+    "Strategic communications leader turning complexity into clarity across AI, Web3, and global communities.",
   icons: { icon: "/logo.svg" },
+
   openGraph: {
-    siteName: "Steven Pajewski",
     type: "website",
+    url: SITE_URL,
+    siteName: "velcrafting.com",
+    title: "Velcrafting",
+    description:
+      "Strategic communications leader turning complexity into clarity across AI, Web3, and global communities.",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
   },
+
   twitter: {
     card: "summary_large_image",
+    title: "Velcrafting",
+    description:
+      "Strategic communications leader turning complexity into clarity across AI, Web3, and global communities.",
+    images: ["/og.png"],
   },
+
   robots: {
     index: true,
     follow: true,
@@ -35,8 +50,9 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-};
 
+  alternates: { canonical: SITE_URL },
+};
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.className} ${geistMono.variable}`}>
