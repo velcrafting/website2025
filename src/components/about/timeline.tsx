@@ -88,7 +88,15 @@ const RAW_ENTRIES: Entry[] = [
     start: "2023-10-01",
     end: "2024-01-01",
     summary:
-      "Co-wrote and produced a 50-page manga in one month; integrated AI sub-agents for continuity; 5-star rating on Amazon.",
+      "Merged AI creativity with human storytelling to co-author and publish a 50-page manga in one month, achieving a 5-star Amazon rating.",
+    highlights: [
+      "Produced a full 50-page manga in 30 days — reducing typical indie cycle times by 80%",
+      "Directed storyboarding, scripting, art direction, and continuity across 5 chapters",
+      "Engineered AI pipelines with GPT, DALL·E 3, and Stable Diffusion to cut design revisions by ~50%",
+      "Built reusable prompt templates and memory-based agents, ensuring style consistency across 100+ assets",
+      "Co-developed layout and typography in Figma, delivering print-ready and digital editions",
+      "Workshopped drafts with 20+ early readers, integrating feedback into final release",
+    ],
   },
   {
     company: "Mike Maroone Automotive",
@@ -99,8 +107,17 @@ const RAW_ENTRIES: Entry[] = [
     start: "2018-06-01",
     end: "2021-04-01",
     summary:
-      "Managed IT operations across five locations and led enterprise infrastructure upgrades (cloud domain, network, VoIP).",
-  },
+      "Directed enterprise IT transformation across five dealerships, consolidating fragmented systems into a unified, modern cloud-based network.",
+    highlights: [
+      "Oversaw IT operations for 400+ users across 5 dealerships in Colorado and Florida",
+      "Migrated networks to Cisco Meraki and Fortinet stacks with 0 downtime during cutover",
+      "Upgraded 100% of telecom lines from analog to VoIP, reducing costs by ~15% annually",
+      "Cut onboarding from 3–4 weeks to 3 days — >80% improvement in provisioning speed",
+      "Negotiated vendor contracts across 5 providers, securing 20% average cost savings",
+      "Directed multimillion-dollar store renovation with 0 service disruption or revenue loss",
+      "Implemented company-wide password and account policies, reducing security incidents by ~30%",
+    ],
+    },
   {
     company: "Comcast",
     role: "Infrastructure and Implementation Engineer II",
@@ -109,8 +126,16 @@ const RAW_ENTRIES: Entry[] = [
     start: "2017-09-01",
     end: "2018-04-01",
     summary:
-      "Built CATS racks, ran coax/Cat6/fiber, created metrics and procedures, rapid troubleshooting.",
-  },
+      "Built and standardized Comcast Automated Testing System (CATS) racks to replicate field outages and accelerate systemic troubleshooting.",
+    highlights: [
+      "Constructed 24+ CATS racks, each simulating 24 household nodes (~600 test points total)",
+      "Deployed coax, Cat6, and fiber cabling to replicate real-world outage conditions",
+      "Created standardized installation and troubleshooting tutorials adopted across multiple labs",
+      "Enabled field engineers to cut mean time to repair (MTTR) by an estimated 20–30%",
+      "Documented and escalated 100+ outage scenarios, improving national diagnostic playbooks",
+      "Scaled lab knowledge sharing across Comcast divisions, training dozens of field techs",
+    ],
+},
   {
     company: "Randstad Technologies US",
     role: "Media IT Asset Manager",
@@ -119,8 +144,16 @@ const RAW_ENTRIES: Entry[] = [
     start: "2015-09-01",
     end: "2017-09-01",
     summary:
-      "Data-center asset deployments, decommission logistics, ops documentation.",
-  },
+      "Managed IT asset logistics for JP Morgan Chase data centers, ensuring secure, compliant, and uninterrupted operations.",
+    highlights: [
+      "Coordinated deployment and decommission of 1,000+ servers and networking assets",
+      "Supervised secure destruction of hundreds of drives, ensuring 100% audit compliance",
+      "Cataloged and tracked assets across multiple facilities, reducing inventory errors by ~40%",
+      "Improved documentation standards, cutting handoff friction between ops/logistics teams",
+      "Built redundancy cabling and workflows that improved disaster recovery readiness by ~25%",
+      "Ensured continuous uptime across mission-critical data centers supporting global finance",
+    ],
+},
 //   {
 //     company: "Discover Financial Services",
 //     role: "Account Manager",
