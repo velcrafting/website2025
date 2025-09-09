@@ -18,7 +18,7 @@ export default function KPISection() {
         <MetricTile
           value="Global"
           label="Community reach"
-          sublabel="multi-region coverage"
+          sublabel="multi-region social media coverage"
         />
       </div>
     </section>
