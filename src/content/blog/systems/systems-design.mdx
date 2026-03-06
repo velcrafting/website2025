@@ -1,0 +1,129 @@
+---
+title: "Systems Design: Building Multi-Agent Architectures That Actually Work"
+summary: "A framework for architecting, governing, measuring, and evolving multi-agent systems with clean-room separation and execution integrity."
+scheduledAt: "2026-02-26"
+tags: ["systems-design", "agents", "architecture", "framework"]
+status: published
+pillar: systems-design
+---
+
+
+## Opening
+
+Most multi-agent systems fail in production. Not because the agents aren't capable, but because the architecture lacks the structural integrity to handle governance, state consistency, and observability at scale.
+
+This article presents a framework for building agentic systems that are reliable, measurable, and evolvable.
+
+## Definition Section
+
+**Multi-Agent System**: A collection of autonomous agents that communicate, coordinate, and collaborate to achieve goals.
+
+**Clean-Room Separation**: Architectural pattern where domains are isolated to prevent contamination and improve reliability.
+
+**Telemetry**: The system of collecting, transmitting, and analyzing data from distributed agents.
+
+**Execution Integrity**: Verification that agent actions produce intended outcomes.
+
+## The Clean-Room Architecture Framework
+
+| Layer | Objective | Failure Mode | Measurement |
+|-------|-----------|--------------|-------------|
+| **Isolation** | Domain separation | Cross-contamination | Boundary violation count |
+| **Communication** | Agent coordination | Message loss | Delivery confirmation rate |
+| **State** | Consistency | Desync events | State divergence incidents |
+| **Observability** | Visibility | Black box | Telemetry coverage |
+
+## Core Principles
+
+### 1. Domain Isolation
+
+Each agent or agent group should operate in a defined domain with clear boundaries:
+
+- **Data separation**: Agents only access their domain's data
+- **Capability boundaries**: Each agent has explicit capabilities
+- **Failure containment**: Domain failures don't cascade
+
+### 2. Structured Communication
+
+Agent communication should follow explicit protocols:
+
+- **Message schemas**: Typed, validated communication
+- **Acknowledgment protocols**: Confirm message receipt
+- **Retry logic**: Handle transient failures gracefully
+
+### 3. State Management
+
+Distributed agents need consistent state:
+
+- **Centralized state store**: Single source of truth
+- **Event sourcing**: All changes as immutable events
+- **Compensation logic**: Reverse operations for failures
+
+### 4. Telemetry & Observability
+
+You cannot improve what you cannot see:
+
+- **Decision logging**: Every agent decision recorded
+- **Metrics**: Key performance indicators per agent
+- **Tracing**: End-to-end request flow
+
+## Building for Production
+
+### The 10-Minute Rule
+
+Every agent should be able to:
+1. Start from cold storage
+2. Initialize telemetry
+3. Connect to state store
+4. Begin processing
+
+Within 10 minutes, an agent should be fully operational.
+
+### The Circuit Breaker Pattern
+
+Implement circuit breakers at agent boundaries:
+
+- **Detect failures**: Track error rates
+- **Open circuit**: Stop routing to failing agent
+- **Recovery**: Test periodically, close when healthy
+
+### Testing Agent Systems
+
+| Test Type | What It Validates | Frequency |
+|-----------|-------------------|------------|
+| Unit | Individual agent logic | Every commit |
+| Integration | Agent communication | Daily |
+| Chaos | Failure handling | Weekly |
+| Performance | Latency under load | Monthly |
+
+## Common Failure Modes
+
+### Failure #1: State Desynchronization
+
+Agents drift apart because there's no single source of truth.
+
+**Solution**: Implement centralized state with event sourcing.
+
+### Failure #2: Telemetry Gaps
+
+You can't see what's failing because you're not tracking it.
+
+**Solution**: Build telemetry from day one, not as an afterthought.
+
+### Failure #3: Governance Breakdown
+
+Agents make conflicting decisions without coordination.
+
+**Solution**: Define explicit decision authority per domain.
+
+## Summary
+
+- Clean-room separation prevents contamination and improves reliability
+- Structured communication protocols ensure coordination
+- Centralized state management prevents desynchronization
+- Telemetry is not optional—it's the foundation of
+- Test at reliability multiple levels: unit, integration, chaos, performance
+
+---
+
+*Pillar 2 of 3: Systems Design & Integration*

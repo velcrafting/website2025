@@ -1,0 +1,61 @@
+{
+  "name": "velcrafting-portfolio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "dev:webpack": "next dev --no-turbo -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "dependencies": {
+    "@calcom/embed-react": "^1.5.3",
+    "@mdx-js/react": "^3.1.0",
+    "@vercel/kv": "^3.0.0",
+    "@vercel/og": "latest",
+    "clsx": "latest",
+    "framer-motion": "^12.23.12",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "latest",
+    "next": "^15.5.0",
+    "next-seo": "latest",
+    "react": "latest",
+    "react-countup": "^6.5.3",
+    "react-dom": "latest",
+    "resend": "^6.0.2",
+    "tailwindcss": "^4.1.12"
+  },
+  "devDependencies": {
+    "@mdx-js/loader": "^3.1.0",
+    "@mdx-js/mdx": "^3.1.0",
+    "@next/mdx": "^15.5.2",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/node": "^24.3.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "^10.4.21",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "postcss": "^8.5.6",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-katex": "^7.0.1",
+    "rehype-prism-plus": "^2.0.1",
+    "rehype-slug": "^6.0.0",
+    "remark-code-titles": "^0.1.2",
+    "remark-directive": "^4.0.0",
+    "remark-footnotes": "^4.0.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gemoji": "^8.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "remark-mdx-frontmatter": "^5.2.0",
+    "typescript": "^5.9.2"
+  }
+}
