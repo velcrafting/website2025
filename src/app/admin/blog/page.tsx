@@ -1,5 +1,5 @@
-import { readdir, stat as fsStat, readFile, writeFile, mkdir, unlink } from "fs/promises";
 // src/app/admin/blog/page.tsx - Manage blog articles
+import fs from "fs/promises";
 import path from "path";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -10,19 +10,19 @@ async function getArticles() {
   const articles: Array<{ pillar: string; slug: string; title: string; status: string; date: string }> = [];
   
   try {
-    const pillars = await fsPromises.readdir(blogDir, { withFileTypes: true });
+    const pillars = await fs.readdir(blogDir);
     for (const pillar of pillars) {
       const pillarPath = path.join(blogDir, pillar);
-      const stat = await stat(pillarPath);
+      const stat = await fs.stat(pillarPath);
       if (!stat.isDirectory()) continue;
       
-      const files = await fsPromises.readdir(pillarPath);
+      const files = await fs.readdir(pillarPath);
       for (const file of files) {
         if (!file.endsWith(".mdx")) continue;
         
         const slug = file.replace(".mdx", "");
         const filePath = path.join(pillarPath, file);
-        const content = await readFile(filePath, "utf8");
+        const content = await fs.readFile(filePath, "utf8");
         
         // Parse frontmatter
         const match = content.match(/^---\n([\s\S]*?)\n---/);
