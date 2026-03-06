@@ -23,7 +23,7 @@
     "framer-motion": "^12.23.12",
     "gray-matter": "^4.0.3",
     "lucide-react": "latest",
-    "next": "^15.5.0",
+    "next": "^15.5.7",
     "next-seo": "latest",
     "react": "latest",
     "react-countup": "^6.5.3",
