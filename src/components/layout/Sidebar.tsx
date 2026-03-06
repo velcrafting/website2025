@@ -69,11 +69,11 @@ export default function Sidebar() {
   return (
     <div className="flex h-full flex-col rail px-4 py-6 md:px-6 md:py-8 text-neutral-900 dark:text-neutral-100">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <SecretAvatar />
-        <div className="leading-tight">
-          <div className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Steven Pajewski</div>
-          <div className="text-2xl font-semibold text-center tracking-tight -mt-1 text-neutral-700 dark:text-neutral-300">Velcrafting</div>
+      <div className="flex flex-col items-center text-center gap-2">
+        <SecretAvatar size={80} />
+        <div className="text-center">
+          <div className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Steven Pajewski</div>
+          <div className="text-xs font-medium tracking-widest uppercase text-neutral-500 dark:text-neutral-400">Velcrafting</div>
         </div>
       </div>
 
