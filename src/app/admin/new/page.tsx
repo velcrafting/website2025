@@ -1,5 +1,5 @@
 // src/app/admin/new/page.tsx - CMS for creating blog articles with pillars
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import Link from "next/link";
 import { redirect } from "next/navigation";
