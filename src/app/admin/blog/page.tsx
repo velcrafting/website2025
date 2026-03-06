@@ -10,19 +10,19 @@ async function getArticles() {
   const articles: Array<{ pillar: string; slug: string; title: string; status: string; date: string }> = [];
   
   try {
-    const pillars = await fs.readdir(blogDir);
+    const pillars = await fsPromises.readdir(blogDir, { withFileTypes: true });
     for (const pillar of pillars) {
       const pillarPath = path.join(blogDir, pillar);
-      const stat = await fs.stat(pillarPath);
+      const stat = await stat(pillarPath);
       if (!stat.isDirectory()) continue;
       
-      const files = await fs.readdir(pillarPath);
+      const files = await fsPromises.readdir(pillarPath);
       for (const file of files) {
         if (!file.endsWith(".mdx")) continue;
         
         const slug = file.replace(".mdx", "");
         const filePath = path.join(pillarPath, file);
-        const content = await fs.readFile(filePath, "utf8");
+        const content = await readFile(filePath, "utf8");
         
         // Parse frontmatter
         const match = content.match(/^---\n([\s\S]*?)\n---/);
