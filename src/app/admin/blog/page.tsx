@@ -1,5 +1,5 @@
 // src/app/admin/blog/page.tsx - Manage blog articles
-import fs from "fs/promises";
+import fs from "fs";
 import path from "path";
 import Link from "next/link";
 import { redirect } from "next/navigation";
