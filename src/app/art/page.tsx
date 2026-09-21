@@ -16,6 +16,13 @@ export default function Page() {
     <main className="min-h-dvh p-6">
     <Card>
       <h1 className="text-4xl sm:text-5xl md:text-6xl mb-4 [text-wrap:balance]">Bouncing Universe</h1>
+
+      {/* The arcade is the other thing on this surface. Steven, 2026-09-16: the arcade "should operate
+          like the tools page... but visually packaged like netflix". It lives at /arcade. */}
+      <p className="mb-4">
+        Looking for the games? They are in the <a href="/arcade">arcade</a>.
+      </p>
+
       <div className="space-y-2 opacity-80 mb-4">
         <p>Shapes represent website visits. Built for desktop browser 🖥️</p>
         <p> Hover to create gravity and swirl them around. Use the sidebar as a configuration panel to switch modes, adjust mouse influence, and view the live winners chart.</p>

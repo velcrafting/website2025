@@ -1,10 +1,11 @@
-// src/middleware.ts
+// middleware.ts — the supported project entrypoint under src/.
+//
+// The old copy lived under src/app, where Next did not discover it. Keep this named export explicit
+// for the current Next 15 build and verify the generated middleware manifest when changing its path.
 import { NextRequest, NextResponse } from "next/server";
 
 export const config = {
   matcher: [
-    // Existing Labs proxy handling
-    "/labs/:path*",
     // Admin dashboard and APIs
     "/admin/:path*",
     // Admin-ish newsletter endpoints (server-only use via curl/Postman)
@@ -12,22 +13,8 @@ export const config = {
   ],
 };
 
-const OWNER = process.env.NEXT_PUBLIC_MICROS_OWNER || "velcrafting";
 const ADMIN_KEY = process.env.ADMIN_KEY;
 const ADMIN_COOKIE = "admin";
-
-/* -------- Labs helpers (unchanged) -------- */
-async function isMicroSlug(slug: string): Promise<boolean> {
-  try {
-    const base = `https://${OWNER}.github.io/${slug}`;
-    const headLab = await fetch(`${base}/lab.json`, { method: "HEAD", cache: "force-cache" });
-    if (headLab.ok) return true;
-    const headIndex = await fetch(`${base}/index.html`, { method: "HEAD", cache: "force-cache" });
-    return headIndex.ok;
-  } catch {
-    return false;
-  }
-}
 
 /* -------- Admin API path whitelist -------- */
 const ADMIN_NEWSLETTER_PREFIXES = new Set<string>([
@@ -40,7 +27,7 @@ const ADMIN_NEWSLETTER_PREFIXES = new Set<string>([
   "/api/newsletter/subscription",
 ]);
 
-export default async function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
 
@@ -79,21 +66,12 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  /* ---------- Existing Labs proxy behavior ---------- */
-  // Skip the listing page and anything not under /labs
-  if (pathname === "/labs" || pathname === "/labs/") return NextResponse.next();
-  if (!pathname.startsWith("/labs/")) return NextResponse.next();
-
-  // Extract first path segment after /labs
-  const rest = pathname.slice(6); // remove "/labs/"
-  const [slug, ...tail] = rest.split("/");
-  if (!slug) return NextResponse.next();
-
-  // If the slug looks like a known micro (has lab.json on GH Pages), rewrite to our proxy
-  if (await isMicroSlug(slug)) {
-    const target = new URL(`/labs/micro/${slug}/${tail.join("/")}`, url.origin);
-    return NextResponse.rewrite(target);
-  }
-
+  /*
+    The former /labs proxy stood here: it matched "/labs/:path*", did a GitHub Pages HEAD probe and
+    rewrote the request to "/labs/micro/<slug>/...". Neither /labs nor /labs/micro exists as a route in
+    this app (the surface is /tools), and because this file never compiled that proxy has never run, so
+    making it live would only add an external network round-trip before a 404. If old /labs links ever
+    mattered, the matcher entry and the probe helper can be restored from git history.
+  */
   return NextResponse.next();
 }

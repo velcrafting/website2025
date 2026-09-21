@@ -1,18 +1,22 @@
 // src/app/blog/[[...slug]]/page.tsx
-import fs from "node:fs/promises";
 import path from "node:path";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { loadMDX } from "@/lib/mdx";
+import { findPublicMdxDoc, loadMDX } from "@/lib/mdx";
+import { isPubliclyVisible } from "@/lib/content";
 import type { Frontmatter } from "@/types/content";
-import MdxClient from "@/components/mdx/MdxClient";
+import MdxServer from "@/components/mdx/MdxServer";
 import CaseStudyLayout from "@/components/layout/CaseStudyLayout";
 import ContentCard from "@/components/listing/ContentCard";
-import { buildMetadata } from "@/lib/seo";
+import {
+  absoluteUrl,
+  buildMetadata,
+  escapeForScriptTag,
+} from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug?: string[] }> }) {
   const { slug } = await params;
-  
+
   // Empty = /blog (root)
   if (!slug || slug.length === 0) {
     return buildMetadata({
@@ -21,20 +25,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug?: st
       canonicalPath: "/blog",
     });
   }
-  
+
   // /blog/ai/post - individual post
   if (slug.length === 2) {
     const [pillar, articleSlug] = slug;
-    const docs = await loadMDX<Frontmatter>("blog", pillar);
-    const doc = docs.find((d) => d.slug === articleSlug);
+    const doc = await findPublicMdxDoc<Frontmatter>("blog", articleSlug, pillar);
     if (!doc) return {};
     return buildMetadata({
       title: doc.frontmatter.title,
       description: doc.frontmatter.summary,
       canonicalPath: `/blog/${pillar}/${articleSlug}`,
+      article: {
+        publishedTime: doc.frontmatter.date ?? doc.frontmatter.scheduledAt,
+        authors: ["Steven Pajewski"],
+        section: pillar.charAt(0).toUpperCase() + pillar.slice(1),
+      },
     });
   }
-  
+
   // /blog/ai - pillar page
   if (slug.length === 1) {
     const pillar = slug[0];
@@ -44,33 +52,40 @@ export async function generateMetadata({ params }: { params: Promise<{ slug?: st
       canonicalPath: `/blog/${pillar}`,
     });
   }
-  
+
   return {};
 }
 
-function getStatus(frontmatter: Frontmatter): "draft" | "scheduled" | "published" {
-  if (frontmatter.status) return frontmatter.status;
-  if (frontmatter.scheduledAt) {
-    const scheduled = new Date(frontmatter.scheduledAt);
-    const now = new Date();
-    return scheduled <= now ? "published" : "scheduled";
-  }
-  if (frontmatter.date) return "published";
-  return "draft";
-}
-
-// Load all blog posts
+// Load all blog posts (publicly visible only — drafts and future items
+// must never appear in list, detail, related, sitemap, or any other
+// public surface).
 async function loadAllBlogPosts() {
   const base = path.join(process.cwd(), "src", "content", "blog");
-  const pillars = await fs.readdir(base);
-  
-  const allDocs: Array<{ slug: string; pillar: string; frontmatter: Frontmatter; content: string }> = [];
-  
+  let pillars: string[] = [];
+  try {
+    pillars = await fs_readdir(base);
+  } catch {
+    return [];
+  }
+
+  const allDocs: Array<{
+    slug: string;
+    pillar: string;
+    frontmatter: Frontmatter;
+    content: string;
+  }> = [];
+
   for (const pillar of pillars) {
     const pillarPath = path.join(base, pillar);
-    const stat = await fs.stat(pillarPath);
-    if (!stat.isDirectory()) continue;
-    
+    let isDir = false;
+    try {
+      const stat = await fs_stat(pillarPath);
+      isDir = stat.isDirectory();
+    } catch {
+      continue;
+    }
+    if (!isDir) continue;
+
     const docs = await loadMDX<Frontmatter>("blog", pillar);
     for (const doc of docs) {
       allDocs.push({
@@ -81,68 +96,85 @@ async function loadAllBlogPosts() {
       });
     }
   }
-  
+
   return allDocs;
+}
+
+// Light fs shims so this file remains ESM-friendly without top-level
+// imports that confuse some bundlers.
+async function fs_readdir(p: string): Promise<string[]> {
+  const { readdir } = await import("node:fs/promises");
+  return readdir(p);
+}
+async function fs_stat(p: string): Promise<import("node:fs").Stats> {
+  const { stat } = await import("node:fs/promises");
+  return stat(p);
 }
 
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const { slug } = await params;
-  
-  // Root /blog - show all posts
+
+  // Root /blog - show all posts (public only)
   if (!slug || slug.length === 0) {
     const allDocs = await loadAllBlogPosts();
-    const allPillars = [...new Set(allDocs.map(d => d.pillar))];
-    const publishedDocs = allDocs.filter(d => getStatus(d.frontmatter) === "published");
-    
-    publishedDocs.sort((a, b) => {
+    const allPillars = [...new Set(allDocs.map((d) => d.pillar))];
+    allDocs.sort((a, b) => {
       const aDate = a.frontmatter.scheduledAt || a.frontmatter.date || "";
       const bDate = b.frontmatter.scheduledAt || b.frontmatter.date || "";
       return new Date(bDate).getTime() - new Date(aDate).getTime();
     });
-    
+
     return (
-      <div className="w-full py-10">
-        <h1 className="text-2xl font-semibold">Blog</h1>
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Notes and essays on communications, AI, and community systems.</p>
-        
-        <div className="mt-4 flex gap-2">
-          {allPillars.map(p => (
-            <Link key={p} href={`/blog/${p}`} className="text-sm px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
+      <div className="container-index py-[var(--space-7)]">
+        <h1 className="measure-prose">Blog</h1>
+        <p className="meta mt-[var(--space-2)] measure-prose">
+          Notes and essays on communications, AI, and community systems.
+        </p>
+
+        <div className="mt-[var(--space-4)] flex flex-wrap gap-[var(--space-2)]">
+          {allPillars.map((p) => (
+            <Link
+              key={p}
+              href={`/blog/${p}`}
+              className="meta rounded-[var(--radius-chip)] border border-rule px-[var(--space-2)] py-0.5 no-underline hover:border-ink"
+            >
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </Link>
           ))}
         </div>
-        
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {publishedDocs.map((d) => (
-            <ContentCard 
-              key={`${d.pillar}-${d.slug}`} 
-              doc={{ slug: `${d.pillar}/${d.slug}`, frontmatter: d.frontmatter, content: d.content }} 
-              href={`/blog/${d.pillar}/${d.slug}`} 
-              tagBase="/blog" 
+
+        <div className="mt-[var(--space-6)] grid gap-[var(--space-6)] sm:grid-cols-2 lg:grid-cols-3">
+          {allDocs.map((d) => (
+            <ContentCard
+              key={`${d.pillar}-${d.slug}`}
+              doc={{
+                slug: `${d.pillar}/${d.slug}`,
+                frontmatter: d.frontmatter,
+                content: d.content,
+              }}
+              href={`/blog/${d.pillar}/${d.slug}`}
+              tagBase="/blog"
             />
           ))}
         </div>
       </div>
     );
   }
-  
-  // /blog/ai/post - individual post
+
+  // /blog/ai/post - individual post. Drafts and unknown-status articles
+  // are denied here as well as in metadata.
   if (slug.length === 2) {
     const [pillar, articleSlug] = slug;
-    const docs = await loadMDX<Frontmatter>("blog", pillar);
-    const doc = docs.find((d) => d.slug === articleSlug);
+    const doc = await findPublicMdxDoc<Frontmatter>("blog", articleSlug, pillar);
+    if (!doc) notFound();
 
-    if (!doc) {
-      notFound();
-    }
-
-    const { frontmatter } = doc;
+    const { frontmatter, content } = doc;
     const canonicalPath = `/blog/${pillar}/${articleSlug}`;
+    if (!isPubliclyVisible(frontmatter)) notFound();
 
-    // Get related posts from same pillar
-    const allDocs = await loadMDX<Frontmatter>("blog", pillar);
-    const related = allDocs
+    // Related posts from same pillar, public only.
+    const pillarDocs = await loadMDX<Frontmatter>("blog", pillar);
+    const related = pillarDocs
       .filter((d) => d.slug !== articleSlug)
       .slice(0, 3)
       .map((d) => ({
@@ -152,7 +184,8 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
         hero: d.frontmatter.hero,
       }));
 
-    // JSON-LD structured data
+    // JSON-LD structured data. Escaped for safe inclusion inside an
+    // HTML <script> element.
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
@@ -160,29 +193,44 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
       description: frontmatter.summary,
       datePublished: frontmatter.date || frontmatter.scheduledAt,
       author: { "@type": "Person", name: "Steven Pajewski" },
-      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalPath },
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": absoluteUrl(canonicalPath),
+      },
       image: frontmatter.hero,
     };
+    const jsonLdSafe = escapeForScriptTag(JSON.stringify(jsonLd));
 
     return (
       <article className="relative">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <CaseStudyLayout frontmatter={frontmatter} related={related} basePath="/blog">
-          <MdxClient slug={articleSlug} dir="blog" pillar={pillar} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdSafe }}
+        />
+        <CaseStudyLayout
+          frontmatter={frontmatter}
+          related={related}
+          basePath="/blog"
+        >
+          {/* Server-rendered article body. Initial HTML payload contains
+              the substantive content; no client-side fetch required. */}
+          <MdxServer source={content} />
         </CaseStudyLayout>
       </article>
     );
   }
-  
-  // /blog/ai - pillar page (list of posts in that pillar)
+
+  // /blog/ai - pillar page (list of public posts in that pillar)
   if (slug.length === 1) {
     const pillar = slug[0];
     const allDocs = await loadAllBlogPosts();
-    const pillarDocs = allDocs.filter(d => d.pillar.toLowerCase() === pillar.toLowerCase() && getStatus(d.frontmatter) === "published");
-    
-    // Get all pillars for navigation
-    const allPillars = [...new Set(allDocs.map(d => d.pillar))];
-    
+    const pillarDocs = allDocs.filter(
+      (d) =>
+        d.pillar.toLowerCase() === pillar.toLowerCase() &&
+        isPubliclyVisible(d.frontmatter),
+    );
+    const allPillars = [...new Set(allDocs.map((d) => d.pillar))];
+
     pillarDocs.sort((a, b) => {
       const aDate = a.frontmatter.scheduledAt || a.frontmatter.date || "";
       const bDate = b.frontmatter.scheduledAt || b.frontmatter.date || "";
@@ -190,38 +238,53 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
     });
 
     return (
-      <div className="w-full py-10">
-        <h1 className="text-2xl font-semibold">Blog · {pillar.charAt(0).toUpperCase() + pillar.slice(1)}</h1>
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+      <div className="container-index py-[var(--space-7)]">
+        <h1 className="measure-prose">
+          Blog · {pillar.charAt(0).toUpperCase() + pillar.slice(1)}
+        </h1>
+        <p className="meta mt-[var(--space-2)] measure-prose">
           Articles about {pillar}
         </p>
-        
-        <div className="mt-4 flex gap-2">
-          <Link href="/blog" className="text-sm px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800">All</Link>
-          {allPillars.map(p => (
-            <Link 
-              key={p} 
-              href={`/blog/${p}`} 
-              className={`text-sm px-3 py-1 rounded-full ${p.toLowerCase() === pillar.toLowerCase() ? 'bg-neutral-900 text-white' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+
+        <div className="mt-[var(--space-4)] flex flex-wrap gap-[var(--space-2)]">
+          <Link
+            href="/blog"
+            className="meta rounded-[var(--radius-chip)] border border-rule px-[var(--space-2)] py-0.5 no-underline hover:border-ink"
+          >
+            All
+          </Link>
+          {allPillars.map((p) => (
+            <Link
+              key={p}
+              href={`/blog/${p}`}
+              className={`meta rounded-[var(--radius-chip)] border px-[var(--space-2)] py-0.5 no-underline ${
+                p.toLowerCase() === pillar.toLowerCase()
+                  ? "border-ink bg-accent text-on-accent"
+                  : "border-rule hover:border-ink"
+              }`}
             >
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </Link>
           ))}
         </div>
-        
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+        <div className="mt-[var(--space-6)] grid gap-[var(--space-6)] sm:grid-cols-2 lg:grid-cols-3">
           {pillarDocs.map((d) => (
-            <ContentCard 
-              key={`${d.pillar}-${d.slug}`} 
-              doc={{ slug: `${d.pillar}/${d.slug}`, frontmatter: d.frontmatter, content: d.content }} 
-              href={`/blog/${d.pillar}/${d.slug}`} 
-              tagBase="/blog" 
+            <ContentCard
+              key={`${d.pillar}-${d.slug}`}
+              doc={{
+                slug: `${d.pillar}/${d.slug}`,
+                frontmatter: d.frontmatter,
+                content: d.content,
+              }}
+              href={`/blog/${d.pillar}/${d.slug}`}
+              tagBase="/blog"
             />
           ))}
         </div>
       </div>
     );
   }
-  
+
   notFound();
 }

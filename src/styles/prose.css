@@ -7,8 +7,11 @@
   --sp-xl: 1.75rem;
 
   color: var(--foreground);
-  line-height: 1.6;
-  font-size: 1rem;
+  line-height: 1.7;
+  /* Concept 03: article prose is 18–20px with 1.6–1.75 line-height. */
+  font-size: var(--step-prose);
+  /* Concept 03: a 60–70 character reading measure for article prose. */
+  max-width: var(--measure-prose);
 }
 
 /* Headings */
@@ -47,13 +50,21 @@
   line-height: 1.7;
 }
 
-/* Links */
-.prose a {
-  color: var(--foreground);
+/* Links
+   Root-cause note: this baseline must NOT outrank a shared control. It previously read
+   `.prose a` (specificity 0-1-1), which beat `.btn-primary` (0-1-0) — so a shared Button
+   rendered as a link inside an article kept the prose foreground instead of its own
+   `--on-accent`, producing a dark label on a dark fill (the reported "Open the tool" state).
+   Fixed at the rule, not with a page-level override: the baseline now excludes button
+   variants, and the parts that only style prose links stay on links. */
+:where(.prose a) {
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
-.prose a:hover {
+.prose a:not(.btn-primary):not(.btn-secondary) {
+  color: var(--foreground);
+}
+.prose a:not(.btn-primary):not(.btn-secondary):hover {
   opacity: 0.85;
 }
 

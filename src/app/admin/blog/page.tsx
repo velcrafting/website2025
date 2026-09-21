@@ -1,3 +1,4 @@
+import Workspace from "@/components/layout/Workspace";
 // src/app/admin/blog/page.tsx - Manage blog articles
 import fs from "fs/promises";
 import path from "path";
@@ -55,13 +56,13 @@ export default async function Page() {
   const articles = await getArticles();
   
   return (
-    <div className="mx-auto max-w-5xl p-6 space-y-6">
+    <Workspace>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Manage Blog</h1>
-          <p className="text-neutral-600">Edit or delete articles</p>
+          <p className="text-muted">Edit or delete articles</p>
         </div>
-        <Link href="/admin/new" className="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">
+        <Link href="/admin/new" className="rounded-[var(--radius-surface)] bg-accent px-4 py-2 text-on-accent hover:bg-forest">
           New Article
         </Link>
       </div>
@@ -76,22 +77,22 @@ export default async function Page() {
             <h2 className="text-lg font-medium capitalize">{pillar}</h2>
             <div className="space-y-2">
               {pillarArticles.map(article => (
-                <div key={`${article.pillar}-${article.slug}`} className="flex items-center justify-between rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+                <div key={`${article.pillar}-${article.slug}`} className="flex items-center justify-between rounded-[var(--radius-surface)] border border-rule p-4">
                   <div>
                     <Link href={`/blog/${article.pillar}/${article.slug}`} className="font-medium hover:underline">
                       {article.title}
                     </Link>
-                    <div className="flex gap-2 text-sm text-neutral-500">
+                    <div className="flex gap-2 text-sm text-muted">
                       <span className={`px-2 py-0.5 rounded-full ${
-                        article.status === "published" ? "bg-emerald-100 text-emerald-700" :
-                        article.status === "scheduled" ? "bg-amber-100 text-amber-700" :
-                        "bg-neutral-100 text-neutral-700"
+                        article.status === "published" ? "text-[var(--success-ink)]" :
+                        article.status === "scheduled" ? "bg-warn-fill text-warn-ink" :
+                        "text-muted"
                       }`}>{article.status}</span>
                       {article.date && <span>{article.date}</span>}
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Link href={`/admin/edit?pillar=${article.pillar}&slug=${article.slug}`} className="text-sm text-blue-600 hover:underline">
+                    <Link href={`/admin/edit?pillar=${article.pillar}&slug=${article.slug}`} className="text-sm text-link hover:underline">
                       Edit
                     </Link>
                   </div>
@@ -103,8 +104,8 @@ export default async function Page() {
       })}
       
       {articles.length === 0 && (
-        <p className="text-neutral-500">No articles yet. Create your first one!</p>
+        <p className="text-muted">No articles yet. Create your first one!</p>
       )}
-    </div>
+    </Workspace>
   );
 }

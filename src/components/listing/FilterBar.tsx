@@ -3,11 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Input from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
 type Props = {
   allTags: string[];
   placeholder?: string;
 };
+
+/** Quiet control surface shared by the sort/view selects and the Apply/Reset buttons. */
+const control =
+  "rounded-[var(--radius-surface)] border border-rule bg-[var(--field-background)] px-2 py-1 text-xs text-ink transition-colors duration-[var(--motion-base)] hover:bg-paper-raised";
+
+/** Filter chips: one API, two states, no raw colour. */
+const chip =
+  "rounded-[var(--radius-chip)] border px-[var(--space-2)] py-0.5 text-xs transition-colors duration-[var(--motion-base)]";
+
+const chipOn = "border-transparent bg-[var(--accent)] text-[var(--on-accent)]";
+const chipOff = "border-rule text-muted hover:bg-paper-raised";
 
 export default function FilterBar({ allTags, placeholder = "Search..." }: Props) {
   const router = useRouter();
@@ -55,8 +67,8 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
   const tags = useMemo(() => Array.from(new Set(allTags.map((t) => t.toLowerCase()))).sort(), [allTags]);
 
   return (
-    <div className="mt-6 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="mt-[var(--space-5)] rounded-[var(--radius-surface)] border border-rule p-[var(--space-3)]">
+      <div className="flex flex-col gap-[var(--space-3)] md:flex-row md:items-center md:justify-between">
         <div className="flex-1">
           <Input
             placeholder={placeholder}
@@ -66,14 +78,15 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
               if (e.key === "Enter") onApply({ q });
             }}
             aria-label="Search"
-            className="bg-white dark:bg-neutral-900"
           />
         </div>
-        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-          <label htmlFor="sort" className="text-xs text-neutral-600 dark:text-neutral-400">Sort</label>
+        <div className="flex w-full flex-wrap items-center gap-[var(--space-2)] md:w-auto">
+          <label htmlFor="sort" className="text-xs text-muted">
+            Sort
+          </label>
           <select
             id="sort"
-            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900 min-w-[120px]"
+            className={cn(control, "min-w-[120px]")}
             value={sort}
             onChange={(e) => onApply({ sort: e.target.value })}
           >
@@ -81,30 +94,29 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
             <option value="alpha">A–Z</option>
             <option value="tags">Most tags</option>
           </select>
-          <label htmlFor="view" className="ml-2 text-xs text-neutral-600 dark:text-neutral-400">View</label>
+          <label htmlFor="view" className="ml-[var(--space-2)] text-xs text-muted">
+            View
+          </label>
           <select
             id="view"
-            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-800 dark:bg-neutral-900 min-w-[110px]"
+            className={cn(control, "min-w-[110px]")}
             value={view}
             onChange={(e) => onApply({ view: e.target.value })}
           >
             <option value="grid">Grid</option>
             <option value="compact">Compact</option>
           </select>
-          <button
-            className="rounded-md border px-3 py-1 text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-800"
-            onClick={() => onApply({ q })}
-          >
+          <button className={cn(control, "px-[var(--space-3)]")} onClick={() => onApply({ q })}>
             Apply
           </button>
           {pending ? (
-            <span className="ml-1 inline-flex items-center gap-1 text-xs text-neutral-500">
-              <span className="inline-block size-3 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent" />
+            <span className="ml-[var(--space-1)] inline-flex items-center gap-[var(--space-1)] text-xs text-muted">
+              <span className="inline-block size-3 animate-spin rounded-full border-2 border-rule border-t-transparent" />
               updating
             </span>
           ) : null}
           <button
-            className="rounded-md border px-3 py-1 text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-800"
+            className={cn(control, "px-[var(--space-3)]")}
             onClick={() => {
               setQ("");
               onApply({ q: "", tag: null, sort: "new" });
@@ -115,14 +127,11 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
         </div>
       </div>
       {tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-[var(--space-3)] flex flex-wrap gap-[var(--space-2)]">
           <button
             onClick={() => onApply({ tag: null })}
-            className={[
-              "rounded-full border px-2 py-0.5 text-xs",
-              selected ? "text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800" :
-                "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent"
-            ].join(" ")}
+            aria-pressed={!selected}
+            className={cn(chip, selected ? chipOff : chipOn)}
           >
             All
           </button>
@@ -130,12 +139,8 @@ export default function FilterBar({ allTags, placeholder = "Search..." }: Props)
             <button
               key={t}
               onClick={() => onApply({ tag: t })}
-              className={[
-                "rounded-full border px-2 py-0.5 text-xs",
-                selected === t
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent"
-                  : "text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800",
-              ].join(" ")}
+              aria-pressed={selected === t}
+              className={cn(chip, selected === t ? chipOn : chipOff)}
             >
               #{t}
             </button>

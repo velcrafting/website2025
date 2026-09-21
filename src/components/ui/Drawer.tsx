@@ -1,5 +1,26 @@
 "use client";
-import { useEffect, useRef } from "react";
+//
+// shadcn-backed shared Drawer (docs/2026-refresh.md §4).
+//
+// Behaviour comes from Radix Dialog: the focus trap the previous hand-rolled version
+// lacked, `aria-hidden` on the rest of the document, and the scroll lock.
+//
+// Two defects fixed after review (CODEX_REFRESH_REVIEW.md finding 3):
+//
+//  1. FOCUS RETURNED TO THE DOCUMENT. Radix restores focus to its own Dialog.Trigger,
+//     but this drawer's trigger lives in the caller (the site menu button in
+//     MobileHeader), so closing left focus on <body> — a keyboard user lost their
+//     place. The caller now passes `returnFocusTo` and `onCloseAutoFocus` focuses it
+//     explicitly.
+//  2. THE TITLE SAT OUTSIDE THE PANEL BACKGROUND. The surface colour was on an inner
+//     div, so the visible "Menu" title rendered on whatever was behind the panel. The
+//     surface, border and scroll area now belong to the panel itself, and the title is
+//     inside it.
+//
+// The public API is extended, not changed: { open, onClose, side, title, children }
+// still work unchanged, and `returnFocusTo` is optional.
+import * as Dialog from "@radix-ui/react-dialog";
+import type { RefObject } from "react";
 
 type Props = {
   open: boolean;
@@ -7,79 +28,67 @@ type Props = {
   side?: "right" | "left";
   title?: string;
   children: React.ReactNode;
+  /**
+   * The control that opened the drawer. Focus returns here on close. Pass this
+   * whenever the trigger is outside the Drawer — otherwise focus lands on <body>.
+   */
+  returnFocusTo?: RefObject<HTMLElement | null>;
 };
 
-export default function Drawer({ open, onClose, side = "right", title, children }: Props) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const lastActive = useRef<Element | null>(null);
-
-  // Lock body scroll and manage focus
-  useEffect(() => {
-    if (open) {
-      lastActive.current = document.activeElement;
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      // focus the panel (or first focusable) on open
-      const t = window.setTimeout(() => {
-        const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        (firstFocusable ?? panelRef.current)?.focus();
-      }, 0);
-      return () => {
-        document.body.style.overflow = prev;
-        window.clearTimeout(t);
-        if (lastActive.current instanceof HTMLElement) lastActive.current.focus();
-      };
-    }
-  }, [open]);
-
-  // Close on ESC
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
+export default function Drawer({
+  open,
+  onClose,
+  side = "right",
+  title,
+  children,
+  returnFocusTo,
+}: Props) {
   const origin = side === "right" ? "right-0" : "left-0";
-  const off = side === "right" ? "translate-x-full" : "-translate-x-full";
   const borderSide = side === "right" ? "border-l" : "border-r";
-
-  const panelTranslate = open ? "translate-x-0" : off;
-  const backdropState = open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none";
-
-  // Do not render at all when closed — avoids invisible overlay blocking taps
-  if (!open) return null;
+  // Both literals must appear verbatim in the source: Tailwind scans text, so an
+  // interpolated class name is never generated.
+  const closedTransform =
+    side === "right"
+      ? "data-[state=closed]:translate-x-full"
+      : "data-[state=closed]:-translate-x-full";
 
   return (
-    <div
-      className="fixed inset-0 z-50"
-      aria-hidden={false}
-      role="presentation"
-    >
-      {/* Backdrop */}
-      <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${backdropState}`}
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title || "Drawer"}
-        ref={panelRef}
-        tabIndex={-1}
-        className={`absolute top-0 ${origin} h-full w-[28rem] max-w-[90vw] transform transition-transform duration-300 ${panelTranslate} outline-none`}
-      >
-        <div className={`h-full overflow-y-auto ${borderSide} bg-white p-4 shadow-xl dark:border-neutral-800 dark:bg-neutral-900`}>
-          {title && <div className="mb-2 text-base font-semibold">{title}</div>}
-          {children}
-        </div>
-      </div>
-    </div>
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay
+          className="scrim fixed inset-0 z-50 backdrop-blur-sm transition-opacity duration-[var(--motion-slow)] data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+        />
+        <Dialog.Content
+          className={`${borderSide} fixed top-0 ${origin} z-50 flex h-full w-[28rem] max-w-[90vw] transform flex-col border-rule bg-surface text-ink transition-transform duration-[var(--motion-slow)] data-[state=open]:translate-x-0 ${closedTransform} focus:outline-none`}
+          // Radix warns unless the content is labelled.
+          aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            // Radix would focus its own Trigger, which does not exist here.
+            const target = returnFocusTo?.current;
+            if (target) {
+              event.preventDefault();
+              target.focus();
+            }
+          }}
+        >
+          <Dialog.Title
+            className={
+              title
+                ? "shrink-0 border-b border-rule px-[var(--space-4)] py-[var(--space-3)] text-base font-semibold text-ink"
+                : "sr-only"
+            }
+          >
+            {title ?? "Menu"}
+          </Dialog.Title>
+          {/*
+            min-h-0 lets this flex child shrink so the panel scrolls on a short
+            viewport instead of overflowing.
+          */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-[var(--space-4)]">
+            {children}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

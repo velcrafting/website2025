@@ -1,7 +1,12 @@
 // src/components/ui/MetricTile.tsx
+//
+// Concept 03: token colours, and the entrance animation now respects
+// prefers-reduced-motion (a scroll-triggered animation must not override a stated
+// preference). The value parsing, the CountUp behaviour and the Card wrapper are
+// unchanged.
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import CountUp from "react-countup";
 import Card from "./Card";
 
@@ -39,28 +44,29 @@ function parseValue(raw: string): Parsed {
 
 export default function MetricTile({ value, label, sublabel }: MetricTileProps) {
   const parsed = parseValue(value);
+  const reduceMotion = useReducedMotion();
 
   return (
-        <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-20% 0px -20% 0px" }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <Card className="text-center">
-        <div className="text-3xl font-semibold tracking-tight">
+        <div className="text-3xl font-semibold tracking-tight text-ink">
           {parsed.kind === "numeric" ? (
             <>
-              <CountUp end={parsed.num} duration={1.6} separator="," />
+              <CountUp end={parsed.num} duration={reduceMotion ? 0 : 1.6} separator="," />
               {parsed.suffix}
             </>
           ) : (
             parsed.display
           )}
         </div>
-        <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{label}</div>
+        <p className="meta mt-[var(--space-2)]">{label}</p>
         {sublabel ? (
-          <div className="mt-1 text-xs italic text-neutral-500 dark:text-neutral-500">{sublabel}</div>
+          <p className="meta mt-[var(--space-1)] italic">{sublabel}</p>
         ) : null}
       </Card>
     </motion.div>

@@ -1,0 +1,9 @@
+{
+  "version": "2026.09",
+  "updated": "2026-09-16",
+  "notes": [
+    "The project index is now one filterable list instead of two that disagreed.",
+    "Projects refresh from the public README files, and keep the last good read when GitHub is unavailable.",
+    "Added an in-editor preview that shows the current draft without saving or publishing it."
+  ]
+}

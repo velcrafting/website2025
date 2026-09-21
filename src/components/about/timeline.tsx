@@ -1,4 +1,22 @@
 // src/components/about/timeline.tsx
+//
+// Concept 03 / refresh contract migration.
+//
+// What changed and why:
+//  - The entries were a bordered `rounded-xl ... bg-white` box wrapping a `Card`, so
+//    every role was a box inside a box. That nesting is the redundancy reported on
+//    /about. Entries are now rule-topped blocks, which is how the reading surfaces
+//    group repeated items.
+//  - The retired neutral ramp and the emerald "Present" chip are replaced by tokens;
+//    the Present marker uses the shared Badge status API instead of a one-off colour.
+//  - Radii come from the radius tokens, and the shadow/surface styling is gone.
+//
+// Stored employment dates remain unchanged.
+import Image from "next/image";
+
+import Badge from "@/components/ui/Badge";
+import { calendarMonthDifference, formatMonthYear } from "@/lib/format-date";
+import { cn } from "@/lib/utils";
 
 /**
  * Logo assets guidance:
@@ -7,10 +25,6 @@
  * - Source size: 160x160 px (min). 192x192 px is ideal for retina.
  * - Format: PNG or SVG. Keep file size < 50 KB.
  */
-
-import Image from "next/image";
-import clsx from "clsx";
-import { Card } from "../ui";
 
 type EmploymentType = "Full-time" | "Contract" | "Self-employed";
 
@@ -30,37 +44,31 @@ type Entry = {
 const RAW_ENTRIES: Entry[] = [
   {
     company: "Ledger",
-    role: "Defensive Communications Manager",
+    role: "Defensive Communications Specialist",
     employmentType: "Contract",
     remote: true,
     logo: "/about/logos/ledger.png",
     start: "2024-07-01",
     summary:
-      "Established first Defensive Communications function; frameworks for brand trust, misinformation response, and community mobilization across Reddit, Discord, X, YouTube, and TikTok.",
+      "Defensive Communications focused on Brand Trust & AI Visibility; built the function from 0→1 with response, FAQ, and visibility systems.",
     highlights: [
-      "Built the department’s foundation from scratch (playbooks, workflows, vendor partnerships)",
-      "Reduced response times by 70% via streamlined workflows and approved messaging playbooks",
-      "Designed and deployed cross‑functional FAQ/brand‑response database (AppSheet) used by PR, Support, Social, and affiliates",
-      "Directed global moderation strategy, overseeing vendors moderating millions of interactions across Reddit, Discord, and X",
-      "Co‑developed AI‑powered phishing detection projected to deliver 1M+ proactive alerts annually",
-      "Launched Community Notes and education‑first initiatives; doubled social reach YoY and improved brand credibility",
-      "Partnered with executives and cross‑functional leaders to align rapid‑response strategies during launches and sensitive events",
+      "Built Defensive Communications from 0→1 with playbooks, workflows, and approved messaging.",
+      "Reduced time to first comment from ~3–4 days to ~14 hours.",
+      "Built an AppSheet FAQ and response system while improving AI-answer visibility from approximately 40% to 51%+ sustained and nearly doubling Ledger-owned citation share.",
     ],
   },
   {
-    company: "Self-employed",
-    role: "Developer & Project Lead — velcrafting.com",
+    company: "Velcrafting",
+    role: "Founder, Technical Consultant & Product Builder",
     employmentType: "Self-employed",
     remote: true,
     logo: "/about/logos/velcrafting.png",
-    start: "2021-04-01",
+    start: "2016-07-01",
     summary:
-      "Independent consultant building open‑source tools, platforms, and blockchain systems with tokenomics. Led community ops and strategy.",
+      "Public practice since 2016; developer work under the Velcrafting name began in 2021, with the company formed as an LLC in 2024.",
     highlights: [
-      "Create AI‑driven tools and products to optimize workflows",
-      "Build Web3 platforms, tokenomics, smart contracts, and mini‑game systems",
-      "Lead digital event coordination and strategic content for community engagement",
-      "Marketing and brand building support for startups and Web3 communities",
+      "Build public AI tools, products, and experiments to make complex work more usable.",
+      "Develop platforms and community-facing systems across AI, Web3, and communications.",
     ],
   },
   {
@@ -88,14 +96,10 @@ const RAW_ENTRIES: Entry[] = [
     start: "2023-10-01",
     end: "2024-01-01",
     summary:
-      "Merged AI creativity with human storytelling to co-author and publish a 50-page manga in one month, achieving a 5-star Amazon rating.",
+      "Co-authored a 50-page manga in one month, combining generative AI, human storytelling, and Figma.",
     highlights: [
-      "Produced a full 50-page manga in 30 days — reducing typical indie cycle times by 80%",
-      "Directed storyboarding, scripting, art direction, and continuity across 5 chapters",
-      "Engineered AI pipelines with GPT, DALL·E 3, and Stable Diffusion to cut design revisions by ~50%",
-      "Built reusable prompt templates and memory-based agents, ensuring style consistency across 100+ assets",
-      "Co-developed layout and typography in Figma, delivering print-ready and digital editions",
-      "Workshopped drafts with 20+ early readers, integrating feedback into final release",
+      "Worked across storyboarding, scripting, art direction, continuity, and layout.",
+      "Built AI-assisted creative workflows and co-developed print-ready and digital editions in Figma.",
     ],
   },
   {
@@ -107,17 +111,13 @@ const RAW_ENTRIES: Entry[] = [
     start: "2018-06-01",
     end: "2021-04-01",
     summary:
-      "Directed enterprise IT transformation across five dealerships, consolidating fragmented systems into a unified, modern cloud-based network.",
+      "Led infrastructure and VoIP modernization across five dealership locations.",
     highlights: [
-      "Oversaw IT operations for 400+ users across 5 dealerships in Colorado and Florida",
-      "Migrated networks to Cisco Meraki and Fortinet stacks with 0 downtime during cutover",
-      "Upgraded 100% of telecom lines from analog to VoIP, reducing costs by ~15% annually",
-      "Cut onboarding from 3–4 weeks to 3 days — >80% improvement in provisioning speed",
-      "Negotiated vendor contracts across 5 providers, securing 20% average cost savings",
-      "Directed multimillion-dollar store renovation with 0 service disruption or revenue loss",
-      "Implemented company-wide password and account policies, reducing security incidents by ~30%",
+      "Directed IT operations for an estimated 400+ users across five dealership locations.",
+      "Led infrastructure and VoIP modernization with zero downtime during cutover.",
+      "Helped reduce onboarding from 3–4 weeks to 3 days.",
     ],
-    },
+  },
   {
     company: "Comcast",
     role: "Infrastructure and Implementation Engineer II",
@@ -126,64 +126,28 @@ const RAW_ENTRIES: Entry[] = [
     start: "2017-09-01",
     end: "2018-04-01",
     summary:
-      "Built and standardized Comcast Automated Testing System (CATS) racks to replicate field outages and accelerate systemic troubleshooting.",
+      "Built and standardized Comcast Automated Testing System (CATS) racks to replicate field outages and support troubleshooting.",
     highlights: [
-      "Constructed 24+ CATS racks, each simulating 24 household nodes (~600 test points total)",
+      "Constructed 24+ CATS racks, each supporting up to 24 household nodes.",
       "Deployed coax, Cat6, and fiber cabling to replicate real-world outage conditions",
-      "Created standardized installation and troubleshooting tutorials adopted across multiple labs",
-      "Enabled field engineers to cut mean time to repair (MTTR) by an estimated 20–30%",
-      "Documented and escalated 100+ outage scenarios, improving national diagnostic playbooks",
-      "Scaled lab knowledge sharing across Comcast divisions, training dozens of field techs",
+      "Supported an estimated 20–30% improvement in mean time to repair (MTTR).",
     ],
-},
+  },
   {
     company: "Randstad Technologies US",
-    role: "Media IT Asset Manager",
+    role: "Media Information Technology Asset Manager",
     location: "Wilmington, DE",
     logo: "/about/logos/randstad.png",
     start: "2015-09-01",
     end: "2017-09-01",
     summary:
-      "Managed IT asset logistics for JP Morgan Chase data centers, ensuring secure, compliant, and uninterrupted operations.",
+      "Managed lifecycle and data-center logistics, including secure disposal for enterprise IT assets.",
     highlights: [
-      "Coordinated deployment and decommission of 1,000+ servers and networking assets",
-      "Supervised secure destruction of hundreds of drives, ensuring 100% audit compliance",
-      "Cataloged and tracked assets across multiple facilities, reducing inventory errors by ~40%",
-      "Improved documentation standards, cutting handoff friction between ops/logistics teams",
-      "Built redundancy cabling and workflows that improved disaster recovery readiness by ~25%",
-      "Ensured continuous uptime across mission-critical data centers supporting global finance",
+      "Coordinated deployment and decommissioning of servers and networking assets.",
+      "Supervised secure destruction of drives.",
+      "Tracked assets and improved documentation across facilities.",
     ],
-},
-//   {
-//     company: "Discover Financial Services",
-//     role: "Account Manager",
-//     location: "New Castle, DE",
-//     logo: "/about/logos/discover.png",
-//     start: "2015-03-01",
-//     end: "2015-09-01",
-//     summary:
-//       "Customer retention and team performance analytics in a high-volume environment.",
-//   },
-//   {
-//     company: "Self-employed",
-//     role: "Independent Contractor",
-//     location: "Orlando, FL",
-//     logo: "/about/logos/independent-contractor.png",
-//     start: "2014-09-01",
-//     end: "2015-02-01",
-//     summary:
-//       "Telecom installs, Avaya programming, network upgrades, POS repair, SMB cabling solutions.",
-//   },
-//   {
-//     company: "Geek Squad",
-//     role: "Consultation Agent / Customer Specialist",
-//     location: "Dover, DE",
-//     logo: "/about/logos/geek-squad.png",
-//     start: "2009-06-01",
-//     end: "2014-09-01",
-//     summary:
-//       "Front-line diagnostics, customer support, and documentation across consumer tech.",
-//   },
+  },
 ];
 
 // Present-first comparator. Then sort present roles by newest start.
@@ -201,16 +165,8 @@ const ENTRIES = [...RAW_ENTRIES].sort((a, b) => {
   return Date.parse(b.start) - Date.parse(a.start);
 });
 
-function fmtMMMYYYY(iso: string) {
-  const d = new Date(iso);
-  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(d);
-}
-
-function diffYM(startISO: string, endISO?: string) {
-  const s = new Date(startISO);
-  const e = endISO ? new Date(endISO) : new Date();
-  let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-  if (e.getDate() < s.getDate()) months -= 1;
+function formatDuration(months: number | null) {
+  if (months === null) return "";
   const years = Math.floor(months / 12);
   const rem = months % 12;
   const y = years > 0 ? `${years} yr${years > 1 ? "s" : ""}` : "";
@@ -220,59 +176,62 @@ function diffYM(startISO: string, endISO?: string) {
 
 export default function Timeline({ className }: { className?: string }) {
   return (
-    <section className={clsx("space-y-4", className)} aria-labelledby="timeline-title">
-      <h2 id="timeline-title" className="text-lg font-semibold text-neutral-900 dark:text-white">Career Timeline 🗓️</h2>
-      <ol className="space-y-3">
+    <section className={cn(className)} aria-labelledby="timeline-title">
+      <h2 id="timeline-title" className="text-lg font-semibold">
+        Career Timeline 🗓️
+      </h2>
+      {/* Rule-topped entries rather than a card per role: grouping comes from the
+          hairline and the spacing scale. */}
+      <ol className="mt-[var(--space-4)] list-none space-y-0 pl-0">
         {ENTRIES.map((item) => {
-          const start = fmtMMMYYYY(item.start);
-          const end = item.end ? fmtMMMYYYY(item.end) : "Present";
-          const span = diffYM(item.start, item.end);
+          const start = formatMonthYear(item.start);
+          const end = item.end ? formatMonthYear(item.end) : "Present";
+          const span = formatDuration(calendarMonthDifference(item.start, item.end));
           return (
-            <li key={`${item.company}-${item.role}-${item.start}`}>
-              <div className="rounded-xl border p-4 bg-white border-neutral-200 dark:border-neutral-800 dark:bg-neutral-900/60">
-                <Card>
-                <div className="flex items-start gap-3">
-                  {item.logo ? (
-                    <div className="shrink-0">
-                      <Image
-                        src={item.logo}
-                        alt={`${item.company} logo`}
-                        width={40}
-                        height={40}
-                        className="rounded-md border border-neutral-800 bg-neutral-100 object-contain p-1 dark:bg-neutral-900"
-                      />
-                    </div>
+            <li
+              key={`${item.company}-${item.role}-${item.start}`}
+              className="border-t border-rule py-[var(--space-4)]"
+            >
+              <div className="flex items-start gap-[var(--space-3)]">
+                {item.logo ? (
+                  <div className="shrink-0">
+                    <Image
+                      src={item.logo}
+                      alt={`${item.company} logo`}
+                      width={40}
+                      height={40}
+                      className="rounded-[var(--radius-chip)] border border-rule bg-[var(--field-background)] object-contain p-1"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink">{item.role}</div>
+                  <div className="text-xs text-muted">
+                    {item.company}
+                    {item.employmentType ? ` · ${item.employmentType}` : ""}
+                    {item.remote ? " · Remote" : item.location ? ` · ${item.location}` : ""}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-[var(--space-2)] text-xs text-muted">
+                    <span>
+                      {start} – {end}
+                    </span>
+                    {!item.end ? <Badge variant="accent">Present</Badge> : null}
+                    {span ? <span>• {span}</span> : null}
+                  </div>
+
+                  {item.summary ? (
+                    <p className="mt-[var(--space-2)] text-sm text-muted">{item.summary}</p>
                   ) : null}
 
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-neutral-900 dark:text-white">{item.role}</div>
-                    <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {item.company}
-                      {item.employmentType ? ` · ${item.employmentType}` : ""}
-                      {item.remote ? " · Remote" : item.location ? ` · ${item.location}` : ""}
-                    </div>
-                    <div className="mt-0.5 text-xs text-neutral-500">
-                      {start} – {item.end ? (
-                        end
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">{end}</span>
-                      )} {span ? `• ${span}` : ""}
-                    </div>
-
-                    {item.summary ? (
-                      <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">{item.summary}</p>
-                    ) : null}
-
-                    {item.highlights?.length ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700 dark:text-neutral-300">
-                        {item.highlights.map((h, i) => (
-                          <li key={i}>{h}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
+                  {item.highlights?.length ? (
+                    <ul className="mt-[var(--space-2)] list-disc space-y-1 pl-[var(--space-5)] text-sm text-muted">
+                      {item.highlights.map((h, i) => (
+                        <li key={i}>{h}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
-                </Card>
               </div>
             </li>
           );

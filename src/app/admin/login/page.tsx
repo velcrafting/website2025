@@ -11,7 +11,7 @@ export default async function Page({
   return (
     <div className="mx-auto max-w-md p-6">
       <h1 className="mb-4 text-2xl font-semibold">Admin Login</h1>
-      {error && <p className="mb-4 text-sm text-red-600">Invalid credentials</p>}
+      {error && <p className="mb-4 text-sm text-[var(--danger-ink)]">Invalid credentials</p>}
       <form action={login} className="space-y-4">
         <input
           type="text"
@@ -27,7 +27,7 @@ export default async function Page({
           className="w-full rounded border px-3 py-2"
           required
         />
-        <button type="submit" className="rounded bg-neutral-900 px-4 py-2 text-white">Login</button>
+        <button type="submit" className="rounded-[var(--radius-surface)] bg-accent px-4 py-2 text-on-accent">Login</button>
       </form>
     </div>
   );

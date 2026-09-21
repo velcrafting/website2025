@@ -31,3 +31,18 @@ Thumbs.db
 
 # Misc
 *.tsbuildinfo
+
+# Gate B: runtime editor database (local milestone store; never committed)
+_data/
+*.db
+*.db-wal
+*.db-shm
+
+# Local agent/browser artifacts and deployment linkage
+.commandcode/
+.playwright-cli/
+.vercel/
+
+# Environment variants may contain credentials; only example templates belong in Git
+.env.*
+!.env.example

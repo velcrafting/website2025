@@ -1,9 +1,59 @@
 // src/components/listing/ContentCard.tsx
+//
+// ONE coherent card per article (Steven's visual review, item 5).
+//
+// What changed and why: the cover previously sat above a rule-separated text block, so the
+// illustration read as a separate object rather than part of the article. Each entry is now a
+// single card containing the cover as its TOP REGION, then the title, description, date and
+// tags inside the same frame. Image and no-image entries share identical geometry because the
+// cover's top region uses an aspect ratio rather than a fixed height.
+//
+// Deliberate structural choices:
+//   - The card is NOT a link. The title is the link and the tags are separate links. Wrapping
+//     the card in an anchor would nest interactive elements inside an anchor, which is invalid
+//     and breaks keyboard and screen-reader use.
+//   - There are no nested competing frames: the card owns the outer border and radius, and the
+//     cover variant drops its own frame (see ContentCover `variant="card-top"`).
+//   - Status and Featured use the shared Badge/status vocabulary rather than ad-hoc spans, and
+//     every state still carries its text label, so nothing is signalled by colour alone.
+//   - Honest illustration labelling is inherited unchanged from the shared cover.
 import Link from "next/link";
-import Image from "next/image";
+
+import Badge from "@/components/ui/Badge";
+import ContentCover from "./ContentCover";
+import { formatDateOnly, isoDateOnly } from "@/lib/format-date";
 import type { Doc, Frontmatter } from "@/types/content";
 
 type Variant = "default" | "compact";
+
+/**
+ * The card's title as a heading that links to the item.
+ *
+ * Defined once because the title renders in one of two places depending on the card: inside the
+ * cover panel when there is no hero image, or in the card body when there is. Never both.
+ */
+function TitleLink({
+  title,
+  href,
+  hardLink,
+  className,
+}: {
+  title: string;
+  href: string;
+  hardLink?: boolean;
+  className?: string;
+}) {
+  const inner = hardLink ? (
+    <a href={href} className="text-ink no-underline hover:underline">
+      {title}
+    </a>
+  ) : (
+    <Link href={href} className="text-ink no-underline hover:underline">
+      {title}
+    </Link>
+  );
+  return <h3 className={className}>{inner}</h3>;
+}
 
 type Props = {
   doc: Doc<Frontmatter>;
@@ -11,12 +61,25 @@ type Props = {
   tagBase?: "/blog" | "/projects" | "/labs" | "/tools";
   variant?: Variant;
   hardLink?: boolean; // use <a> to force full navigation
+  /** Position in the list; shown as the cover's index mark. */
+  index?: number;
 };
 
-export default function ContentCard({ doc, href, tagBase, variant = "default", hardLink = false }: Props) {
+const STATUS_TEXT: Record<"draft" | "scheduled", string> = {
+  draft: "Draft",
+  scheduled: "Scheduled",
+};
+
+export default function ContentCard({
+  doc,
+  href,
+  tagBase,
+  variant = "default",
+  hardLink = false,
+  index,
+}: Props) {
   const { frontmatter } = doc;
-  const isSvg = frontmatter.hero?.toLowerCase().endsWith(".svg");
-  
+
   // Determine status
   let status: "draft" | "scheduled" | "published" = "published";
   if (frontmatter.status) {
@@ -26,201 +89,87 @@ export default function ContentCard({ doc, href, tagBase, variant = "default", h
   } else if (!frontmatter.date) {
     status = "draft";
   }
-  
-  const statusColors = {
-    draft: "bg-neutral-500",
-    scheduled: "bg-amber-500", 
-    published: "bg-emerald-500",
-  };
-  
-  const HeroImage = frontmatter.hero
-    ? isSvg
-      ? (
-          <img
-            src={frontmatter.hero}
-            alt={frontmatter.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
-          />
-        )
-      : (
-          <Image
-            src={frontmatter.hero}
-            alt={frontmatter.title}
-            fill
-            sizes="(min-width: 1024px) 360px, 100vw"
-            className="object-cover transition-transform group-hover:scale-[1.03]"
-          />
-        )
-    : null;
-  
-  // Tag color mapping - each tag maps to gradient colors
-  const tagColors: Record<string, [string, string]> = {
-    // AI/Agentic - purple/blue
-    ai: ["from-violet-100", "to-indigo-200"],
-    agents: ["from-violet-100", "to-indigo-200"],
-    agentic: ["from-violet-100", "to-indigo-200"],
-    llm: ["from-violet-100", "to-indigo-200"],
-    discovery: ["from-violet-100", "to-indigo-200"],
-    geo: ["from-violet-100", "to-indigo-200"],
-    chatgpt: ["from-violet-100", "to-indigo-200"],
-    // Systems - teal/cyan
-    systems: ["from-teal-100", "to-cyan-200"],
-    "systems-design": ["from-teal-100", "to-cyan-200"],
-    architecture: ["from-teal-100", "to-cyan-200"],
-    framework: ["from-teal-100", "to-cyan-200"],
-    engineering: ["from-teal-100", "to-cyan-200"],
-    seo: ["from-teal-100", "to-cyan-200"],
-    // Communications - amber/orange
-    communications: ["from-amber-100", "to-orange-200"],
-    "strategic-comms": ["from-amber-100", "to-orange-200"],
-    narrative: ["from-amber-100", "to-orange-200"],
-    fud: ["from-amber-100", "to-orange-200"],
-    defense: ["from-amber-100", "to-orange-200"],
-    security: ["from-amber-100", "to-orange-200"],
-    // About - rose/pink
-    about: ["from-emerald-100", "to-green-200"],
-    vel: ["from-emerald-100", "to-green-200"],
-    anchor: ["from-rose-100", "to-pink-200"],
-    // Default
-    default: ["from-neutral-100", "to-neutral-200"],
-  };
 
-  const getGradientByTags = (tags?: string[]) => {
-    if (!tags?.length) return "from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700";
-    
-    const tagLower = tags.map(t => t.toLowerCase().trim());
-    
-    // Find first matching tag color
-    for (const tag of tagLower) {
-      if (tagColors[tag]) {
-        const [from, to] = tagColors[tag];
-        return `${from} ${to} dark:${from.replace('from-', 'from-')} dark:${to.replace('to-', 'to-')}`;
-      }
-    }
-    
-    return "from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700";
-  };
-  
-  
-  
-  const gradientClass = getGradientByTags(frontmatter.tags);
-  
-  // Generate a unique pattern based on slug (for visual variety)
-  const patternId = `pattern-${doc.slug.slice(0, 8)}`;
-  
-  const GradientPlaceholder = !frontmatter.hero ? (
-    <div className={`h-full w-full bg-gradient-to-br ${gradientClass} relative overflow-hidden`}>
-      {/* 30% black overlay for readability */}
-      <div className="absolute inset-0 bg-black/30" />
-      {/* Subtle geometric pattern overlay */}
-      <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none">
-        <defs>
-          <pattern id={patternId} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="20" cy="20" r="1.5" fill="currentColor" className="text-white/20" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
-      </svg>
-      {/* Title overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/50 to-transparent">
-        <span className="text-xs font-medium text-white drop-shadow-md line-clamp-2">
-          {frontmatter.title}
-        </span>
-      </div>
-    </div>
-  ) : null;
+  const compact = variant === "compact";
+  const titleClass = compact ? "text-[1rem] font-semibold" : "text-[1.15rem] font-semibold";
+  const dateLabel = formatDateOnly(frontmatter.date) || null;
+  const showStatusRow = status !== "published" || Boolean(frontmatter.featured);
+
   return (
-    <div
-      className="group card-hover-gradient relative block overflow-hidden rounded-2xl border border-neutral-200 bg-white/80 p-3 shadow-sm transition hover:-translate-y-[2px] hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900/70"
+    <article
+      className={`group flex h-full flex-col overflow-hidden rounded-[var(--radius-surface)] border border-rule bg-paper-raised ${
+        compact ? "" : "transition-colors hover:border-ink/40"
+      }`}
     >
-      {/* Featured badge - position below title when no hero image */}
-      {frontmatter.featured ? (
-        <span className={`pointer-events-none absolute ${HeroImage ? 'left-3 top-3' : 'left-3 top-3'} z-10 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-400 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm`}>FEATURED</span>
-      ) : null}
-      
-      {/* Status badge */}
-      {status !== "published" ? (
-        <span className={`pointer-events-none absolute right-3 ${HeroImage ? 'top-3' : 'top-3'} z-10 rounded-full ${statusColors[status]} px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm`}>
-          {status.toUpperCase()}
-        </span>
-      ) : null}
-
-      {HeroImage ? (
-        hardLink ? (
-          <a
-            href={href}
-            className={
-              variant === "compact"
-                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
-                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
-            }
-          >
-            {HeroImage}
-            <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-          </a>
-        ) : (
-          <Link
-            href={href}
-            className={
-              variant === "compact"
-                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
-                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
-            }
-          >
-            {HeroImage}
-            <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-          </Link>
-        )
-      ) : GradientPlaceholder ? (
-        hardLink ? (
-          <a
-            href={href}
-            className={
-              variant === "compact"
-                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
-                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
-            }
-          >
-            {GradientPlaceholder}
-          </a>
-        ) : (
-          <Link
-            href={href}
-            className={
-              variant === "compact"
-                ? "relative mb-2 block h-28 w-full overflow-hidden rounded-lg"
-                : "relative mb-3 block h-40 w-full overflow-hidden rounded-lg"
-            }
-          >
-            {GradientPlaceholder}
-          </Link>
-        )
-      ) : <div className="mb-2" />}
-      {hardLink ? (
-        <a href={href} className={`${variant === "compact" ? "text-[13px]" : "text-sm"} font-semibold text-neutral-900 hover:underline dark:text-neutral-100 ${!HeroImage ? "mt-2" : ""}`}>{frontmatter.title}</a>
-      ) : (
-        <Link href={href} className={variant === "compact" ? "text-[13px] font-semibold text-neutral-900 hover:underline dark:text-neutral-100" : "text-sm font-semibold text-neutral-900 hover:underline dark:text-neutral-100"}>{frontmatter.title}</Link>
+      {/*
+        A card with no hero used to show a tall empty ruled panel labelled "Illustration" and then
+        the title underneath it, which read as half-implemented. The title now sits inside the panel
+        and is not repeated below. A card WITH a real hero keeps the title in the body: the hero
+        already carries the visual weight, and overlaying text on an image is a contrast risk.
+      */}
+      {compact ? null : (
+        <ContentCover
+          title={frontmatter.title}
+          hero={frontmatter.hero}
+          topic={frontmatter.tags?.[0]}
+          index={index}
+          variant="card-top"
+          sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 100vw"
+        >
+          {frontmatter.hero ? null : (
+            <TitleLink
+              title={frontmatter.title}
+              href={href}
+              hardLink={hardLink}
+              className={titleClass}
+            />
+          )}
+        </ContentCover>
       )}
-      {frontmatter.summary ? (
-        <div className={variant === "compact" ? "mt-0.5 line-clamp-2 text-[11px] text-neutral-600 dark:text-neutral-400" : "mt-1 line-clamp-3 text-xs text-neutral-600 dark:text-neutral-400"}>{frontmatter.summary}</div>
-      ) : null}
-      {frontmatter.tags?.length ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {frontmatter.tags.slice(0, 4).map((t) => (
-            tagBase ? (
-              <Link
-                key={t}
-                href={`${tagBase}?tag=${encodeURIComponent(t)}`}
-                className="relative z-10 rounded-md border border-neutral-200 px-1.5 py-0.5 text-[11px] text-neutral-600 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              >
-                #{t}
-              </Link>
-            ) : (
-              <span key={t} className="rounded-md border border-neutral-200 px-1.5 py-0.5 text-[11px] text-neutral-600 dark:border-neutral-800 dark:text-neutral-400">#{t}</span>
-            )
-          ))}
-        </div>
-      ) : null}
-    </div>
+
+      <div className={`flex flex-1 flex-col ${compact ? "p-[var(--space-3)]" : "p-[var(--space-4)]"}`}>
+        {showStatusRow ? (
+          <div className="mb-[var(--space-3)] flex flex-wrap items-center gap-[var(--space-2)]">
+            {status !== "published" ? (
+              <Badge variant="warn">{STATUS_TEXT[status as "draft" | "scheduled"]}</Badge>
+            ) : null}
+            {frontmatter.featured ? <Badge variant="link">Featured</Badge> : null}
+          </div>
+        ) : null}
+
+        {!compact && !frontmatter.hero ? null : (
+          <TitleLink title={frontmatter.title} href={href} hardLink={hardLink} className={titleClass} />
+        )}
+
+        {frontmatter.summary ? (
+          <p className={`mt-[var(--space-2)] text-muted ${compact ? "text-[0.9rem]" : "text-[0.95rem]"}`}>
+            {frontmatter.summary}
+          </p>
+        ) : null}
+
+        {/* mt-auto keeps the metadata row aligned across cards in a grid, so cards of
+            different text lengths still line up at the bottom. */}
+        {(dateLabel || frontmatter.tags?.length) && (
+          <p className="meta mt-[var(--space-4)] flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] pt-[var(--space-3)]">
+            {dateLabel ? (
+              <time dateTime={isoDateOnly(frontmatter.date)}>{dateLabel}</time>
+            ) : null}
+            {frontmatter.tags?.slice(0, 4).map((t) =>
+              tagBase ? (
+                <Link
+                  key={t}
+                  href={`${tagBase}?tag=${encodeURIComponent(t)}`}
+                  className="no-underline hover:underline"
+                >
+                  #{t}
+                </Link>
+              ) : (
+                <span key={t}>#{t}</span>
+              ),
+            )}
+          </p>
+        )}
+      </div>
+    </article>
   );
 }

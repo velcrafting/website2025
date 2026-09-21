@@ -1,4 +1,8 @@
 // StickyTOC.tsx
+//
+// Concept 03: token colours. Also respects reduced-motion for the in-page jump —
+// a smooth scroll is decorative movement and should not override a visitor's
+// stated preference.
 "use client";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -7,6 +11,14 @@ type TocHead = { id: string; text: string; level: 2 | 3 };
 
 function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 export default function StickyTOC() {
@@ -26,12 +38,16 @@ export default function StickyTOC() {
       }
 
       const collect = (): TocHead[] => {
-        const nodes = Array.from(root.querySelectorAll<HTMLElement>("h2, h3"));
+        const nodes = Array.from(root.querySelectorAll<HTMLElement>("h2"));
         return nodes
           .map((el) => {
             const text = el.textContent?.trim() ?? "";
             if (!text) return null;
             if (!el.id) el.id = slugify(text);
+            // H2 only, by default (docs/2026-refresh.md §5: "TOC too dense —
+            // H2-only navigation by default; retain semantic H3s in article
+            // content"). H3s stay in the article; they just do not become menu
+            // entries. The level field is kept so a caller can opt into depth later.
             const level = Number(el.tagName.substring(1)) as 2 | 3;
             return { id: el.id, text, level };
           })
@@ -52,7 +68,7 @@ export default function StickyTOC() {
         },
         { root: null, rootMargin: "0px 0px -70% 0px", threshold: 0 }
       );
-      Array.from(root.querySelectorAll<HTMLElement>("h2, h3")).forEach((el) => io.observe(el));
+      Array.from(root.querySelectorAll<HTMLElement>("h2")).forEach((el) => io.observe(el));
 
       const onHash = () => setActiveId(location.hash.replace(/^#/, "") || null);
       window.addEventListener("hashchange", onHash);
@@ -75,14 +91,17 @@ export default function StickyTOC() {
 
   const onClick = (id: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById(id)?.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start",
+    });
     history.replaceState(null, "", `#${id}`);
     setActiveId(id);
   };
 
- return (
-    <nav className="text-md">
-      <ul className="space-y-1">
+  return (
+    <nav>
+      <ul className="flex list-none flex-col gap-[var(--space-1)] pl-0">
         {heads.map((h) => {
           const active = activeId === h.id;
           return (
@@ -90,14 +109,11 @@ export default function StickyTOC() {
               <a
                 href={`#${h.id}`}
                 onClick={onClick(h.id)}
+                aria-current={active ? "location" : undefined}
                 className={[
-                  "block rounded px-2 py-1 transition-colors",
-                  h.level === 3
-                    ? "pl-5 text-neutral-500 dark:text-neutral-400"
-                    : "pl-2",
-                  active
-                    ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white",
+                  "block rounded-[var(--radius-chip)] px-[var(--space-2)] py-[var(--space-1)] text-sm no-underline transition-colors",
+                  h.level === 3 ? "pl-[var(--space-5)] text-muted" : "",
+                  active ? "bg-rule text-ink" : "text-ink hover:bg-paper-raised",
                 ].join(" ")}
               >
                 {h.text}

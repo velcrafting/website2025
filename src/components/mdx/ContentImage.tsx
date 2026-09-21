@@ -1,5 +1,6 @@
-"use client";
-
+// Presentational MDX component. Rendered on the server by the
+// non-executable body renderer, so it must not be a client component.
+// Concept 03: token border and radius, no decorative shadow.
 import clsx from "clsx";
 import type { ImgHTMLAttributes } from "react";
 
@@ -11,7 +12,7 @@ export default function ContentImage({ className, alt, ...rest }: Props) {
       alt={alt}
       {...rest}
       className={clsx(
-        "my-4 w-full rounded-xl border border-neutral-800 shadow-sm",
+        "my-[var(--space-4)] w-full rounded-[var(--radius-surface)] border border-rule",
         className
       )}
     />

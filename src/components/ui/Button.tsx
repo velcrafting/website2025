@@ -1,50 +1,74 @@
 // src/components/ui/Button.tsx
-import clsx from "clsx";
+//
+// shadcn-backed shared Button (docs/2026-refresh.md §4).
+//
+// Behaviour comes from Radix Slot and variants from class-variance-authority —
+// the shadcn structure — while appearance still resolves to the concept-03 token
+// classes (.btn-primary / .btn-secondary) defined in globals.css. The public API
+// is unchanged and `buttonClasses` is still exported, so existing callers keep
+// working.
+//
+// `asChild` is the one added capability: it lets a link render as a button
+// without copying button classes into the page, which is how the reading and
+// contact surfaces previously styled anchors by hand.
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-[var(--space-2)] font-medium text-sm transition",
+  {
+    variants: {
+      variant: {
+        // `accent` and `default` are the same visual treatment; both names are
+        // kept because callers already use each.
+        default: "btn-primary",
+        accent: "btn-primary",
+        outline: "btn-secondary",
+        ghost: "min-h-[44px] text-ink hover:bg-paper-raised",
+      },
+      size: {
+        // min-height comes from the .btn-* class, so touch targets stay >= 44px
+        sm: "px-[var(--space-3)] py-[var(--space-1)]",
+        md: "px-[var(--space-4)] py-[var(--space-2)]",
+        lg: "px-[var(--space-5)] py-[var(--space-3)]",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "md",
+    },
+  }
+);
 
 type Variant = "accent" | "default" | "outline" | "ghost";
 type Size = "sm" | "md" | "lg";
 
+/** Kept for callers that need the class string (for example a non-React href). */
 export function buttonClasses({
   variant = "default",
   size = "md",
   className,
-}: { variant?: Variant; size?: Size; className?: string } = {}) {
-  return clsx(
-    // base
-    "inline-flex items-center justify-center rounded-full font-medium text-sm transition",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-purple-400",
-    // sizes
-    size === "sm" && "px-3 py-1.5",
-    size === "md" && "px-4 py-2",
-    size === "lg" && "px-5 py-2.5",
-    // variants
-    variant === "default" &&
-      "bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200",
-    variant === "outline" &&
-      "border bg-white text-neutral-900 hover:bg-neutral-50 border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800",
-    variant === "ghost" &&
-      "text-neutral-900 hover:bg-neutral-100 dark:text-white/90 dark:hover:bg-white/10",
-    variant === "accent" &&
-      "text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 shadow-md hover:shadow-lg",
-    className
-  );
+}: { variant?: Variant | null; size?: Size | null; className?: string } = {}) {
+  return cn(buttonVariants({ variant, size }), className);
 }
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant;
-  size?: Size;
-};
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants> & {
+    /** Render the single child element (for example a Link) with button styling. */
+    asChild?: boolean;
+  };
 
 export default function Button({
-  variant = "default",
-  size = "md",
+  variant,
+  size,
   className,
+  asChild = false,
   ...props
 }: Props) {
+  const Comp = asChild ? Slot : "button";
   return (
-    <button
-      className={buttonClasses({ variant, size, className })}
-      {...props}
-    />
+    <Comp className={buttonClasses({ variant, size, className })} {...props} />
   );
 }

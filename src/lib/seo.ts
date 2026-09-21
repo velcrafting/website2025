@@ -22,6 +22,19 @@ export function titleize(s: string) {
   return s ? `${s} · Steven Pajewski` : "Steven Pajewski";
 }
 
+// Escape a string so it is safe to embed inside an HTML <script>
+// element. JSON-encoding (used by JSON.stringify) does NOT escape the
+// sequence "</script", so we must substitute it explicitly. This is the
+// standard OWASP guidance for inlining JSON-LD into HTML.
+export function escapeForScriptTag(json: string): string {
+  return json
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 export function buildMetadata(opts: {
   title: string;
   description?: string;

@@ -14,19 +14,20 @@ import {
   FolderKanban,
   PenSquare,
   User2,
-  CalendarClock,
-  Brush,
+  Gamepad2,
   LucideHammer,
   LayoutDashboard,
   FilePlus2,
   Send,
+  Compass,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import StickyTOC from "@/components/layout/StickyTOC";
 import IconButton from "@/components/ui/IconButton";
-import Separator from "@/components/ui/Separator";
-import { Card, GradientIcon } from "../ui";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import { GradientIcon } from "../ui";
+import { GuidedChatTrigger } from "@/components/guided-chat";
 import dynamic from "next/dynamic";
 const SidebarArtPanel = dynamic(
   () => import("@/app/art/components/SidebarArtPanel"),
@@ -36,12 +37,15 @@ const SidebarArtPanel = dynamic(
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/connect", label: "Connect", icon: Compass },
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/blog", label: "Blog", icon: PenSquare },
   { href: "/tools", label: "Tools", icon: LucideHammer },
-  { href: "/contact", label: "Contact", icon: CalendarClock },
-  { href: "/art", label: "Something Different", icon: Brush },
+  // No "/contact" entry: D1 consolidated the connect/contact surfaces and /contact
+  // redirects to /connect, so a second nav item would only name a page that leaves
+  // immediately. The URL still resolves for old links (src/app/contact/page.tsx).
+  { href: "/arcade", label: "Arcade", icon: Gamepad2 },
 ];
 
 const adminNav = [
@@ -49,6 +53,53 @@ const adminNav = [
   { href: "/admin/new", label: "New Article", icon: FilePlus2 },
   { href: "/admin/newsletter", label: "Newsletter", icon: Send },
 ];
+
+// Concept 03: a hairline rule between groups instead of repeated bordered cards.
+function SidebarGroup({ label, children }: { label?: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-[var(--space-5)]">
+      <hr className="rule" />
+      <div className="pt-[var(--space-4)]">
+        {label ? (
+          <p className="meta mb-[var(--space-2)] uppercase tracking-wide">{label}</p>
+        ) : null}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function NavList({
+  items,
+  pathname,
+}: {
+  items: typeof nav;
+  pathname: string;
+}) {
+  return (
+    <nav className="grid gap-[var(--space-1)]">
+      {items.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={clsx(
+              "flex min-h-[44px] items-center gap-[var(--space-3)] rounded-[var(--radius-chip)] px-[var(--space-3)] py-[var(--space-2)] text-sm no-underline transition",
+              active
+                ? "bg-rule text-ink"
+                : "text-ink hover:bg-paper-raised",
+            )}
+          >
+            <Icon className="size-4" aria-hidden />
+            <span>{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -67,107 +118,56 @@ export default function Sidebar() {
     pathname.startsWith("/blog");
 
   return (
-    <div className="flex h-full flex-col rail px-4 py-6 md:px-6 md:py-8 text-neutral-900 dark:text-neutral-100">
-      {/* Header */}
-      <div className="flex flex-col items-center text-center gap-2">
-        <SecretAvatar size={80} />
-        <div className="text-center">
-          <div className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">Steven Pajewski</div>
-          <div className="text-xs font-medium tracking-widest uppercase text-neutral-500 dark:text-neutral-400">Velcrafting</div>
+    <div className="rail flex h-full flex-col overflow-y-auto px-[var(--space-4)] py-[var(--space-6)] text-ink md:px-[var(--space-5)]">
+      {/* Identity: Steven and Vel are shown together so a visitor who met the
+          card recognises who this is (concept 03 recognition principle). */}
+      <div className="flex items-center gap-[var(--space-3)]">
+        <SecretAvatar size={64} />
+        <div>
+          <p className="text-[1.05rem] font-semibold tracking-tight text-ink">
+            Steven Pajewski
+          </p>
+          <p className="meta">you can call me Vel</p>
         </div>
       </div>
 
-      {/* Nav */}
-      <Card>
-        <Separator variant="gradient" />
-        <nav className="grid gap-1.5">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={clsx(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition",
-                  active
-                    ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                    : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-                )}
-              >
-                <Icon className="size-4" aria-hidden />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </Card>
+      <SidebarGroup>
+        <NavList items={nav} pathname={pathname} />
+        <GuidedChatTrigger className="mt-[var(--space-1)] w-full justify-start" />
+      </SidebarGroup>
 
-      {/* Art controls */}
       {pathname.startsWith("/art") && <SidebarArtPanel />}
 
-      {/* TOC */}
       {showTOC && (
-        <Card>
-          <Separator variant="gradient" />
-          <div className="mt-4">
-            <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">On this page</div>
-            <StickyTOC />
-          </div>
-        </Card>
+        <SidebarGroup label="On this page">
+          <StickyTOC />
+        </SidebarGroup>
       )}
 
-      {/* Admin */}
       {isAdmin && (
-        <Card>
-          <Separator variant="gradient" />
-          <div className="mt-4">
-            <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">Admin pages</div>
-            <nav className="grid gap-1.5">
-              {adminNav.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href;
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={clsx(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition",
-                      active
-                        ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                        : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
-                    )}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    <span>{label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </Card>
+        <SidebarGroup label="Admin pages">
+          <NavList items={adminNav} pathname={pathname} />
+        </SidebarGroup>
       )}
 
-      {/* Footer actions */}
       <div className="mt-auto">
-        <Separator variant="gradient" />
-        <Card>
-          <div className="flex items-center justify-between rounded-sm">
-            {/* <ThemeToggle/> */}
-            <IconButton className="group !text-white hover:!text-white" href={SITE.links.github} label="GitHub">
+        <SidebarGroup>
+          <ThemeToggle className="mb-[var(--space-3)] w-full justify-center" />
+          <div className="flex items-center justify-between">
+            <IconButton href={SITE.links.github} label="GitHub">
               <GradientIcon icon={<Github className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={SITE.links.linkedin} label="LinkedIn">
+            <IconButton href={SITE.links.linkedin} label="LinkedIn">
               <GradientIcon icon={<Linkedin className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={`mailto:${SITE.email}`} label="Email">
+            <IconButton href={`mailto:${SITE.email}`} label="Email">
               <GradientIcon icon={<Mail className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={SITE.resumeUrl} label="Resume">
+            <IconButton href={SITE.resumeUrl} label="View resume (PDF)">
               <GradientIcon icon={<FileText className="size-5" />} />
             </IconButton>
           </div>
-        </Card>
+        </SidebarGroup>
       </div>
     </div>
   );

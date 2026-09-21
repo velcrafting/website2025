@@ -1,0 +1,272 @@
+<!doctype html>
+<!--
+  The arcade reference game. F4, repaired for R4 on 2026-09-17.
+
+  A worked example for src/app/arcade/AUTHOR_PROMPT.md, not a product. It exists so the author contract can
+  point at something real, and it meets that contract without an engine.
+
+  R4: an independent audit reproduced four defects, all repaired here.
+    1. `reset()` cleared the score and misses variables but never wrote them back to the page, so the
+       counters still read "Misses 3/3" immediately after a restart. There is now ONE sync point that writes
+       every visible value from the state, and reset() calls it. The two cannot drift again.
+    2. The game autostarted, so a visitor arriving from a card was already losing before they understood it.
+       It now waits in an explicit idle state; Start, Space or Enter begins.
+    3. Space was captured globally, so pressing Space on a focused Pause or Restart button both clicked the
+       button and started the game. Keys are now ignored while a native control has focus, and Tab moves
+       through the controls and out of the page normally.
+    4. There was no pause-on-blur, so a game kept running while the visitor looked elsewhere. Blur now
+       pauses.
+
+  THE HOST CONTRACT, as actually consumed (see AUTHOR_PROMPT.md):
+    - the host renders this in a fixed 4:3 frame. It does NOT listen for postMessage and does NOT resize to a
+      reported height. An earlier version of this file reported its height to `parent`; that message was
+      never read, so it is gone rather than left in as if it worked.
+    - so the game must fit a 4:3 stage and must not depend on the host for anything but the frame.
+    - no autoplay; explicit Start; Space and Enter start from idle
+    - arrows AND WASD; touch drag anywhere on the stage; every control at least 44px tall
+    - Pause/Resume (P) and Restart (R), both real buttons, both reachable by Tab, both disabled when they
+      would do nothing
+    - no audio element at all, so nothing is "sound off" by default
+    - no external requests: no fonts, no scripts, no images from anywhere
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reference game — catch the blocks</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0f1114; color: #f2efe9;
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px;
+  }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  h1 { margin: 0; font-size: 15px; letter-spacing: .12em; text-transform: uppercase; }
+  .stat { font-variant-numeric: tabular-nums; color: #9b9ba3; }
+  /* Fixed 4:3, matching the frame the host renders. The canvas scales inside it, so the controls below never
+     get pushed off-screen and nothing clips at 320px. */
+  .stage { aspect-ratio: 4 / 3; width: min(420px, 100%); }
+  canvas {
+    width: 100%; height: 100%; display: block;
+    background: #08080a; border: 1px solid #2a2a30; border-radius: 8px;
+    touch-action: none;
+  }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  button {
+    min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+    border: 1px solid #3a3a42; background: none; color: inherit; font: inherit;
+  }
+  button:focus-visible { outline: 2px solid #7cc4ff; outline-offset: 2px; }
+  button[disabled] { opacity: .45; cursor: default; }
+  p { margin: 0; color: #9b9ba3; text-align: center; max-width: 46ch; }
+  p.loud { color: #f2efe9; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Catch the blocks</h1>
+    <span class="stat">Score <span id="score">0</span></span>
+    <span class="stat">Misses <span id="misses">0</span>/<span id="limit">3</span></span>
+  </header>
+
+  <div class="stage">
+    <canvas id="game" width="420" height="300" aria-label="Move the bar to catch the falling blocks"></canvas>
+  </div>
+
+  <div class="controls">
+    <button id="start" type="button">Start <span aria-hidden="true">(Space)</span></button>
+    <button id="pause" type="button" disabled>Pause <span aria-hidden="true">(P)</span></button>
+    <button id="restart" type="button">Restart <span aria-hidden="true">(R)</span></button>
+  </div>
+
+  <p id="hint">
+    Press Start, Space or Enter. Arrows or WASD to move; on a touch screen, drag anywhere on the stage.
+    Three misses ends the run.
+  </p>
+
+<script>
+// ------------------------------------------------------------------ one state, one sync
+const MISS_LIMIT = 3;
+const PADDLE_W = 72, PADDLE_H = 10, BLOCK = 16;
+const IDLE_HINT = "Press Start, Space or Enter. Arrows or WASD to move; on a touch screen, drag anywhere on the stage. Three misses ends the run.";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const els = {
+  score: document.getElementById("score"),
+  misses: document.getElementById("misses"),
+  limit: document.getElementById("limit"),
+  hint: document.getElementById("hint"),
+  start: document.getElementById("start"),
+  pause: document.getElementById("pause"),
+};
+
+let state = { phase: "idle", score: 0, misses: 0 };  // idle | running | paused | over
+let paddleX = canvas.width / 2 - PADDLE_W / 2;
+let blocks = [];
+let keys = new Set();
+let pointerX = null;
+let spawn = 0;
+let last = 0;
+
+/**
+ * The single sync point. Everything the visitor can see is derived from `state` here and nowhere else.
+ * R4's first defect was two writers disagreeing; this is the fix.
+ */
+function sync() {
+  els.score.textContent = String(state.score);
+  els.misses.textContent = String(state.misses);
+  els.limit.textContent = String(MISS_LIMIT);
+
+  els.pause.disabled = state.phase === "idle" || state.phase === "over";
+  els.pause.textContent = state.phase === "paused" ? "Resume (P)" : "Pause (P)";
+  els.start.disabled = state.phase === "running" || state.phase === "paused";
+
+  if (state.phase === "idle") {
+    els.hint.textContent = IDLE_HINT;
+    els.hint.classList.remove("loud");
+  } else if (state.phase === "over") {
+    els.hint.textContent = "Run over — score " + state.score + ". Press R or Restart to play again.";
+    els.hint.classList.add("loud");
+  } else if (state.phase === "paused") {
+    els.hint.textContent = "Paused. Press P or Resume to continue, or R to restart.";
+    els.hint.classList.remove("loud");
+  } else {
+    els.hint.textContent = IDLE_HINT;
+    els.hint.classList.remove("loud");
+  }
+  draw();
+}
+
+function reset() {
+  state = { phase: "idle", score: 0, misses: 0 };
+  paddleX = canvas.width / 2 - PADDLE_W / 2;
+  blocks = []; keys = new Set(); pointerX = null; spawn = 0;
+  sync();                                  // ← the missing call that R4 reproduced
+}
+
+function start() {
+  if (state.phase === "running") return;
+  state = { phase: "running", score: 0, misses: 0 };
+  paddleX = canvas.width / 2 - PADDLE_W / 2;
+  blocks = []; spawn = 0.4; last = performance.now();
+  sync();
+}
+
+function togglePause() {
+  if (state.phase === "running") state.phase = "paused";
+  else if (state.phase === "paused") { state.phase = "running"; last = performance.now(); }
+  else return;
+  sync();
+}
+
+// ------------------------------------------------------------------ play
+function spawnBlock() {
+  blocks.push({ x: 20 + Math.random() * (canvas.width - 40 - BLOCK), y: -BLOCK, vy: 90 + Math.random() * 70 });
+}
+
+function step(dt) {
+  const speed = 320;
+  if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) paddleX -= speed * dt;
+  if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) paddleX += speed * dt;
+  if (pointerX !== null) paddleX = pointerX - PADDLE_W / 2;
+  paddleX = Math.max(0, Math.min(canvas.width - PADDLE_W, paddleX));
+
+  spawn -= dt;
+  if (spawn <= 0) { spawnBlock(); spawn = 0.75 + Math.random() * 0.5; }
+
+  const paddleTop = canvas.height - 28;
+  for (const b of blocks) {
+    b.y += b.vy * dt;
+    const caught = b.y + BLOCK >= paddleTop && b.y + BLOCK <= paddleTop + PADDLE_H + 6 &&
+      b.x + BLOCK > paddleX && b.x < paddleX + PADDLE_W;
+    if (caught) { b.done = true; state.score += 1; }
+    else if (b.y > canvas.height) {
+      b.done = true; state.misses += 1;
+      if (state.misses >= MISS_LIMIT) state.phase = "over";
+    }
+  }
+  blocks = blocks.filter((b) => !b.done);
+  sync();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#f2efe9";
+  for (const b of blocks) ctx.fillRect(b.x, b.y, BLOCK, BLOCK);
+  ctx.fillStyle = "#7cc4ff";
+  ctx.fillRect(paddleX, canvas.height - 28, PADDLE_W, PADDLE_H);
+  if (state.phase !== "running") {
+    ctx.fillStyle = "rgba(8,8,10,.62)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f2efe9";
+    ctx.font = "14px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    const label = state.phase === "idle" ? "PRESS START" : state.phase === "paused" ? "PAUSED" : "GAME OVER";
+    ctx.fillText(label, canvas.width / 2, canvas.height / 2);
+  }
+}
+
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  if (state.phase === "running") step(dt);
+  requestAnimationFrame(frame);
+}
+
+// ------------------------------------------------------------------ input
+/** Keys must not fight a focused control: Space on a focused button is that button's, not ours. */
+function controlHasFocus() {
+  const el = document.activeElement;
+  if (!el) return false;
+  return ["BUTTON", "A", "INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
+}
+
+addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const focused = controlHasFocus();
+  const isStartKey = e.key === " " || e.key === "Spacebar" || e.key === "Enter";
+
+  if (isStartKey && !focused) {
+    if (state.phase === "over") { e.preventDefault(); start(); return; }
+    if (state.phase === "idle") { e.preventDefault(); start(); return; }
+  }
+  if ((e.key === "p" || e.key === "P") && !focused) { e.preventDefault(); togglePause(); return; }
+  if (e.key === "r" || e.key === "R") { e.preventDefault(); reset(); return; }
+  if (["ArrowLeft", "ArrowRight", "a", "d", "A", "D"].includes(e.key) && state.phase === "running") {
+    e.preventDefault();
+    keys.add(e.key);
+  }
+});
+addEventListener("keyup", (e) => keys.delete(e.key));
+
+// Touch and mouse. touch-action:none on the canvas means a drag moves the bar instead of scrolling the page.
+function pointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  return (clientX - rect.left) * (canvas.width / rect.width);
+}
+canvas.addEventListener("pointerdown", (e) => {
+  if (state.phase === "idle" || state.phase === "over") { start(); return; }
+  pointerX = pointerPos(e);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (e.pointerType === "touch" || e.buttons) pointerX = pointerPos(e);
+});
+canvas.addEventListener("pointerup", () => { pointerX = null; });
+canvas.addEventListener("pointercancel", () => { pointerX = null; });
+
+// An unfocused game must not keep scoring.
+addEventListener("blur", () => { if (state.phase === "running") togglePause(); });
+
+els.start.addEventListener("click", start);
+els.pause.addEventListener("click", togglePause);
+document.getElementById("restart").addEventListener("click", reset);
+
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

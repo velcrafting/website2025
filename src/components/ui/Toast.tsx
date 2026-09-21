@@ -1,4 +1,9 @@
 "use client";
+//
+// Concept 03: token colours. The toast previously used a hardcoded white/near-black
+// surface plus green/red borders; it now uses the surface token and the functional
+// state tokens added for form feedback, so a toast cannot drift from the palette.
+// Behaviour (portal, auto-dismiss, click-to-dismiss, reduced-motion) is unchanged.
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
@@ -53,7 +58,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {portalRoot &&
         createPortal(
           <div
-            className="pointer-events-none fixed bottom-4 right-4 z-50 space-y-2 md:right-6 md:bottom-6"
+            className="pointer-events-none fixed bottom-[var(--space-4)] right-[var(--space-4)] z-50 flex flex-col gap-[var(--space-2)] md:bottom-[var(--space-5)] md:right-[var(--space-5)]"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
             aria-live="polite"
             aria-atomic="true"
@@ -72,16 +77,19 @@ function ToastCard({ item, onClose }: { item: ToastItem; onClose: () => void }) 
   const prefersReduced =
     typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+  const borderColor =
+    item.variant === "success"
+      ? "var(--success-ink)"
+      : item.variant === "error"
+        ? "var(--danger-ink)"
+        : "var(--rule)";
+
   return (
     <div
       role="status"
-      className={[
-        "pointer-events-auto select-none rounded-md border px-3 py-2 text-sm shadow transition",
-        "bg-white dark:bg-neutral-900 dark:border-neutral-800",
-        item.variant === "success" && "border-green-600/40",
-        item.variant === "error" && "border-red-600/40",
-      ].filter(Boolean).join(" ")}
+      className="pointer-events-auto max-w-[min(24rem,90vw)] select-none rounded-[var(--radius-surface)] border bg-surface px-[var(--space-3)] py-[var(--space-2)] text-ink transition"
       style={{
+        borderColor,
         opacity: 1,
         transform: prefersReduced ? undefined : "translateY(0)",
         animation: prefersReduced ? undefined : "toast-in 120ms ease-out",

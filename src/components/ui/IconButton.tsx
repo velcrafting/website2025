@@ -1,4 +1,6 @@
 // src/components/ui/IconButton.tsx
+//
+// Concept 03: token colours and the accent focus ring. The API is unchanged.
 import * as React from "react";
 import clsx from "clsx";
 
@@ -41,10 +43,10 @@ export default function IconButton({
       aria-label={label}
       title={title ?? label}
       className={clsx(
-        "inline-flex size-10 items-center justify-center rounded-md",
-        "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
-        "dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white",
+        // 44px minimum target for a compact control.
+        "inline-flex size-11 items-center justify-center rounded-[var(--radius-chip)]",
+        "text-ink hover:bg-paper-raised",
+        "transition-colors duration-[var(--motion-base)]",
         className
       )}
       {...rest}

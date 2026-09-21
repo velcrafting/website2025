@@ -1,72 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import SecretAvatar from "@/components/SecretAvatar";
 import { usePathname } from "next/navigation";
 import Drawer from "@/components/ui/Drawer";
-import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, FlaskConical, PenSquare, User2, CalendarClock, Brush, LucideHammer } from "lucide-react";
+import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, PenSquare, User2, LucideHammer, Compass, Gamepad2 } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { GradientIcon } from "@/components/ui";
 import { SITE } from "@/config/site";
+import { GuidedChatTrigger } from "@/components/guided-chat";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
 const SidebarArtPanel = dynamic(() => import("@/app/art/components/SidebarArtPanel"), { ssr: false });
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/connect", label: "Connect", icon: Compass },
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/blog", label: "Blog", icon: PenSquare },
   { href: "/tools", label: "Tools", icon: LucideHammer },
-  { href: "/contact", label: "Contact", icon: CalendarClock },
-  { href: "/art", label: "Something Different", icon: Brush },
+  // No "/contact" entry — D1 consolidated connect/contact and /contact now redirects
+  // to /connect. The URL still resolves for existing links.
+  { href: "/arcade", label: "Arcade", icon: Gamepad2 },
 ];
 
 export default function MobileHeader() {
   const [open, setOpen] = useState(false);
+  // Focus must return to this control when the drawer closes; the trigger is outside
+  // the Drawer, so Radix cannot restore it on its own.
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
   return (
-    <div className="flex items-center justify-between">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5">
+    <div className="flex items-center justify-between gap-[var(--space-3)]">
+      {/* Identity */}
+      <div className="flex items-center gap-[var(--space-2)]">
         <SecretAvatar size={32} />
         <div className="leading-tight">
-          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Steven Pajewski</div>
-          <div className="text-[11px] text-neutral-600 dark:text-neutral-300">Velcrafting</div>
+          <p className="text-sm font-semibold text-ink">Steven Pajewski</p>
+          <p className="meta">you can call me Vel</p>
         </div>
       </div>
 
-      {/* Hamburger */}
+      {/* Hamburger — 44px minimum target */}
       <button
+        ref={triggerRef}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-chip)] text-ink hover:bg-paper-raised"
       >
-        <Menu className="size-5" />
+        <Menu className="size-5" aria-hidden />
       </button>
 
       {/* Drawer */}
-      <Drawer open={open} onClose={() => setOpen(false)} side="left" title="Menu">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        side="left"
+        title="Menu"
+        returnFocusTo={triggerRef}
+      >
+        <div className="mb-[var(--space-3)] flex items-center justify-between gap-[var(--space-3)]">
+          <div className="flex items-center gap-[var(--space-3)]">
             <SecretAvatar size={40} />
             <div className="leading-tight">
-              <div className="text-base font-semibold">Steven Pajewski</div>
-              <div className="text-xs text-neutral-600 dark:text-neutral-300">Velcrafting</div>
+              <p className="text-base font-semibold text-ink">Steven Pajewski</p>
+              <p className="meta">you can call me Vel</p>
             </div>
           </div>
           <button
             aria-label="Close menu"
             onClick={() => setOpen(false)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-chip)] text-ink hover:bg-paper-raised"
           >
-            <X className="size-5" />
+            <X className="size-5" aria-hidden />
           </button>
         </div>
 
-        <nav className="mt-2 grid gap-1.5">
+        <nav className="mt-[var(--space-2)] grid gap-[var(--space-1)]">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -76,10 +90,8 @@ export default function MobileHeader() {
                 onClick={() => setOpen(false)}
                 aria-current={active ? "page" : undefined}
                 className={clsx(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition",
-                  active
-                    ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-                    : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                  "flex min-h-[44px] items-center gap-[var(--space-3)] rounded-[var(--radius-chip)] px-[var(--space-3)] py-[var(--space-2)] text-sm no-underline transition",
+                  active ? "bg-rule text-ink" : "text-ink hover:bg-paper-raised",
                 )}
               >
                 <Icon className="size-4" aria-hidden />
@@ -89,28 +101,38 @@ export default function MobileHeader() {
           })}
         </nav>
 
-        {/* Art controls when on art page */}
+        <GuidedChatTrigger
+          returnFocusRef={triggerRef}
+          onBeforeOpen={() => setOpen(false)}
+          deferOpen
+          className="mt-[var(--space-2)] w-full justify-start"
+        />
+
         {pathname.startsWith("/art") && (
-          <div className="mt-6">
+          <div className="mt-[var(--space-5)]">
             <SidebarArtPanel />
           </div>
         )}
 
-        <div className="mt-6">
-          <div className="mb-2 text-xs uppercase tracking-wide text-neutral-600 dark:text-neutral-300">Connect</div>
-          <div className="flex items-center gap-2">
-            <IconButton className="group !text-white hover:!text-white" href={SITE.links.github} label="GitHub">
+        <div className="mt-[var(--space-5)]">
+          <hr className="rule mb-[var(--space-4)]" />
+          <p className="meta mb-[var(--space-2)] uppercase tracking-wide">Connect</p>
+          <div className="flex items-center gap-[var(--space-2)]">
+            <IconButton href={SITE.links.github} label="GitHub">
               <GradientIcon icon={<Github className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={SITE.links.linkedin} label="LinkedIn">
+            <IconButton href={SITE.links.linkedin} label="LinkedIn">
               <GradientIcon icon={<Linkedin className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={`mailto:${SITE.email}`} label="Email">
+            <IconButton href={`mailto:${SITE.email}`} label="Email">
               <GradientIcon icon={<Mail className="size-5" />} />
             </IconButton>
-            <IconButton className="group !text-white hover:!text-white" href={SITE.resumeUrl} label="Resume">
+            <IconButton href={SITE.resumeUrl} label="View resume (PDF)">
               <GradientIcon icon={<FileText className="size-5" />} />
             </IconButton>
+          </div>
+          <div className="mt-[var(--space-4)]">
+            <ThemeToggle className="w-full justify-center" />
           </div>
         </div>
       </Drawer>

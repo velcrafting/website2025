@@ -1,62 +1,36 @@
 // src/app/contact/page.tsx
-import { ScheduleEmbed, ContactForm, NewsletterForm } from "@/components/contact";
-import { ChevronDown } from "lucide-react";
-import { buildMetadata } from "@/lib/seo";
+//
+// /contact → /connect, permanently.
+//
+// D1 (docs/implementation_plan_Sep16.md §4 task 2.3 and §12): connect and contact
+// were two pages offering the same actions, so they competed. /connect survives —
+// it is the homepage's action target and the destination of the physical card's QR
+// code — and the message form on it is the single primary action. /contact is not
+// deleted and its content was not dropped: it redirects, so every existing link
+// (site nav, sitemap history, the prose link in src/content/blog/ai/geo-llm-discovery.mdx,
+// anything already printed or shared) still lands somewhere useful.
+//
+// A 308, not a 302: the consolidation is permanent, and a permanent redirect is what
+// transfers the search signal for the old URL. `permanentRedirect()` also runs before
+// any of this route's rendering, so this file holds no markup, no metadata, and no
+// form components — a redirecting page that still rendered a second contact form is
+// exactly the duplication D1 removes.
+//
+// The components the old page rendered now have one home:
+//   NewsletterForm→ /connect, in the "Join Vel, and be a Crafter" block (the low-lift action).
+//   ContactForm   → no longer rendered anywhere as of 2026-09-16 (Phase 8.2). The component and
+//                   its /api/contact route are kept, not deleted: the labelled mailto in the
+//                   sidebar replaced it, and reversing that is one line in /connect.
+//   ScheduleEmbed → removed entirely 2026-09-16. Superseded: /connect links the verified booking
+//                   page instead of loading a third-party iframe.
+//
+// Verified through the served response, not a build log:
+//   curl -s -o /dev/null -D - http://127.0.0.1:<port>/contact   → 308, location: /connect
+//
+// Reversal is one commit: restore the previous page body and remove the redirect.
 
-export const generateMetadata = () =>
-  buildMetadata({
-    title: "Contact",
-    description: "Get in touch to discuss communications strategy, AI systems, and community operations.",
-    canonicalPath: "/contact",
-  });
+import { permanentRedirect } from "next/navigation";
 
-export default function Page() {
-  return (
-    <div className="mx-auto px-6 py-12 space-y-6">
-      <section id="contact">
-        <details className="group rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-4" open>
-          <summary className="flex cursor-pointer items-center justify-between list-none">
-            <h1 className="text-2xl font-semibold">Send a message</h1>
-            <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
-          </summary>
-          <div className="mt-4">
-            <p className="mb-6 text-sm text-neutral-600 dark:text-neutral-400">
-              Prefer email? <a href="mailto:steven@velcrafting.com" className="underline">steven@velcrafting.com</a>
-            </p>
-            <ContactForm />
-          </div>
-        </details>
-      </section>
-
-      <section id="schedule">
-        <details className="group rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-4">
-          <summary className="flex cursor-pointer items-center justify-between list-none">
-            <h2 className="text-2xl font-semibold">Schedule a meeting</h2>
-            <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
-          </summary>
-          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Book time that fits your schedule — let’s talk about your project, goals, and next steps.
-          </div>
-          <div className="mt-4">
-            <ScheduleEmbed />
-          </div>
-        </details>
-      </section>
-
-      <section id="newsletter">
-        <details className="group rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40 p-4">
-          <summary className="flex cursor-pointer items-center justify-between list-none">
-            <h2 className="text-2xl font-semibold">Join the newsletter</h2>
-            <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
-          </summary>
-          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Get occasional updates on new writing and projects.
-          </div>
-          <div className="mt-4">
-            <NewsletterForm />
-          </div>
-        </details>
-      </section>
-    </div>
-  );
+export default function ContactPage(): never {
+  permanentRedirect("/connect");
 }
