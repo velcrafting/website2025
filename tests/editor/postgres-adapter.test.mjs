@@ -47,7 +47,10 @@ assert.doesNotThrow(() =>
   postgresTarget("postgresql://website_editor:test-only@db.eeddvwszyhcrjbvmcpow.supabase.co/postgres"),
 );
 assert.doesNotThrow(() =>
-  postgresTarget("postgres://website_editor.eeddvwszyhcrjbvmcpow:test-only@aws-0-us-east-1.pooler.supabase.com/postgres"),
+  postgresTarget("postgres://website_editor.eeddvwszyhcrjbvmcpow:test-only@aws-7-us-east-1.pooler.supabase.com/postgres"),
+);
+assert.throws(() =>
+  postgresTarget("postgres://website_editor.eeddvwszyhcrjbvmcpow:test-only@aws-x-us-east-1.pooler.supabase.com/postgres"),
 );
 assert.throws(() =>
   postgresTarget("postgres://postgres:test-only@db.other-project.supabase.co/postgres"),

@@ -16,7 +16,7 @@ export function postgresTarget(url: string): void {
     throw new Error("POSTGRES_URL is invalid");
   }
   const direct = parsed.hostname === "db.eeddvwszyhcrjbvmcpow.supabase.co" && parsed.username === "website_editor";
-  const pooled = parsed.hostname === "aws-0-us-east-1.pooler.supabase.com" && parsed.username === "website_editor.eeddvwszyhcrjbvmcpow";
+  const pooled = /^aws-\d+-us-east-1\.pooler\.supabase\.com$/.test(parsed.hostname) && parsed.username === "website_editor.eeddvwszyhcrjbvmcpow";
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
     throw new Error("POSTGRES_URL must use the PostgreSQL protocol");
   }
