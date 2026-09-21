@@ -2,8 +2,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default function Page({ searchParams }: { searchParams?: { error?: string } }) {
-  const error = searchParams?.error;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
     <div className="mx-auto max-w-md p-6">
       <h1 className="mb-4 text-2xl font-semibold">Admin Login</h1>

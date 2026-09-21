@@ -78,9 +78,9 @@ export default async function Page() {
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Content</h2>
         <div className="grid grid-cols-2 gap-4">
-          <Link href="/admin/new" className="rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
-            <div className="font-medium">New Article</div>
-            <div className="text-sm text-neutral-600">Create a new blog post</div>
+          <Link href="/admin/editor" className="rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
+            <div className="font-medium">Blog drafts</div>
+            <div className="text-sm text-neutral-600">Create, edit and preview private article drafts</div>
           </Link>
           <Link href="/admin/blog" className="rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
             <div className="font-medium">Manage Blog</div>
