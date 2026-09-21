@@ -47,6 +47,8 @@ const config: NextConfig = {
   experimental: { mdxRs: false },
   // Optional. Helps Vercel tracing when repo is in a subfolder locally.
   outputFileTracingRoot: process.cwd(),
+  // Filesystem-backed admin handlers otherwise pull generated webpack cache packs into their functions.
+  outputFileTracingExcludes: { "/*": ["./.next/cache/**/*"] },
 };
 
 export default withMDX(config);

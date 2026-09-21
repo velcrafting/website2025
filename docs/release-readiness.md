@@ -16,6 +16,7 @@ The hosted-editor branch was integrated with the current Velcrafting site overla
 - `npm run typecheck -- --incremental false` — passed.
 - `npm run lint` — passed.
 - `npm run build` — passed; Next generated the site, CMS, and middleware routes.
+- The first Vercel build found `.next/cache/webpack` packs in filesystem-backed function traces and rejected `/admin/edit` at 313 MB. `next.config.ts` now excludes the generated `.next/cache` directory from function traces. The rebuilt local traces are 34.4 MiB for `/admin/edit`, `/admin/new`, and `/admin/newsletter`, and 33.9 MiB for `/api/cms/sync`; the MDX source files remain included. A new Preview deployment is required to verify this fix on Vercel.
 - All 13 package test scripts passed, including the editor boundary, revision, approval, preview, and first-issue suites, plus the design checks.
 - A production-mode local server was inspected in a browser. The current homepage rendered and its path selector changed content. The admin login and editor created a private draft from an excerpt of the existing `agentic-discovery.mdx` article; its saved revision preview rendered, and the draft stayed out of the public blog. The disposable local SQLite database passed `quick_check` and was removed after the test.
 - `git diff --check` — passed.
