@@ -1,49 +1,73 @@
 // src/components/layout/CaseStudyLayout.tsx
+//
+// Concept 03: token colours, hairline rules instead of the bordered card grid,
+// and the article respects the shared reading measure. The TOC root hook, the
+// Figure/ProjectKPISection composition, the related-items list and the basePath
+// tag links are all unchanged.
 "use client";
 import ProjectKPISection from "@/components/projects/ProjectKPISection";
 import Figure from "@/components/mdx/Figure";
 import type { Frontmatter } from "@/types/content";
+import { formatDateOnly, isoDateOnly } from "@/lib/format-date";
 import Image from "next/image";
 import Link from "next/link";
 
 type RelatedItem = { slug: string; title: string; summary?: string; hero?: string };
-type Props = { frontmatter: Frontmatter; children: React.ReactNode; related?: RelatedItem[]; basePath?: "/blog" | "/projects" | "/labs" | "/tools" };
+type Props = {
+  frontmatter: Frontmatter;
+  children: React.ReactNode;
+  related?: RelatedItem[];
+  basePath?: "/blog" | "/projects" | "/labs" | "/tools";
+  cover?: "show" | "hide";
+  contentWidth?: "reading" | "wide";
+};
 
-export default function CaseStudyLayout({ frontmatter, related, children, basePath = "/blog" }: Props) {
+export default function CaseStudyLayout({ frontmatter, related, children, basePath = "/blog", cover = "show", contentWidth = "reading" }: Props) {
   return (
-    <div className="w-full py-10">
-      <article className="prose max-w-none" data-toc-root>
-        <h1 className="text-2xl lg:text-3xl">{frontmatter.title}</h1>
+    <div className="container-page py-[var(--space-7)]">
+      {/*
+        `prose` carries the 60–70 character reading measure and `mx-auto` CENTERS the
+        reading region in the available width. Before this, the measure was applied
+        but the region stayed left-anchored, leaving ~730px of dead space on a 1440px
+        desktop. VELCRAFTING_DESIGN_PRINCIPLES.md allows either centering or balancing
+        with a rail; centering is used here because the "on this page" navigation
+        already lives in the site sidebar.
+      */}
+      <article
+        className={`prose mx-auto ${contentWidth === "wide" ? "" : "lg:max-w-[76ch]"}`}
+        style={contentWidth === "wide" ? { maxWidth: "var(--measure-index)" } : undefined}
+        data-toc-root
+      >
+        <h1>{frontmatter.title}</h1>
 
-        {frontmatter.summary && (
-          <p className="text-neutral-600 dark:text-neutral-400">{frontmatter.summary}</p>
-        )}
+        {frontmatter.summary && <p className="lead">{frontmatter.summary}</p>}
 
         {frontmatter.date && (
-          <p className="mt-1 text-sm text-neutral-500">
-            {new Date(frontmatter.date).toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "long",
-              day: "2-digit",
-            })}
+          <p className="meta mt-[var(--space-1)]">
+            {/* One shared date-only policy. The list and this detail page must
+                render the same calendar day, so both call formatDateOnly and
+                neither constructs a Date from a date-only string. */}
+            <time dateTime={isoDateOnly(frontmatter.date)}>
+              {formatDateOnly(frontmatter.date)}
+            </time>
           </p>
         )}
 
         {frontmatter.tags?.length ? (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <p className="mt-[var(--space-2)] flex flex-wrap gap-[var(--space-2)]">
             {frontmatter.tags.map((t) => (
               <Link
                 key={t}
                 href={`${basePath}?tag=${encodeURIComponent(t)}`}
-                className="rounded-full border border-neutral-200 px-2 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                className="meta rounded-[var(--radius-chip)] border border-rule px-[var(--space-2)] py-0.5 no-underline hover:bg-paper-raised"
               >
                 #{t}
               </Link>
             ))}
-          </div>
+          </p>
         ) : null}
 
-        {frontmatter.hero ? (
+        {frontmatter.hero && cover === "show" ? (
           <Figure src={frontmatter.hero} alt={frontmatter.title} priority />
         ) : null}
 
@@ -51,16 +75,16 @@ export default function CaseStudyLayout({ frontmatter, related, children, basePa
         {children}
       </article>
 
-      {/* Read more section */}
+      {/* Read more: rule-topped entries, not a bordered card grid. */}
       {related && related.length > 0 ? (
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Read more</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-[var(--space-7)]">
+          <h2>Read more</h2>
+          <div className="mt-[var(--space-4)] grid gap-[var(--space-4)] sm:grid-cols-2 lg:grid-cols-3">
             {related.map((it) => (
               <Link
                 key={it.slug}
                 href={`/blog/${it.slug}`}
-                className="block overflow-hidden rounded-xl border border-neutral-200 p-3 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+                className="block border-t border-rule pt-[var(--space-3)] no-underline hover:border-ink"
               >
                 {it.hero ? (
                   <Image
@@ -69,12 +93,12 @@ export default function CaseStudyLayout({ frontmatter, related, children, basePa
                     width={800}
                     height={450}
                     sizes="(min-width: 1024px) 360px, 100vw"
-                    className="mb-3 h-40 w-full rounded-lg object-cover"
-                  />)
-                : null}
-                <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{it.title}</div>
+                    className="mb-[var(--space-3)] h-40 w-full rounded-[var(--radius-surface)] object-cover"
+                  />
+                ) : null}
+                <span className="block font-semibold text-ink">{it.title}</span>
                 {it.summary ? (
-                  <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 line-clamp-3">{it.summary}</div>
+                  <span className="meta mt-[var(--space-1)] line-clamp-3 block">{it.summary}</span>
                 ) : null}
               </Link>
             ))}

@@ -1,15 +1,30 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import Script from "next/script";
 import Providers from "./providers";
+import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
 import { Sidebar } from "@/components/layout";
 import { MobileHeader } from "@/components/layout";
+import { GuidedChatProvider } from "@/components/guided-chat";
 import { SITE_URL, organizationSchema, personSchema } from "@/lib/seo";
 import "@/app/globals.css";
 import "@/styles/prose.css";
 
-const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+// Concept 03 typography: a contemporary serif for headings and editorial reading,
+// paired with a restrained sans for controls, labels and utility text. Both are
+// declared as CSS variables so the token layer falls back to a local stack if a
+// font fails to load.
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-source-sans",
+  display: "swap",
+});
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 // Use the commit sha (or a timestamp fallback) to bust social caches of og:image
@@ -23,7 +38,7 @@ export const metadata: Metadata = {
     template: "%s · Velcrafting",
   },
   description:
-    "Strategic communications leader turning complexity into clarity across AI, Web3, and global communities.",
+    "Steven Pajewski / velcrafting: Founder, Technical Consultant & Product Builder focused on communications, brand trust, and practical AI systems.",
   icons: { icon: "/logo.svg" },
 
   openGraph: {
@@ -55,9 +70,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.className} ${geistMono.variable}`}>
-      {/* lock viewport height and prevent document scrolling */}
-      <body className="antialiased h-dvh overflow-hidden">
+    <html
+      lang="en"
+      // The pre-paint theme script sets the light/dark class on this element before paint,
+      // so the client class is intentionally not the server's. Suppressing the warning here
+      // is what keeps a correct, flash-free theme from being reported as a hydration bug.
+      suppressHydrationWarning
+      className={`${sourceSerif.variable} ${sourceSans.variable} ${geistMono.variable}`}
+    >
+      <body className="antialiased">
+        {/*
+          Theme initialisation, first in the body so it runs before the rest of the document
+          is painted. Deliberately a raw inline <script>, not next/script: next/script defers,
+          which is exactly the wrong-theme flash this prevents. The logic lives beside the
+          provider it must agree with (THEME_INIT_SCRIPT) so the two cannot drift.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <Script
           id="ld-organization-global"
           type="application/ld+json"
@@ -69,26 +97,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema()) }}
         />
         <Providers>
-          <div className="w-full h-full">
-            {/* fill viewport and hide overflow at this level */}
-            <div className="grid h-full grid-cols-1 2xl:grid-cols-[320px_1fr] overflow-hidden">
-              {/* fixed rail */}
-              <aside className="w-[320px] shrink-0 hidden 2xl:block">
+          <GuidedChatProvider>
+            {/*
+              Ordinary document scrolling. The previous shell locked the viewport
+              height and scrolled inside <main>, which trapped nested scrolling and
+              conflicted with the mobile reading order concept 03 requires. The rail
+              is sticky instead of a fixed-height scroll region.
+            */}
+            <a className="skip-link" href="#main">
+              Skip to content
+            </a>
+            <div className="grid min-h-dvh grid-cols-1 2xl:grid-cols-[256px_1fr]">
+              <aside className="hidden w-[256px] shrink-0 2xl:block">
                 <div className="sticky top-0 h-dvh">
                   <Sidebar />
                 </div>
               </aside>
 
-              {/* the only scrollable area */}
-              <main className="h-dvh overflow-y-auto px-6 mb-6 md:px-10 lg:px-12 scroll-area">
-                {/* Mobile top bar with hamburger menu */}
+              <main id="main" className="px-[var(--gutter)] pb-[var(--space-8)] md:px-10 lg:px-12">
                 <div className="2xl:hidden pt-4">
                   <MobileHeader />
                 </div>
                 {children}
               </main>
             </div>
-          </div>
+          </GuidedChatProvider>
         </Providers>
       </body>
     </html>

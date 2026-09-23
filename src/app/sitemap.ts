@@ -1,6 +1,10 @@
 // src/app/sitemap.ts
 import type { MetadataRoute } from "next";
-import { allProjects, allWriting, allLabs } from "@/lib/content";
+import {
+  allPublicProjects,
+  allPublicWriting,
+  allPublicLabs,
+} from "@/lib/content";
 import { loadMicros } from "@/lib/micros";
 import { SITE_URL } from "@/lib/seo";
 
@@ -22,10 +26,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL;
   const now = new Date();
 
+  // Only publicly visible items appear in the sitemap. Drafts, scheduled
+  // future items, and unknown-status articles are excluded everywhere.
   const [projects, writing, labs, micros] = await Promise.all([
-    allProjects(),
-    allWriting(),
-    allLabs(),
+    allPublicProjects(),
+    allPublicWriting(),
+    allPublicLabs(),
     loadMicros(),
   ]);
 
@@ -38,7 +44,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/projects`, priority: 0.7, changeFrequency: "weekly", lastModified: latestDate(projects, now) },
     { url: `${base}/blog`, priority: 0.6, changeFrequency: "weekly", lastModified: latestDate(writing, now) },
     { url: `${base}/tools`, priority: 0.6, changeFrequency: "weekly", lastModified: latestDate(tools, now) },
-    { url: `${base}/contact`, priority: 0.5, changeFrequency: "yearly", lastModified: now },
+    // /connect replaced /contact here under D1: /contact is a permanent redirect, and a
+    // redirecting URL does not belong in a sitemap. The surviving page is now listed.
+    { url: `${base}/connect`, priority: 0.6, changeFrequency: "monthly", lastModified: now },
     { url: `${base}/art`, priority: 0.4, changeFrequency: "monthly", lastModified: now },
   ];
 

@@ -1,8 +1,16 @@
 // src/app/api/cms/sync/route.ts - API for agent-dashboard to push content
-import fs from "fs/promises";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import {
+  assertSafeRawName,
+  normalizeContentName,
+  resolveSafeContentPath,
+  resolveSafeExistingContentPath,
+  UnsafeContentPathError,
+  filesystemContentWritesEnabled,
+} from "@/lib/content-paths";
 
 const ADMIN_COOKIE = "admin";
 
@@ -11,11 +19,11 @@ async function verifyAuth(req: NextRequest) {
   // Check agent API key
   const apiKey = req.headers.get("x-agent-key");
   const expectedAgentKey = process.env.AGENT_SYNC_KEY;
-  
+
   if (expectedAgentKey && apiKey === expectedAgentKey) {
     return true;
   }
-  
+
   // Check cookie auth
   const key = process.env.ADMIN_KEY;
   const store = await cookies();
@@ -23,10 +31,30 @@ async function verifyAuth(req: NextRequest) {
   return Boolean(key && cookie && cookie === key);
 }
 
+// Shared content-root path used by every handler below.
+function blogContentRoot(): string {
+  return path.join(process.cwd(), "src", "content");
+}
+
+// (Raw-name validation and normalization live in src/lib/content-paths.ts.)
+
+function unsafePathResponse(err: unknown): NextResponse {
+  if (err instanceof UnsafeContentPathError) {
+    return NextResponse.json(
+      { error: "Unsafe content path", code: err.code, message: err.message },
+      { status: 400 },
+    );
+  }
+  throw err;
+}
+
 export async function POST(req: NextRequest) {
   // Verify auth
   if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!filesystemContentWritesEnabled()) {
+    return NextResponse.json({ error: "Filesystem CMS writes are disabled in hosted storage mode" }, { status: 410 });
   }
 
   try {
@@ -40,9 +68,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sanitize slug
-    const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const safePillar = pillar.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    if (typeof pillar !== "string" || typeof slug !== "string") {
+      return NextResponse.json(
+        { error: "pillar and slug must be strings" },
+        { status: 400 },
+      );
+    }
+
+    // Validate dangerous syntax on every raw name, then normalize.
+    try {
+      assertSafeRawName(pillar, "pillar");
+      assertSafeRawName(slug, "slug");
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+    let safePillar: string;
+    let safeSlug: string;
+    try {
+      safePillar = normalizeContentName(pillar, "pillar");
+      safeSlug = normalizeContentName(slug, "slug");
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+
+    // Resolve and validate the destination path before any filesystem effect.
+    let filePath: string;
+    try {
+      filePath = await resolveSafeContentPath(
+        blogContentRoot(),
+        safePillar,
+        safeSlug,
+        ".mdx",
+      );
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
 
     // Build frontmatter
     const tagsArray = Array.isArray(tags) ? tags : tags?.split(",").map((t: string) => t.trim()).filter(Boolean) || [];
@@ -61,9 +121,8 @@ export async function POST(req: NextRequest) {
     const fullContent = `${frontmatter}\n\n${content || ""}`;
 
     // Write file
-    const pillarDir = path.join(process.cwd(), "src", "content", "blog", safePillar);
+    const pillarDir = path.dirname(filePath);
     await fs.mkdir(pillarDir, { recursive: true });
-    const filePath = path.join(pillarDir, `${safeSlug}.mdx`);
     await fs.writeFile(filePath, fullContent, "utf8");
 
     return NextResponse.json({
@@ -134,6 +193,9 @@ export async function PUT(req: NextRequest) {
   if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!filesystemContentWritesEnabled()) {
+    return NextResponse.json({ error: "Filesystem CMS writes are disabled in hosted storage mode" }, { status: 410 });
+  }
 
   try {
     const body = await req.json();
@@ -142,11 +204,67 @@ export async function PUT(req: NextRequest) {
     if (!pillar || !slug) {
       return NextResponse.json({ error: "Missing pillar or slug" }, { status: 400 });
     }
+    if (typeof pillar !== "string" || typeof slug !== "string") {
+      return NextResponse.json({ error: "pillar and slug must be strings" }, { status: 400 });
+    }
+    if (newPillar !== undefined && typeof newPillar !== "string") {
+      return NextResponse.json({ error: "newPillar must be a string" }, { status: 400 });
+    }
+    if (newSlug !== undefined && typeof newSlug !== "string") {
+      return NextResponse.json({ error: "newSlug must be a string" }, { status: 400 });
+    }
 
-    const safePillar = pillar.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const targetPillar = (newPillar || safePillar).toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const targetSlug = (newSlug || safeSlug).toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    // Validate dangerous syntax on every raw name, then normalize.
+    try {
+      assertSafeRawName(pillar, "pillar");
+      assertSafeRawName(slug, "slug");
+      if (newPillar !== undefined) assertSafeRawName(newPillar, "newPillar");
+      if (newSlug !== undefined) assertSafeRawName(newSlug, "newSlug");
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+    let safePillar: string;
+    let safeSlug: string;
+    let targetPillar: string;
+    let targetSlug: string;
+    try {
+      safePillar = normalizeContentName(pillar, "pillar");
+      safeSlug = normalizeContentName(slug, "slug");
+      targetPillar = newPillar !== undefined
+        ? normalizeContentName(newPillar, "newPillar")
+        : safePillar;
+      targetSlug = newSlug !== undefined
+        ? normalizeContentName(newSlug, "newSlug")
+        : safeSlug;
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+
+    // Validate the *original* (existing) path before any unlink.
+    let oldRealFile: string | null = null;
+    try {
+      oldRealFile = await resolveSafeExistingContentPath(
+        blogContentRoot(),
+        safePillar,
+        safeSlug,
+        ".mdx",
+      );
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+
+    // Validate the *target* path before any write or unlink.
+    let filePath: string;
+    try {
+      filePath = await resolveSafeContentPath(
+        blogContentRoot(),
+        targetPillar,
+        targetSlug,
+        ".mdx",
+      );
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
 
     // Build frontmatter
     const tagsArray = Array.isArray(tags) ? tags : tags?.split(",").map((t: string) => t.trim()).filter(Boolean) || [];
@@ -164,20 +282,19 @@ export async function PUT(req: NextRequest) {
 
     const fullContent = `${frontmatter}\n\n${content || ""}`;
 
-    // Delete old if moving
-    if (safePillar !== targetPillar || safeSlug !== targetSlug) {
-      const oldPath = path.join(process.cwd(), "src", "content", "blog", safePillar, `${safeSlug}.mdx`);
-      await fs.unlink(oldPath).catch(() => {});
+    // Delete old if moving. Only after both paths are validated.
+    const rename = safePillar !== targetPillar || safeSlug !== targetSlug;
+    if (rename && oldRealFile) {
+      await fs.unlink(oldRealFile).catch(() => {});
     }
 
     // Write new
-    const pillarDir = path.join(process.cwd(), "src", "content", "blog", targetPillar);
+    const pillarDir = path.dirname(filePath);
     await fs.mkdir(pillarDir, { recursive: true });
-    const filePath = path.join(pillarDir, `${targetSlug}.mdx`);
     await fs.writeFile(filePath, fullContent, "utf8");
 
     return NextResponse.json({ success: true, path: `/blog/${targetPillar}/${targetSlug}` });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 }
@@ -186,6 +303,9 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!filesystemContentWritesEnabled()) {
+    return NextResponse.json({ error: "Filesystem CMS writes are disabled in hosted storage mode" }, { status: 410 });
   }
 
   try {
@@ -197,11 +317,34 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Missing pillar or slug" }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), "src", "content", "blog", pillar, `${slug}.mdx`);
-    await fs.unlink(filePath);
+    // Validate raw names (DELETE uses existing-path semantics: must not
+    // normalize away a non-existent file).
+    try {
+      assertSafeRawName(pillar, "pillar");
+      assertSafeRawName(slug, "slug");
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+
+    const safePillar = pillar.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+
+    let realFile: string;
+    try {
+      realFile = await resolveSafeExistingContentPath(
+        blogContentRoot(),
+        safePillar,
+        safeSlug,
+        ".mdx",
+      );
+    } catch (err) {
+      return unsafePathResponse(err);
+    }
+
+    await fs.unlink(realFile);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

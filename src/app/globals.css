@@ -3,227 +3,564 @@
 @plugin "@tailwindcss/typography";
 @import "katex/dist/katex.min.css";
 
-/* ====== Tokens ====== */
+/* ==========================================================================
+   Velcrafting design tokens — concept 03 ("open notebook")
+   Authority: VELCRAFTING_DESIGN_PRINCIPLES.md (version concept 03).
+   Rules: named tokens only, no page-specific hex values, semantic names for
+   roles. The retired choices (cobalt square, oversized "Vel." brand block,
+   geometric display type, boxed-card grid, brooding dark reading surface) must
+   not reappear here.
+   ========================================================================== */
+
 :root {
-  /* Dark defaults */
-  --background: #141414;     /* page bg */
-  --surface:    #111111;     /* panels/rail/cards */
-  --foreground: #e7e7e7;     /* primary text */
-  --muted:      #9a9a9a;     /* secondary text */
-  --radius:     16px;        /* rounded-2xl vibe */
+  /* --- primitives (the only place these hex values may appear) --- */
+  --parchment: #eae5d8;      /* main tinted reading background */
+  --paper-raised: #f4f0e6;   /* subtle lighter surface for grouping */
+  --ink: #2f2c32;            /* warm dark text */
+  --forest: #3c5749;         /* primary actions, restrained identity accent */
+  --violet: #735b80;         /* links, selected editorial emphasis */
+  --violet-strong: #5b4566;  /* small text ON a tinted fill: the link violet clears 4.5:1 on
+                                parchment but only reaches 4.42:1 on the lavender tint, so
+                                12px status labels need this deeper step */
+  --lavender-wash: #e3dce6;  /* quiet selection / callout background */
+  --muted-ink: #625c65;      /* supporting copy (contrast-validated) */
+  --rule: #bbb3a5;           /* decorative hairlines */
+  --plum-dark: #392f3d;      /* reverse face, sparse high-contrast feature */
+  --white: #ffffff;          /* QR background, high-contrast button text */
 
-  /* Next/font variables */
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Functional UI state colours. These are not brand colours: they exist so
+     form and status feedback can be token-driven and contrast-checked like
+     everything else instead of being hardcoded per component. */
+  --danger-ink: #8f3325;     /* error text on parchment (contrast-checked) */
+  --success-ink: #2b5f45;    /* success text on parchment (contrast-checked) */
+  --warn-ink: #7a5418;       /* scheduled / caution text on parchment */
+  --warn-fill: #e8d9b8;      /* scheduled / caution chip background */
 
-  /* rings and borders */
-  --border:     34 34 34;    /* rgb triplet for borders */
-  --ring:       255 255 255; /* focus ring in dark */
+  /* --- semantic roles --- */
+  --background: var(--parchment);
+  --surface: var(--paper-raised);
+  --foreground: var(--ink);
+  --muted: var(--muted-ink);
+  --link: var(--violet);
+  --link-strong: var(--violet-strong);
+  --accent: var(--forest);
+  --selection: var(--lavender-wash);
+  --border: 187 179 165;     /* --rule as an rgb triplet for alpha borders */
+  --ring: 60 87 73;          /* focus ring uses the accent, always visible */
+
+  /* --- role aliases that the two themes must supply separately, so a themed rule
+     never mixes an inverted primitive with a background from the other theme */
+  --field-background: var(--white);
+  --on-accent: var(--white);
+
+  /* --- shadcn-compatible semantic roles -----------------------------------
+     Added for the shadcn/ui foundation (docs/2026-refresh.md §4). These are
+     ALIASES onto the concept-03 roles above, not a second palette: every value
+     resolves to an existing token, so an adapted shadcn component inherits the
+     brand instead of importing a default theme.
+
+     --accent deliberately keeps its established forest meaning; the shadcn
+     "accent" (a quiet hover surface) is expressed here as --secondary, which is
+     the lavender wash. Do not add a competing --accent. */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--accent);
+  --primary-foreground: var(--on-accent);
+  --secondary: var(--lavender-wash);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted-ink);
+  --destructive: var(--danger-ink);
+  --destructive-foreground: var(--white);
+  --input: rgb(var(--border));
+
+  /* --- radius: 4–6px, rare shallow surfaces, no repeated bordered cards --- */
+  --radius-chip: 4px;
+  --radius-surface: 6px;
+  --radius: 6px;             /* legacy alias kept so existing components work */
+
+  /* --- spacing scale: 4 8 12 16 24 32 48 64 --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --gutter: 20px;            /* mobile gutter, reduces to 16px at 320px */
+
+  /* --- measures --- */
+  --measure-prose: 66ch;     /* 60–70 characters */
+  --measure-connect: 440px;  /* the connect column */
+  --measure-index: 1160px;   /* broader index max (1120–1200) */
+
+  /* --- type --- */
+  /* Font families are provided as next/font CSS variables by the root layout.
+     These stacks are the documented cross-medium fallback, so the palette and
+     rhythm survive a font-loading failure. */
+  --font-serif: var(--font-source-serif), "Source Serif 4", "Iowan Old Style",
+    Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-source-sans), "Source Sans 3", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* fluid content scale: mobile H1 30–36 / desktop 40–48, H2 24–30 */
+  --step-h1: clamp(1.875rem, 1.35rem + 2.4vw, 3rem);
+  --step-h2: clamp(1.5rem, 1.22rem + 1.2vw, 1.875rem);
+  --step-h3: clamp(1.2rem, 1.08rem + 0.5vw, 1.4rem);
+  --step-body: 1.0625rem;    /* 17px controls/labels territory */
+  --step-prose: 1.1875rem;   /* 18px article prose (18–20) */
+  --step-meta: 0.8125rem;    /* 13px metadata floor */
+
+  /* --- motion: 120–180ms state feedback only --- */
+  --motion-fast: 120ms;
+  --motion-base: 160ms;
+  --motion-slow: 180ms;
 }
 
-/* Map tokens to Tailwind theme variables */
+/* Map tokens to Tailwind theme variables so utilities are semantic:
+   text-ink, text-muted, bg-paper, border-rule, text-link, bg-accent … */
 @theme inline {
   --color-background: var(--background);
-  --color-surface:    var(--surface);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --color-muted:      var(--muted);
-  --radius:           var(--radius);
+  --color-muted: var(--muted);
+  --color-ink: var(--ink);
+  --color-forest: var(--forest);
+  --color-violet: var(--violet);
+  --color-lavender: var(--lavender-wash);
+  --color-rule: var(--rule);
+  --color-plum: var(--plum-dark);
+  --color-paper: var(--parchment);
+  --color-paper-raised: var(--paper-raised);
+  --color-link: var(--link);
+  --color-accent: var(--accent);
+
+  /* shadcn-compatible utilities (bg-card, text-muted-foreground, border-input,
+     ring-ring …). --border and --ring are rgb triplets, so they are wrapped
+     here rather than aliased directly. */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: rgb(var(--border));
+  --color-input: var(--input);
+  --color-ring: rgb(var(--ring));
+
+  /* Functional UI state colours. These MUST be mapped here to be usable as utilities:
+     `bg-warn-fill` generated nothing until they were, so the scheduled/draft status
+     chip rendered with no background at all. Only the arbitrary-value form
+     (`bg-[var(--warn-fill)]`) worked, which hid the defect. */
+  --color-warn-fill: var(--warn-fill);
+  --color-warn-ink: var(--warn-ink);
+  --color-danger-ink: var(--danger-ink);
+  --color-success-ink: var(--success-ink);
+  --color-on-accent: var(--on-accent);
+  --color-field-background: var(--field-background);
+
+  --radius: var(--radius-surface);
 
   --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
 }
 
-/* Optional: follow user’s system preference as a default.
-   You can still force light by adding .light to <html>. */
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #fafafa;
-    --surface:    #ffffff;
-    --foreground: #171717;
-    --muted:      #5f5f5f;
-    --ring:       17 17 17;
-    --border:     224 224 224;
-  }
-  html { color-scheme: light; }
+/* Pinched gutters on the smallest supported width. */
+@media (max-width: 359px) {
+  :root { --gutter: 16px; }
 }
 
-/* ====== Global base ====== */
-html, body { height: 100%; }
-html { color-scheme: dark; }
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  font-family: var(--font-serif);
+  font-size: var(--step-body);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  background:
-    radial-gradient(1200px 600px at 75% 0%, rgba(255,255,255,0.06), transparent 60%),
-    radial-gradient(900px 500px at 10% 0%, rgba(255,255,255,0.04), transparent 60%),
-    var(--background);
+  /* Flat parchment. The flat colour must look complete if any texture fails. */
+  background-color: var(--background);
   color: var(--foreground);
 }
 
-/* Tablet typography bump: iPad Air/Pro can feel zoomed out.
-   Increase base font-size more aggressively on tablet sizes. */
-@media (min-width: 820px) and (max-width: 1023px) {
-  html { font-size: 18px; } /* small tablets / narrow landscape */
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
 }
-@media (min-width: 820px) and (max-width: 1024px) and (orientation: portrait) {
-  html { font-size: 19px; } /* portrait iPad Air/Pro */
-}
-@media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
-  html { font-size: 18px; } /* iPad Pro landscape */
-}
+h1 { font-size: var(--step-h1); line-height: 1.12; }
+h2 { font-size: var(--step-h2); line-height: 1.2; }
+h3 { font-size: var(--step-h3); line-height: 1.25; }
 
-/* Light theme override via class on <html> */
-html.light {
-  color-scheme: light;
-  --background: #fafafa;
-  --surface:    #ffffff;
-  --foreground: #171717;
-  --muted:      #5f5f5f;
-  --ring:       17 17 17;
-  --border:     224 224 224;
-}
-html.light body {
-  background:
-    radial-gradient(1200px 600px at 75% 0%, rgba(0,0,0,0.05), transparent 60%),
-    radial-gradient(900px 500px at 10% 0%, rgba(0,0,0,0.04), transparent 60%),
-    var(--background);
-}
-
-/* Dark theme override via class on <html> */
-html.dark {
-  color-scheme: dark;
-  --background: #141414;
-  --surface:    #111111;
-  --foreground: #e7e7e7;
-  --muted:      #9a9a9a;
-  --ring:       255 255 255;
-  --border:     34 34 34;
-}
-
-/* ====== App chrome ====== */
-.app-shell {        /* full-viewport frame with padding and soft bg bloom */
-  @apply min-h-dvh p-4 md:p-6;
-}
-
-.panel {            /* main rounded container */
-  @apply mx-auto w-full overflow-hidden rounded-2xl shadow-sm;
-  background-color: color-mix(in oklab, var(--surface) 92%, transparent);
-  border: 1px solid rgb(var(--border) / 0.8);
-  backdrop-filter: blur(1px);
-}
-
-.rail {             /* left navigation rail */
-  background-color: color-mix(in oklab, var(--surface) 95%, transparent);
-  border-right: 1px solid rgb(var(--border) / 0.85);
-}
-
-/* ====== Typography ====== */
-h1, h2, h3 { @apply tracking-tight; }
-h1 { @apply text-neutral-100; }
-h2, h3 { @apply text-neutral-100; }
-p  { @apply text-neutral-300; }
-
-.lead {             /* subheadline under H1 */
-  @apply text-lg text-neutral-400 max-w-3xl;
-}
+p { color: var(--foreground); }
 
 a {
-  @apply text-neutral-200 no-underline;
-  transition: opacity .15s ease, color .15s ease, background-color .15s ease, border-color .15s ease;
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--link) 45%, transparent);
+  transition: text-decoration-color var(--motion-base) ease, color var(--motion-base) ease;
 }
-a:hover { @apply text-white; }
+a:hover { text-decoration-color: currentColor; }
 
-/* prose typography handled in src/styles/prose.css */
-
-/* ====== Components ====== */
-.btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm;
-  border: 1px solid rgb(var(--border) / 0.85);
-  background-color: color-mix(in oklab, var(--surface) 92%, transparent);
-}
-.btn:hover {
-  @apply bg-white/5;
-}
-html.light .btn:hover {
-  @apply bg-neutral-100;
-}
-
-.metric {           /* KPI card */
-  @apply rounded-xl p-4 shadow-sm;
-  border: 1px solid rgb(var(--border) / 0.85);
-  background-color: color-mix(in oklab, var(--surface) 92%, transparent);
-}
-.metric .value { @apply text-3xl font-semibold text-neutral-100; }
-.metric .label { @apply mt-2 text-sm text-neutral-400; }
-
-/* Avatar ring */
-.avatar {
-  @apply h-16 w-16 rounded-full ring-1 ring-white/10;
+/* Controls, labels and utility text use the sans face — never the serif. */
+button,
+input,
+select,
+textarea,
+.utility,
+.meta,
+nav,
+th,
+label {
+  font-family: var(--font-sans);
 }
 
-/* Focus styles */
-:where(a, button, [role="button"], .btn):focus-visible {
+::selection { background: var(--selection); color: var(--ink); }
+
+/* A skip link is visible on first tab, not on load. */
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -3rem;
+  z-index: 50;
+  padding: var(--space-2) var(--space-4);
+  background: var(--plum-dark);
+  color: var(--parchment);
+  border-radius: var(--radius-chip);
+  text-decoration: none;
+  transition: top var(--motion-fast) ease;
+}
+.skip-link:focus-visible { top: var(--space-4); }
+
+/* ==========================================================================
+   Primitives
+   ========================================================================== */
+
+/* Section rules and whitespace do most of the grouping. */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+.rule-strong { border-top-color: color-mix(in oklab, var(--rule) 70%, var(--ink)); }
+
+/* Small forest wordmark — replaces the retired oversized "Vel." brand block. */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-decoration: none;
+}
+.wordmark span[aria-hidden] { font-size: 1.05rem; }
+.wordmark:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.section-gap { margin-top: var(--space-7); }
+.container-narrow { margin-inline: auto; width: 100%; max-width: 72rem; }
+/* The shared public page shell. `container-index` and `container-page` carry the SAME measure and are
+   kept as two names only because pages already reference both; they must never diverge. Every public
+   page shell uses one of these with py-[var(--space-7)], so containers stay consistent across blog,
+   projects and labs instead of each page inventing its own width. */
+.container-index,
+.container-page { margin-inline: auto; width: 100%; max-width: var(--measure-index); }
+/* Wide page shell for composed desktop layouts. VELCRAFTING_DESIGN_PRINCIPLES.md
+   (Spacing scale) requires Connect to use "a responsive desktop composition within
+   the shared wide shell"; approximately 440px may constrain an ACTION GROUP, never
+   the whole desktop page. This class is that shell. */
+/* The action-group measure only. Do NOT put this on a page wrapper: doing so was
+   the desktop defect where the whole Connect page rendered at phone width. */
+.container-connect { margin-inline: auto; width: 100%; max-width: var(--measure-connect); }
+.measure-prose { max-width: var(--measure-prose); }
+
+/* `/links` is a standalone full-bleed route. The page marks itself so the normal
+   shell stays intact for every other route without adding a global redesign. */
+body:has([data-standalone-page="links"]) > div > aside { display: none; }
+body:has([data-standalone-page="links"]) > div.grid { grid-template-columns: minmax(0, 1fr); }
+body:has([data-standalone-page="links"]) > div > main { padding-inline: 0; }
+body:has([data-standalone-page="links"]) > div > main > div:first-child { display: none; }
+
+/* `/links` keeps the approved parchment identity even when the site preference is dark.
+   These values are scoped to the route marker; the user's global theme preference remains intact. */
+[data-standalone-page="links"] {
+  --parchment: #eae5d8;
+  --paper-raised: #f4f0e6;
+  --ink: #2f2c32;
+  --forest: #3c5749;
+  --violet: #735b80;
+  --muted-ink: #625c65;
+  --rule: #bbb3a5;
+  --background: var(--parchment);
+  --surface: var(--paper-raised);
+  --foreground: var(--ink);
+  --muted: var(--muted-ink);
+  --link: var(--violet);
+  --accent: var(--forest);
+}
+
+/*
+  The arcade shelf. A horizontal browsing row, styled rather than left to the platform: snap points so
+  a card lands square, a thin scrollbar tinted from the shared tokens, and overscroll contained so the
+  page behind it does not bounce sideways. Steven, 2026-09-16: "the side scrolling bar needs to look
+  styled.. right now its just blah."
+
+  Tokens only. No raw colour, so the dark theme and any future theme follow for free.
+
+  THE COLUMN CAP (2026-09-17, from the supervisor's 1440px review). This was `minmax(180px, 1fr)`: the
+  flexible maximum meant a shelf holding ONE card stretched that single cabinet to nearly the full page
+  width — a huge blank 16:9 screen, with the title pushed below the fold. Capping the track at a
+  cabinet-sized 360px fixes the lone card while keeping the row's behaviour: cards take 360px when
+  there is room, shrink toward the 180px floor as more are added, and the row scrolls horizontally once
+  the floor is reached. The 180px/360px literals match the existing shelf rules on this block.
+*/
+.arcade-shelf {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 360px);
+  gap: var(--space-4);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+.arcade-shelf > * { scroll-snap-align: start; }
+.arcade-shelf::-webkit-scrollbar { height: 8px; }
+.arcade-shelf::-webkit-scrollbar-track { background: transparent; }
+.arcade-shelf::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 999px;
+}
+.arcade-shelf::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+@media (max-width: 640px) {
+  .arcade-shelf { grid-auto-columns: minmax(148px, 1fr); gap: var(--space-3); }
+}
+
+/* The shelf arrows are a desktop affordance. On touch, the row itself is the interaction. */
+.arcade-arrows { display: none; }
+@media (min-width: 1024px) {
+  .arcade-arrows { display: flex; }
+}
+.meta {
+  font-size: var(--step-meta);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.btn,
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;               /* 48px design target for primary controls */
+  padding: var(--space-3) var(--space-5);
+  font-size: 1rem;
+  font-family: var(--font-sans);
+  border-radius: var(--radius-surface);
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--motion-base) ease, border-color var(--motion-base) ease,
+    color var(--motion-base) ease;
+}
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.btn-primary:hover { background-color: color-mix(in oklab, var(--accent) 88%, black); }
+.btn-secondary {
+  background-color: transparent;
+  color: var(--ink);
+  border-color: color-mix(in oklab, var(--rule) 80%, var(--ink));
+}
+.btn-secondary:hover { background-color: var(--paper-raised); }
+.btn[disabled],
+.btn-primary[disabled],
+.btn-secondary[disabled],
+[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Compact controls keep a 44px minimum target. */
+.btn-compact { min-height: 44px; padding: var(--space-2) var(--space-4); font-size: 0.9375rem; }
+
+/* Form fields: persistent labels, visible boundaries, token colours. Used by the
+   private editor and the contact form so the two surfaces share one control. */
+.field {
+  width: 100%;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--ink);
+  background-color: var(--field-background);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-chip);
+}
+.field-mono { font-family: var(--font-mono); font-size: 0.9375rem; }
+
+/* Modal / drawer backdrop. Uses the plum reverse tone rather than a hard black,
+   so the scrim belongs to the palette instead of bypassing it. */
+.scrim { background-color: color-mix(in oklab, var(--plum-dark) 45%, transparent); }
+
+/* A shallow surface is the exception, not the grid. */
+.surface {
+  background-color: var(--surface);
+  border: 1px solid color-mix(in oklab, var(--rule) 75%, transparent);
+  border-radius: var(--radius-surface);
+  padding: var(--space-5);
+}
+
+/* Legacy aliases kept so existing components keep working after the re-theme. */
+.app-shell { min-height: 100dvh; padding: var(--space-4); }
+.panel {
+  margin-inline: auto;
+  width: 100%;
+  background-color: var(--surface);
+  border: 1px solid color-mix(in oklab, var(--rule) 75%, transparent);
+  border-radius: var(--radius-surface);
+}
+.rail {
+  background-color: var(--surface);
+  border-right: 1px solid color-mix(in oklab, var(--rule) 75%, transparent);
+}
+.lead { font-size: 1.125rem; color: var(--muted); max-width: var(--measure-prose); }
+.metric {
+  padding: var(--space-4);
+  border: 1px solid color-mix(in oklab, var(--rule) 75%, transparent);
+  border-radius: var(--radius-surface);
+  background-color: var(--surface);
+}
+.metric .value { font-size: 1.875rem; font-weight: 600; color: var(--ink); }
+.metric .label { margin-top: var(--space-2); font-size: var(--step-meta); color: var(--muted); }
+.avatar { height: 4rem; width: 4rem; border-radius: 9999px; outline: 1px solid color-mix(in oklab, var(--rule) 80%, transparent); outline-offset: -1px; }
+
+.scroll-area { -webkit-overflow-scrolling: touch; }
+
+/* ==========================================================================
+   Interaction states
+   ========================================================================== */
+
+:where(a, button, [role="button"], .btn, .btn-primary, .btn-secondary, input, select, textarea):focus-visible {
   outline: 2px solid rgb(var(--ring));
   outline-offset: 2px;
+  border-radius: var(--radius-chip);
 }
 
-/* Ensure nested scroll works smoothly on iPad (momentum + vertical pan) */
-.scroll-area {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  touch-action: pan-y;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-/* ====== Light theme component overrides ====== */
-html.light h1, html.light h2, html.light h3 { @apply text-neutral-900; }
-html.light p  { @apply text-neutral-700; }
-html.light a  { @apply text-neutral-900; }
-html.light a:hover { @apply text-black; }
+/* ==========================================================================
+   Reverse face (sparse high-contrast feature: the /connect contact card)
+   ========================================================================== */
 
-html.light .panel { @apply bg-white; border-color: rgb(var(--border)); }
-html.light .rail  { @apply bg-neutral-50; border-color: rgb(var(--border)); }
-html.light .metric { @apply bg-white; border-color: rgb(var(--border)); }
-/* prose light theme handled in src/styles/prose.css */
+.on-plum {
+  background-color: var(--plum-dark);
+  color: var(--parchment);
+}
+.on-plum h1,
+.on-plum h2,
+.on-plum h3 { color: var(--parchment); }
+.on-plum a { color: var(--parchment); }
+.on-plum .meta { color: color-mix(in oklab, var(--parchment) 78%, transparent); }
 
-/* ====== Helpful defaults ====== */
-.container-narrow { @apply mx-auto w-full max-w-6xl; }
-.section-gap { @apply mt-10 md:mt-12; }
+/* ==========================================================================
+   Dark theme — an explicitly themed sibling of the parchment identity, not the
+   default reading experience (concept 03). Every primitive a themed rule reads
+   must be remapped here, otherwise a heading keeps its light-theme ink colour on
+   a dark surface and becomes unreadable.
+   ========================================================================== */
 
-/* ====== Scrollbar polish (WebKit) ====== */
+html.dark {
+  color-scheme: dark;
+
+  /* primitives remapped for the dark surface */
+  --parchment: #211e22;
+  --paper-raised: #2a262b;
+  --ink: #eae5d8;
+  --muted-ink: #c9c1b4;
+  --rule: #5f574c;
+  --lavender-wash: #3a3340;
+  --plum-dark: #15121a;
+  --forest: #47624f;   /* dark enough for --on-accent to stay >= 4.5:1 */
+  --violet: #cbb6d6;
+  /* In dark, the link violet is already light enough for a tinted fill, so the "strong"
+     step is the same value — the token exists to keep one variant expression working. */
+  --violet-strong: #cbb6d6;
+
+  /* semantic roles */
+  --background: var(--parchment);
+  --surface: var(--paper-raised);
+  --foreground: var(--ink);
+  --muted: var(--muted-ink);
+  --link: var(--violet);
+  --accent: var(--forest);
+  --selection: var(--lavender-wash);
+  --border: 95 87 76;
+  --ring: 203 182 214;
+  --field-background: #2f2a30;
+  --on-accent: #ffffff;
+
+  /* Functional state colours need a dark counterpart. The light values are tuned for
+     parchment, and --success-ink / --danger-ink are DARK greens and reds that sit at very
+     low contrast on the dark surface — which would make the status badges unreadable in
+     exactly the theme where status needs to stand out. These keep the same meanings with
+     contrast measured against the dark surface. */
+  --warn-fill: #3a3222;
+  --warn-ink: #e2c98a;
+  --success-ink: #9ccfb2;
+  --danger-ink: #f0a99b;
+}
+html.dark body { background-color: var(--background); }
+html.light {
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   Scrollbar polish (WebKit)
+   ========================================================================== */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background-color: rgba(120,120,120,.35); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(160,160,160,.55); }
-
-/* ====== Animated rainbow utility for icons ====== */
-@keyframes huerotate {
-  from { filter: hue-rotate(0deg); }
-  to   { filter: hue-rotate(360deg); }
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--rule) 70%, transparent);
+  border-radius: 4px;
 }
-
-/* Force icon stroke/fill to follow CSS variables, overriding SVG attributes */
-.gradient-icon svg *,
-.gradient-icon svg {
-  stroke: var(--icon-stroke, currentColor) !important;
-  fill: var(--icon-fill, none) !important;
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
 }
-
-/* Card hover gradient border (subtle) */
-.card-hover-gradient::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 1rem; /* match rounded-2xl */
-  padding: 1px; /* border thickness */
-  background: linear-gradient(135deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6);
-  -webkit-mask: 
-    linear-gradient(#000 0 0) content-box, 
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  opacity: 0;
-  transition: opacity .2s ease;
-  pointer-events: none;
-}
-.card-hover-gradient:hover::before { opacity: 0.9; }

@@ -1,5 +1,15 @@
-import clsx from "clsx";
+// src/components/ui/Input.tsx
+//
+// shadcn-backed shared Input (docs/2026-refresh.md §4).
+//
+// Appearance stays on the shared `.field` token class so inputs, selects and
+// textareas across the contact form and the private editor keep measuring the
+// same. Added here: an invalid state that the shared tokens already own
+// (--danger-ink), so a form can mark a field without inventing a colour, and
+// `cn` so a caller's layout classes merge instead of fighting.
 import { forwardRef } from "react";
+
+import { cn } from "@/lib/utils";
 
 type Props = React.InputHTMLAttributes<HTMLInputElement>;
 
@@ -10,8 +20,9 @@ const Input = forwardRef<HTMLInputElement, Props>(function Input(
   return (
     <input
       ref={ref}
-      className={clsx(
-        "w-full rounded-md border px-3 py-2 text-sm bg-white border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900",
+      className={cn(
+        "field",
+        "aria-[invalid=true]:border-[var(--danger-ink)]",
         className
       )}
       {...rest}

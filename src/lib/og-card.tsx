@@ -58,8 +58,12 @@ export function OgCard({
         }}
       >
         {logoDataUrl ? (
+          // Decorative: the wordmark "Velcrafting" sits directly beside it, so an empty alt is
+          // correct here rather than a description that would be read twice. Added 2026-09-16 to
+          // clear a real jsx-a11y/alt-text warning.
           <img
             src={logoDataUrl}
+            alt=""
             width={44}
             height={44}
             style={{ display: "block" }}

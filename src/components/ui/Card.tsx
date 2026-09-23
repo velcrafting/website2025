@@ -1,4 +1,12 @@
 // src/components/ui/Card.tsx
+//
+// Concept 03: this was the boxed-card component with a violet/blue radial bloom
+// and heavy layered shadows — all retired by the design direction. It is now a
+// shallow token surface: rules and whitespace do the grouping, the surface is the
+// exception rather than the default grid.
+//
+// The prop API is unchanged (variant, hoverLift, className), so existing callers
+// keep working. `hoverLift` still lifts, but the shadow stack is gone.
 import clsx from "clsx";
 
 type CardProps = {
@@ -17,19 +25,12 @@ export default function Card({
   return (
     <div
       className={clsx(
-        "relative rounded-2xl border p-5 transition mt-4",
-  // base tones
-  "bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100",
-        // borders
-        variant === "outline" && "border-neutral-200 dark:border-neutral-800 shadow-sm",
-        variant === "soft" &&
-          "border-neutral-100/70 dark:border-neutral-800/70 shadow-md shadow-black/10 dark:shadow-black/30",
-        variant === "elevated" &&
-          "border-neutral-100/60 dark:border-neutral-800/80 shadow-lg shadow-black/10 dark:shadow-black/40",
-        // subtle tinted backdrop and gradient bloom
-        variant !== "outline" &&
-          "before:absolute before:inset-0 before:-z-10 before:bg-[radial-gradient(40%_60%_at_10%_-10%,rgba(147,51,234,0.06),transparent_60%),radial-gradient(40%_60%_at_110%_120%,rgba(59,130,246,0.05),transparent_60%)]",
-        hoverLift && "hover:-translate-y-[2px] hover:shadow-xl",
+        "relative mt-[var(--space-4)] rounded-[var(--radius-surface)] border p-[var(--space-5)] transition",
+        "bg-surface text-ink",
+        variant === "outline" && "border-rule",
+        variant === "soft" && "border-rule",
+        variant === "elevated" && "border-rule",
+        hoverLift && "hover:-translate-y-[1px] hover:border-ink",
         className
       )}
     >

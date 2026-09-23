@@ -1,5 +1,7 @@
-"use client";
-
+// Presentational MDX component. Rendered on the server by the
+// non-executable body renderer, so it must not be a client component.
+// Concept 03: token border, radius and caption colour. The native/optimised
+// image split, `sizes` and `priority` behaviour are unchanged.
 import Image from "next/image";
 import clsx from "clsx";
 
@@ -24,9 +26,13 @@ export default function Figure({
 }: Props) {
   const useNative = !width || !height;
   return (
-    <figure className={clsx("my-6", className)}>
+    <figure className={clsx("my-[var(--space-5)]", className)}>
       {useNative ? (
-        <img src={src} alt={alt} className="w-full rounded-xl border border-neutral-800" />
+        <img
+          src={src}
+          alt={alt}
+          className="w-full rounded-[var(--radius-surface)] border border-rule"
+        />
       ) : (
         <Image
           src={src}
@@ -35,11 +41,11 @@ export default function Figure({
           height={height}
           sizes="(min-width: 1024px) 860px, 100vw"
           priority={priority}
-          className="h-auto w-full rounded-xl border border-neutral-800"
+          className="h-auto w-full rounded-[var(--radius-surface)] border border-rule"
         />
       )}
       {caption ? (
-        <figcaption className="mt-2 text-sm text-neutral-400 text-center">
+        <figcaption className="meta mt-[var(--space-2)] text-center">
           {caption}
         </figcaption>
       ) : null}

@@ -1,21 +1,20 @@
 import { notFound } from "next/navigation";
-import { loadMDX } from "@/lib/mdx";
+import { findPublicMdxDoc, loadMDX } from "@/lib/mdx";
 import { CaseStudyLayout } from "@/components/layout";
-import MdxClient from "@/components/mdx/MdxClient";
+import MdxServer from "@/components/mdx/MdxServer";
 import type { Frontmatter } from "@/types/content";
 import {
   AUTHOR_NAME,
   SITE_URL,
   articleSchemas,
   buildMetadata,
+  escapeForScriptTag,
   personSchema,
 } from "@/lib/seo";
-import Script from "next/script";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const docs = await loadMDX<Frontmatter>("projects");
-  const doc = docs.find((d) => d.slug === slug);
+  const doc = await findPublicMdxDoc<Frontmatter>("projects", slug);
   if (!doc) return {};
   const fm = doc.frontmatter;
   const og = fm.ogImage || fm.hero || undefined;
@@ -39,8 +38,7 @@ export default async function Page({
 }) {
   const { slug } = await params;
 
-  const docs = await loadMDX<Frontmatter>("projects");
-  const doc = docs.find((d) => d.slug === slug);
+  const doc = await findPublicMdxDoc<Frontmatter>("projects", slug);
   if (!doc || !doc.frontmatter?.title) return notFound();
   const fm = doc.frontmatter;
   const canonicalPath = `/projects/${slug}`;
@@ -54,13 +52,33 @@ export default async function Page({
     tags: fm.tags,
   });
 
-  const tags = new Set((doc.frontmatter.tags ?? []).map((t) => t.toLowerCase()));
-  const related = docs
+  const ldBlog = escapeForScriptTag(JSON.stringify(schemas.blogPosting));
+  const ldTech = escapeForScriptTag(JSON.stringify(schemas.techArticle));
+  const ldBread = escapeForScriptTag(
+    JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Projects", item: `${SITE_URL}/projects` },
+        { "@type": "ListItem", position: 3, name: fm.title, item: `${SITE_URL}/projects/${slug}` },
+      ],
+    }),
+  );
+  const ldAuthor = escapeForScriptTag(JSON.stringify(personSchema()));
+
+  // Related posts from the same kind, public only.
+  const allProjects = await loadMDX<Frontmatter>("projects");
+  const tags = new Set((fm.tags ?? []).map((t) => t.toLowerCase()));
+  const related = allProjects
     .filter((d) => d.slug !== slug)
     .map((d) => {
       const dt = d.frontmatter.date ? Date.parse(d.frontmatter.date) : 0;
       const t = new Set((d.frontmatter.tags ?? []).map((x) => x.toLowerCase()));
-      const overlap = Array.from(tags).reduce((acc, tag) => acc + (t.has(tag) ? 1 : 0), 0);
+      const overlap = Array.from(tags).reduce(
+        (acc, tag) => acc + (t.has(tag) ? 1 : 0),
+        0,
+      );
       return { d, score: overlap * 1000000000 + dt };
     })
     .sort((a, b) => b.score - a.score)
@@ -73,36 +91,31 @@ export default async function Page({
     }));
 
   return (
-    <CaseStudyLayout frontmatter={doc.frontmatter} related={related} basePath="/projects">
-      <Script id="ld-breadcrumb-projects" type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-              { "@type": "ListItem", position: 2, name: "Projects", item: `${SITE_URL}/projects` },
-              { "@type": "ListItem", position: 3, name: doc.frontmatter.title, item: `${SITE_URL}/projects/${slug}` },
-            ],
-          }),
-        }}
+    <CaseStudyLayout frontmatter={fm} related={related} basePath="/projects">
+      {/* Plain <script> elements, not next/script: structured data must be in
+          the initial HTML payload, and next/script defers it out of the
+          server-rendered document. */}
+      <script
+        id="ld-breadcrumb-projects"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: ldBread }}
       />
-      <Script
+      <script
         id="ld-author-projects"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema()) }}
+        dangerouslySetInnerHTML={{ __html: ldAuthor }}
       />
-      <Script
+      <script
         id="ld-blog-projects"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.blogPosting) }}
+        dangerouslySetInnerHTML={{ __html: ldBlog }}
       />
-      <Script
+      <script
         id="ld-tech-projects"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas.techArticle) }}
+        dangerouslySetInnerHTML={{ __html: ldTech }}
       />
-      <MdxClient slug={slug} />
+      <MdxServer source={doc.content} />
     </CaseStudyLayout>
   );
 }

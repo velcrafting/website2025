@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { loadMDX } from "@/lib/mdx";
 import type { Doc, Frontmatter } from "@/types/content";
 import ContentCard from "@/components/listing/ContentCard";
@@ -37,9 +38,9 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
 
   if (!docs.length) {
     return (
-      <div className="w-full py-10">
-        <h1 className="text-2xl font-semibold">Labs</h1>
-        <p className="mt-2 text-neutral-500">Experimental prototypes and WIP tools. No entries yet.</p>
+      <div className="container-index py-[var(--space-7)]">
+        <h1 className="measure-prose">Labs</h1>
+        <p className="meta mt-[var(--space-2)] measure-prose">Experimental prototypes and WIP tools. No entries yet.</p>
       </div>
     );
   }
@@ -69,9 +70,12 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
   const featured = docs.filter((d) => d.frontmatter.featured === true);
 
   return (
-    <div className="w-full py-10">
-      <h1 className="text-2xl font-semibold">Tools & Utilities{tag ? ` · #${tag}` : ""}</h1>
-      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Free, open-source utilities for everyday use. No paywalls, no friction. Just tools to help you get things done.</p>
+    <div className="container-index py-[var(--space-7)]">
+      <h1 className="measure-prose">Tools &amp; Utilities{tag ? ` · #${tag}` : ""}</h1>
+      <p className="meta mt-[var(--space-2)] measure-prose">
+        Free, open-source utilities for everyday use. No paywalls, no friction. Just tools to help you get
+        things done. For something different, visit the <Link href="/arcade">Arcade</Link> or the <Link href="/art">Bouncing Universe</Link>.
+      </p>
       <FilterBar allTags={allTags} placeholder="Search labs..." />
       <FeaturedStrip items={featured} base="/tools" />
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

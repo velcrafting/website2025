@@ -27,6 +27,11 @@ export type Frontmatter = {
   ogImage?: string;   // 1200x630 recommended
   tags?: string[];    // 2-6 lowercase labels
   featured?: boolean; // show in Featured strips on listing pages
+  // Tool/lab launch fields. Both are optional: a tools page must not claim an
+  // embedded experience it cannot deliver, so the page renders real links when
+  // these exist and an honest unavailable state when they do not.
+  repo?: string;      // source repository URL, e.g. "https://github.com/<owner>/<repo>"
+  liveUrl?: string;   // public address the tool actually runs at, if one exists
   // Scheduler fields
   scheduledAt?: string; // ISO date for scheduled publishing
   status?: "draft" | "scheduled" | "published"; // article status
