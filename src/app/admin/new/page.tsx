@@ -1,5 +1,5 @@
 import Workspace from "@/components/layout/Workspace";
-// src/app/admin/new/page.tsx - CMS for creating blog articles with pillars
+// src/app/admin/new/page.tsx - quick capture for private issue drafts
 import fs from "node:fs/promises";
 import path from "node:path";
 import { redirect } from "next/navigation";
@@ -46,7 +46,7 @@ export default async function Page({
 
   return (
     <Workspace measure="form">
-      <h1 className="text-2xl font-semibold">Create Article</h1>
+      <h1 className="text-2xl font-semibold">Capture an Issue Draft</h1>
       <p className="meta mt-1">
         Only the writing is required. Anything you leave empty is generated or defaults.
       </p>
@@ -56,7 +56,7 @@ export default async function Page({
           role="status"
           className="mt-4 rounded-[var(--radius-surface)] border border-[var(--accent)] bg-paper-raised p-3 text-sm text-ink"
         >
-          Saved as a draft at <code>/blog/{created}</code>. Nothing was published.
+          Saved as an unpublished issue draft. Open the editor to review it before publication.
         </p>
       ) : null}
 

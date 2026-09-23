@@ -21,8 +21,9 @@ export async function POST(
   if (denied) return denied;
 
   const { id } = await context.params;
+  let submitted: Record<string, unknown> = {};
   try {
-    const body = await readJsonBody(request);
+    const body = (submitted = await readJsonBody(request));
     const result = (await withEditorStore(async (store) =>
       (await saveIssueRevision(store, {
         itemId: id,
@@ -55,15 +56,11 @@ export async function POST(
     const response = editorErrorResponse(error);
     if (response.status === 409) {
       // Echo the submitted buffer so the client can keep the user's work.
-      const body = await request
-        .clone()
-        .json()
-        .catch(() => ({}) as Record<string, unknown>);
       return NextResponse.json(
         {
           error: "CONFLICT_STALE_REVISION",
           message: "This issue changed since you loaded it. Your text has been preserved.",
-          submitted: body,
+          submitted,
         },
         { status: 409 },
       );

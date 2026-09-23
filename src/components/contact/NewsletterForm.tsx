@@ -65,7 +65,7 @@ export default function NewsletterForm() {
       <p role="status" aria-live="polite" className="meta">
         {state === "sent" ? (
           <span style={{ color: "var(--success-ink)" }}>
-            Subscribed — check your inbox for a confirmation.
+            Thanks, your signup was received.
           </span>
         ) : null}
         {state === "error" ? (

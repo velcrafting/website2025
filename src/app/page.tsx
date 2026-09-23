@@ -22,7 +22,18 @@ export default async function Page() {
   // Existing content only: one featured project and the latest published writing. Nothing
   // here invents a project, a metric, a date or a biographical claim.
   const workbench = featuredProjects()[0];
-  const writing = (await allWriting()).slice(0, 3);
+  const writing = (await allWriting())
+    .sort((a, b) => {
+      const publishedAt = (value: string | undefined) => {
+        const timestamp = Date.parse(value ?? "");
+        return Number.isNaN(timestamp) ? 0 : timestamp;
+      };
+      return (
+        publishedAt(b.frontmatter.date ?? b.frontmatter.scheduledAt) -
+        publishedAt(a.frontmatter.date ?? a.frontmatter.scheduledAt)
+      );
+    })
+    .slice(0, 3);
 
   return (
     <div className="container-index py-[var(--space-7)]">

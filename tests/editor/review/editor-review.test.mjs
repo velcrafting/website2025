@@ -238,10 +238,14 @@ await test("A2: a stale save returns 409 and preserves the submitted buffer", as
 
   const conflicted = await readResponse(
     await revisions.POST(
-      request({
-        expectedRevisionId: firstRevisionId,
-        title: "Conflict",
-        blocks: [{ markdown: "Unsaved buffer text." }],
+      new Request("http://127.0.0.1:3410/api/editor/test", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          expectedRevisionId: firstRevisionId,
+          title: "Conflict",
+          blocks: [{ markdown: "Unsaved buffer text." }],
+        }),
       }),
       { params: (await Promise.resolve({ id: itemId })) },
     ),
