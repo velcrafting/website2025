@@ -37,7 +37,6 @@ const SidebarArtPanel = dynamic(
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/connect", label: "Connect", icon: Compass },
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/blog", label: "Blog", icon: PenSquare },
@@ -46,6 +45,7 @@ const nav = [
   // redirects to /connect, so a second nav item would only name a page that leaves
   // immediately. The URL still resolves for old links (src/app/contact/page.tsx).
   { href: "/arcade", label: "Arcade", icon: Gamepad2 },
+  { href: "/connect", label: "Connect", icon: Compass },
 ];
 
 const adminNav = [

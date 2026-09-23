@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, FileText, Github, Leaf, Linkedin, Mail, Send, UserRound } from "lucide-react";
 
 import ShareButton from "@/components/connect/ShareButton";
-import { GuidedChatTrigger } from "@/components/guided-chat";
 import { SITE } from "@/config/site";
 import { buildMetadata } from "@/lib/seo";
 
@@ -43,10 +42,7 @@ export default function LinksPage() {
           <Link href="/" className="font-serif text-[1.1rem] font-semibold tracking-tight text-ink no-underline hover:underline">
             velcrafting <span className="mx-[var(--space-2)] text-muted">/</span> <em className="font-normal text-link">links</em>
           </Link>
-          <div className="flex items-center gap-[var(--space-2)]">
-            <GuidedChatTrigger className="px-[var(--space-2)]" />
-            <ShareButton canonicalUrl={LINKS_CANONICAL} />
-          </div>
+          <ShareButton canonicalUrl={LINKS_CANONICAL} />
         </header>
 
         <hr className="rule mt-[var(--space-4)]" />

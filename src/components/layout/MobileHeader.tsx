@@ -17,7 +17,6 @@ const SidebarArtPanel = dynamic(() => import("@/app/art/components/SidebarArtPan
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/connect", label: "Connect", icon: Compass },
   { href: "/about", label: "About", icon: User2 },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/blog", label: "Blog", icon: PenSquare },
@@ -25,6 +24,7 @@ const nav = [
   // No "/contact" entry — D1 consolidated connect/contact and /contact now redirects
   // to /connect. The URL still resolves for existing links.
   { href: "/arcade", label: "Arcade", icon: Gamepad2 },
+  { href: "/connect", label: "Connect", icon: Compass },
 ];
 
 export default function MobileHeader() {

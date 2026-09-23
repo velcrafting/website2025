@@ -107,8 +107,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a className="skip-link" href="#main">
               Skip to content
             </a>
-            <div className="grid min-h-dvh grid-cols-1 2xl:grid-cols-[320px_1fr]">
-              <aside className="hidden w-[320px] shrink-0 2xl:block">
+            <div className="grid min-h-dvh grid-cols-1 2xl:grid-cols-[256px_1fr]">
+              <aside className="hidden w-[256px] shrink-0 2xl:block">
                 <div className="sticky top-0 h-dvh">
                   <Sidebar />
                 </div>
