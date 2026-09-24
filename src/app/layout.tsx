@@ -7,7 +7,14 @@ import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
 import { Sidebar } from "@/components/layout";
 import { MobileHeader } from "@/components/layout";
 import { GuidedChatProvider } from "@/components/guided-chat";
-import { SITE_URL, organizationSchema, personSchema } from "@/lib/seo";
+import {
+  SITE_URL,
+  SHARE_CARD_DESCRIPTION,
+  SHARE_CARD_IMAGE,
+  SHARE_CARD_TITLE,
+  organizationSchema,
+  personSchema,
+} from "@/lib/seo";
 import "@/app/globals.css";
 import "@/styles/prose.css";
 
@@ -27,30 +34,29 @@ const sourceSans = Source_Sans_3({
 });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
-// Use the commit sha (or a timestamp fallback) to bust social caches of og:image
-const OG_VERSION =
-  process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? String(Date.now());
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Velcrafting",
     template: "%s · Velcrafting",
   },
-  description:
-    "Steven Pajewski / velcrafting: Founder, Technical Consultant & Product Builder focused on communications, brand trust, and practical AI systems.",
+  description: SHARE_CARD_DESCRIPTION,
   icons: { icon: "/logo.svg" },
 
   openGraph: {
     type: "website",
     url: SITE_URL,
-    siteName: "velcrafting.com",
-    images: [{ url: `/opengraph-image?v=${OG_VERSION}`, width: 1200, height: 630 }],
+    siteName: "Velcrafting",
+    title: SHARE_CARD_TITLE,
+    description: SHARE_CARD_DESCRIPTION,
+    images: [{ url: SHARE_CARD_IMAGE, width: 1200, height: 630 }],
   },
 
   twitter: {
     card: "summary_large_image",
-    images: [`/opengraph-image?v=${OG_VERSION}`],
+    title: SHARE_CARD_TITLE,
+    description: SHARE_CARD_DESCRIPTION,
+    images: [SHARE_CARD_IMAGE],
   },
 
   robots: {

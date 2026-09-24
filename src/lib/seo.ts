@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { SITE } from "@/config/site";
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.velcrafting.com";
+const DEPLOYMENT_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
+export const SITE_URL =
+  process.env.VERCEL_ENV === "preview" && DEPLOYMENT_URL
+    ? DEPLOYMENT_URL
+    : process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.velcrafting.com";
+export const SHARE_CARD_TITLE = "Steven Pajewski · You can call me vel";
+export const SHARE_CARD_DESCRIPTION =
+  "Things I’m making. Ideas I’m researching. Helping you understand, identify opportunities for, and implement AI in your business.";
+export const SHARE_CARD_IMAGE =
+  `/opengraph-image?v=${process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"}`;
 export const AUTHOR_NAME = "Steven Pajewski";
 export const AUTHOR_SAME_AS = [SITE.links.linkedin, SITE.links.github].filter(Boolean);
 export const PERSON_ID = `${SITE_URL}/#person`;
@@ -38,7 +47,6 @@ export function escapeForScriptTag(json: string): string {
 export function buildMetadata(opts: {
   title: string;
   description?: string;
-  ogImage?: string;
   canonicalPath?: string; // e.g. "/blog/my-post"
   article?: {
     publishedTime?: string;
@@ -47,7 +55,6 @@ export function buildMetadata(opts: {
   };
 }): Metadata {
   const fullTitle = titleize(opts.title);
-  const og = opts.ogImage ?? `/og?title=${encodeURIComponent(opts.title)}`;
   const publishedTime = normalizeIsoDate(opts.article?.publishedTime);
 
   return {
@@ -56,19 +63,19 @@ export function buildMetadata(opts: {
     alternates: opts.canonicalPath ? { canonical: opts.canonicalPath } : undefined,
     openGraph: {
       type: opts.article ? "article" : "website",
-      title: fullTitle,
-      description: opts.description,
+      title: SHARE_CARD_TITLE,
+      description: SHARE_CARD_DESCRIPTION,
       url: opts.canonicalPath ? absoluteUrl(opts.canonicalPath) : undefined,
-      images: [og],
+      images: [SHARE_CARD_IMAGE],
       publishedTime,
       authors: opts.article?.authors,
       section: opts.article?.section,
     },
     twitter: {
       card: "summary_large_image",
-      title: fullTitle,
-      description: opts.description,
-      images: [og],
+      title: SHARE_CARD_TITLE,
+      description: SHARE_CARD_DESCRIPTION,
+      images: [SHARE_CARD_IMAGE],
     },
   };
 }
@@ -110,7 +117,7 @@ export function articleSchemas(opts: {
 }) {
   const url = absoluteUrl(opts.canonicalPath);
   const publishedTime = normalizeIsoDate(opts.datePublished);
-  const image = absoluteUrl(opts.image ?? `/og?title=${encodeURIComponent(opts.title)}`);
+  const image = absoluteUrl(opts.image ?? SHARE_CARD_IMAGE);
   const common = {
     "@context": "https://schema.org",
     headline: opts.title,
