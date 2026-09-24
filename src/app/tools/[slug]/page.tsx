@@ -20,11 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const doc = await findPublicMdxDoc<Frontmatter>("labs", slug);
   if (!doc) return {};
   const fm = doc.frontmatter;
-  const og = fm.ogImage || fm.hero || undefined;
   return buildMetadata({
     title: fm.title,
     description: fm.summary,
-    ogImage: og,
     canonicalPath: `/tools/${slug}`,
     article: {
       publishedTime: fm.date,

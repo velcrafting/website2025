@@ -1,8 +1,10 @@
 // src/app/_og/utils.ts
 
-async function pngToDataUrl(relPath: string): Promise<string | null> {
+async function pngToDataUrl(relPath: string, origin?: string): Promise<string | null> {
   try {
-    const ab = await fetch(new URL(relPath, import.meta.url)).then(r => r.arrayBuffer());
+    const response = await fetch(new URL(relPath, origin ?? import.meta.url));
+    if (!response.ok) return null;
+    const ab = await response.arrayBuffer();
     // Edge runtime friendly base64 (no Buffer)
     const bytes = new Uint8Array(ab);
     let bin = "";
@@ -17,10 +19,10 @@ async function pngToDataUrl(relPath: string): Promise<string | null> {
   }
 }
 
-export async function loadOgAssets() {
+export async function loadOgAssets(origin?: string) {
   const [logo, avatar] = await Promise.all([
-    pngToDataUrl("./logo.png"),
-    pngToDataUrl("./avatar.png"),
+    pngToDataUrl(origin ? "/about/logos/velcrafting.png" : "./logo.png", origin),
+    pngToDataUrl(origin ? "/avatar.png" : "./avatar.png", origin),
   ]);
   return { logo, avatar };
 }
