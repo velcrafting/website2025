@@ -5,7 +5,7 @@ const DEPLOYMENT_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_UR
 export const SITE_URL =
   process.env.VERCEL_ENV === "preview" && DEPLOYMENT_URL
     ? DEPLOYMENT_URL
-    : process.env.NEXT_PUBLIC_SITE_URL ?? DEPLOYMENT_URL ?? "https://www.velcrafting.com";
+    : process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.velcrafting.com";
 export const SHARE_CARD_TITLE = "Steven Pajewski · You can call me vel";
 export const SHARE_CARD_DESCRIPTION =
   "Things I’m making. Ideas I’m researching. Helping you understand, identify opportunities for, and implement AI in your business.";
