@@ -30,12 +30,12 @@ export type ReadmeSource = {
 
 export const PERSONAL_README: ReadmeSource = {
   id: "personal",
-  allowedSections: ["Current Focus", "Start Here"],
+  allowedSections: ["Current Focus", "Start Here", "Public Builds"],
 };
 
 export const ORG_README: ReadmeSource = {
   id: "org",
-  allowedSections: ["What We Build", "Start Here", "Recommended Pins"],
+  allowedSections: ["What We Build", "Start Here", "Recommended Pins", "Public Builds"],
 };
 
 export type ReadmeEntry = {
