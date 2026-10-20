@@ -484,6 +484,27 @@ await test("the actual filter/dedupe path: a lane filter and a query over one me
   sameJson(q.map((c) => c.repo), ["VelDesk"]);
 });
 
+
+await test("the actual VelDesk catalog entry merges with its README identity", async () => {
+  const { portfolioProjects } = loader.load("src/lib/portfolio-projects.ts");
+  const project = portfolioProjects.find((entry) => entry.links.some((link) =>
+    /^https:\/\/github\.com\/Vel-Labs\/(?:VelDesk|CommandCode-UI)$/i.test(link.href)));
+  assert.ok(project, "the authored workbench must remain in the catalog");
+  const link = project.links.find((entry) => entry.label === "Repo");
+  const [, owner, repo] = new URL(link.href).pathname.split("/");
+  const view = buildPortfolioView({
+    readmeEntries: [readmeRow("VelDesk", "Agent workbenches")], readmeComplete: true,
+    metadata: { byRepo: { "Vel-Labs/VelDesk": meta({ repo: "VelDesk" }) }, unknown: [], unavailable: [], complete: true },
+    editorial: [{ owner, repo, url: link.href, label: project.name, lane: project.lane }], knownLaneIds: LANES,
+  });
+  assert.equal(view.cards.length, 1, "the README and authored workbench must be one card");
+  assert.equal(project.name, "VelDesk");
+  assert.equal(project.slug, "veldesk");
+  assert.equal(link.href, "https://github.com/Vel-Labs/VelDesk");
+  assert.equal(view.cards[0].curated.label, "VelDesk", "retain the authored project detail");
+  assert.equal(view.cards[0].laneId, "agent-workbenches");
+});
+
 console.log(
   `\nportfolio refresh: ${passed}/${passed + failures.length} passed` +
     (failures.length ? `\n  failing: ${failures.join(", ")}` : ""),

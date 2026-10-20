@@ -68,8 +68,8 @@ export const projectLanes: ProjectLane[] = [
 
 export const portfolioProjects: PortfolioProject[] = [
   {
-    slug: "commandcode-ui",
-    name: "CommandCode-UI",
+    slug: "veldesk",
+    name: "VelDesk",
     lane: "agent-workbenches",
     status: "active",
     featured: true,
@@ -79,7 +79,7 @@ export const portfolioProjects: PortfolioProject[] = [
       "A CLI agent can remain the execution source of truth while the operator gets a calmer cockpit for setup, runtime state, and diagnostics.",
     stack: ["Electron", "React", "TypeScript", "PTY", "local receipts"],
     links: [
-      { label: "Repo", href: "https://github.com/Vel-Labs/CommandCode-UI" },
+      { label: "Repo", href: "https://github.com/Vel-Labs/VelDesk" },
     ],
   },
   {
