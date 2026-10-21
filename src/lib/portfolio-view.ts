@@ -14,8 +14,8 @@
 //      rather than pretended into a filter value.
 //   3. **Newly discovered repositories must be confirmed public.** A row found by a live read renders
 //      only when the metadata read says `private === false`. Private and unknown are withheld and
-//      recorded. Baseline and curated rows are exempt — they are the approved last-good content, and a
-//      cold start must still render them.
+//      recorded. Baseline and curated text survives cold starts. Repository links on every path require
+//      a current confirmed-public answer; withheld metadata cannot restore an external link.
 //   4. **Last-good metadata is kept, not dropped.** A transient or partial refresh leaves previous
 //      validated metadata in place (from the baseline slot); a failure never replaces it with nothing.
 //
@@ -28,8 +28,8 @@
 // less is more." A mixed page — half freshly read, half last-good — is harder to explain and harder to
 // trust than a page that says plainly "serving the snapshot". Do not add per-index partial state
 // without a decision to that effect, and do not let the copy imply it exists.
-//   5. **It never empties and never silently swaps.** A failed read keeps last-good; a read that
-//      succeeds but yields nothing while the baseline had entries is reported as DEGRADED.
+//   5. **Failure keeps the snapshot; successful empty indexes honor withdrawal.** Missing index
+//      headings are a failed read; authored empty sections are a valid empty index.
 
 import { FALLBACK_ENTRIES, FALLBACK_METADATA, FALLBACK_READ_AT } from "./github/fallback";
 import type { ReadmeEntry } from "./github/readme-index";
@@ -126,7 +126,7 @@ export type PortfolioView = {
 };
 
 function keyOf(owner: string, repo: string): string {
-  return `${owner}/${repo}`;
+  return `${owner}/${repo}`.toLowerCase();
 }
 
 /**
@@ -186,9 +186,9 @@ function metadataFor(
   key: string,
   metadata: MetadataRead,
 ): { value: RepoMetadata | null; source: "live" | "baseline" | "none" } {
-  const live = metadata.byRepo[key];
+  const live = Object.entries(metadata.byRepo).find(([identity]) => identity.toLowerCase() === key)?.[1];
   if (live) return { value: live, source: "live" };
-  const baseline = FALLBACK_METADATA[key];
+  const baseline = Object.entries(FALLBACK_METADATA).find(([identity]) => identity.toLowerCase() === key)?.[1];
   if (baseline) return { value: baseline, source: "baseline" };
   return { value: null, source: "none" };
 }
@@ -210,20 +210,20 @@ export function buildPortfolioView(input: {
   // new `pending.push(...)` cannot reintroduce the codename.
   const pending: Omit<PendingReview, "display">[] = [];
 
-  // (5) A read that succeeded but parsed to nothing is DEGRADED, not a new empty truth.
+  // Optional legacy degradation signal; complete authored empty indexes otherwise honor withdrawal.
   const degraded = input.perSourceCounts
     ? Object.keys(input.perSourceCounts).length > 0 &&
       Object.values(input.perSourceCounts).every((count) => count === 0)
     : false;
 
-  const liveNow = readmeEntries.length > 0;
+  const liveNow = readmeComplete && !degraded;
   const readmeRows: Array<{ entry: ReadmeEntry | (typeof FALLBACK_ENTRIES)[number]; discovered: boolean }> =
     liveNow
       ? readmeEntries.map((entry) => ({ entry, discovered: true }))
       : FALLBACK_ENTRIES.map((entry) => ({ entry, discovered: false }));
 
-  const unavailableKeys = new Set(metadata.unavailable.map((entry) => entry.key));
-  const unknownKeys = new Set(metadata.unknown);
+  const unavailableKeys = new Set(metadata.unavailable.map((entry) => entry.key.toLowerCase()));
+  const unknownKeys = new Set(metadata.unknown.map((key) => key.toLowerCase()));
   const editorialByKey = new Map(editorial.map((entry) => [keyOf(entry.owner, entry.repo), entry]));
   const seen = new Set<string>();
   const cards: PortfolioCard[] = [];
@@ -241,10 +241,11 @@ export function buildPortfolioView(input: {
     const curatedLane = curated && knownLaneIds.has(curated.lane) ? curated.lane : null;
     const meta = metadataFor(key, metadata);
     const section = "section" in entry ? String(entry.section) : "";
+    const publicRepo = meta.source === "live" && !unavailableKeys.has(key) && !unknownKeys.has(key) && meta.value?.private === false;
     const base = {
       owner: entry.owner,
       repo: entry.repo,
-      url: entry.url,
+      url: publicRepo ? entry.url : "",
       label: entry.label,
       displayName: publicDisplayName(entry.owner, entry.repo, entry.label),
       section,
@@ -262,37 +263,35 @@ export function buildPortfolioView(input: {
       metadataSource: meta.source,
     };
 
-    // A confirmed 404 is a removal, recorded explicitly.
-    if (unavailableKeys.has(key)) {
-      pending.push({ key, reason: "confirmed absent — excluded, recorded for review" });
-      continue;
+    // Confirmed absence, identity mismatch or private metadata withholds the repository link.
+    if (unavailableKeys.has(key) || meta.value?.private === true) {
+      pending.push({ key, reason: meta.value?.private === true ? "confirmed private — repository link withheld" : "repository unavailable — repository link withheld" });
+      if (!curated) continue;
     }
 
-    // (3) Rows discovered by a live read need a confirmed-public answer.
-    if (discovered) {
-      if (meta.value && meta.value.private === true) {
-        pending.push({ key, reason: "confirmed private — excluded" });
-        continue;
-      }
-      if (unknownKeys.has(key) || !meta.value || meta.value.private !== false) {
+    // New repository links require confirmed public metadata; authored case studies remain readable.
+    if (discovered && !publicRepo && !curated) {
+      if (!unavailableKeys.has(key) && meta.value?.private !== true) {
         pending.push({ key, reason: "public status unconfirmed — withheld from new cards" });
-        continue;
       }
+      continue;
     }
 
     cards.push(base);
   }
 
-  // (1) Curated entries the READMEs exclude (site-only, local-only) are appended once and are never
-  //     subject to the discovery gate.
+  // Authored case studies absent from the README remain readable; their repository links require
+  // the same confirmed-public metadata as indexed links.
   for (const entry of editorial) {
     const key = keyOf(entry.owner, entry.repo);
     if (seen.has(key)) continue;
     seen.add(key);
+    const meta = metadataFor(key, metadata);
+    const publicRepo = meta.source === "live" && !unavailableKeys.has(key) && !unknownKeys.has(key) && meta.value?.private === false;
     cards.push({
       owner: entry.owner,
       repo: entry.repo,
-      url: entry.url,
+      url: publicRepo ? entry.url : "",
       label: entry.label,
       displayName: publicDisplayName(entry.owner, entry.repo, entry.label),
       section: "",
@@ -324,7 +323,7 @@ export function buildPortfolioView(input: {
       : `Read from the public indexes — partial: some repository metadata could not be read. ${ageLabel}.`
     : degraded
       ? `A read succeeded but produced no usable entries, so the committed baseline is being served. ${ageLabel}.`
-      : `No usable read: serving the committed baseline — not a live refresh. ${ageLabel}.`;
+      : `Incomplete public index read: serving the committed baseline for both indexes — not a live refresh. ${ageLabel}.`;
 
   return {
     cards,
@@ -340,7 +339,7 @@ export function buildPortfolioView(input: {
 /**
  * Whether a confirmed 404 should remove an entry that is currently displayed.
  *
- * Stated as a function so the policy is in one place: only `unavailable` (a 404) removes; a transient
+ * Stated as a function so the policy is in one place: only `unavailable` (absence or identity mismatch) removes; a transient
  * failure never does.
  */
 export function removalPolicy(metadata: MetadataRead): { remove: string[]; keep: string[] } {

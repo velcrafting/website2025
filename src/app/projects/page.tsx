@@ -14,6 +14,7 @@ import {
 import { buildPortfolioView, type EditorialCard, type PortfolioCard } from "@/lib/portfolio-view";
 
 import { Badge } from "@/components/ui";
+import { FALLBACK_ENTRIES } from "@/lib/github/fallback";
 import RepoVersionChip from "@/components/listing/RepoVersionChip";
 
 export const generateMetadata = () =>
@@ -62,9 +63,11 @@ const statusVariant: Record<
 
 function ProjectIndexCard({
   project,
+  card,
   release,
 }: {
   project: PortfolioProject;
+  card?: PortfolioCard;
   /**
    * The result of this repository's `release-note.json` read. `null` also renders no chip, so a
    * missing read can never produce a version. The status is on the article either way, so "the
@@ -77,6 +80,7 @@ function ProjectIndexCard({
   return (
     <article
       className="surface flex h-full flex-col"
+      data-project-repository={card?.url ? `${card.owner}/${card.repo}`.toLowerCase() : undefined}
       data-repo-version-state={release?.status ?? "not-read"}
     >
       <div className="flex flex-wrap items-center gap-[var(--space-2)]">
@@ -152,6 +156,7 @@ function ImportedIndexCard({
     <article
       className="surface flex h-full flex-col"
       data-imported="true"
+      data-project-repository={card.url ? `${card.owner}/${card.repo}`.toLowerCase() : undefined}
       data-repo-version-state={release?.status ?? "not-read"}
     >
       <div className="flex flex-wrap items-center gap-[var(--space-2)]">
@@ -174,10 +179,11 @@ function ImportedIndexCard({
       </div>
 
       <h2 className="mt-[var(--space-3)] text-[1.3rem]">
-        <a href={card.url} target="_blank" rel="noopener noreferrer" className="font-medium">
-          {card.displayName}
-          <span aria-hidden="true"> ↗</span>
-        </a>
+        {card.url ? (
+          <a href={card.url} target="_blank" rel="noopener noreferrer" className="font-medium">
+            {card.displayName}<span aria-hidden="true"> ↗</span>
+          </a>
+        ) : card.displayName}
       </h2>
       <p className="meta mt-[var(--space-2)]">
         {card.owner}/{card.repo}
@@ -188,9 +194,11 @@ function ImportedIndexCard({
       <RepoVersionChip read={release} className="mt-[var(--space-3)]" />
 
       <div className="mt-auto flex flex-wrap gap-[var(--space-4)] pt-[var(--space-5)]">
-        <a href={card.url} target="_blank" rel="noopener noreferrer" className="font-medium">
-          Repository<span aria-hidden="true"> ↗</span>
-        </a>
+        {card.url ? (
+          <a href={card.url} target="_blank" rel="noopener noreferrer" className="font-medium">
+            Repository<span aria-hidden="true"> ↗</span>
+          </a>
+        ) : <span className="meta">Public repository link unavailable</span>}
       </div>
     </article>
   );
@@ -232,7 +240,11 @@ export default async function Page({
   const publicIndex = await (async () => {
     try {
       const readme = await readReadmeIndexes(fetch);
-      const refs = readme.extractions.flatMap((extraction) => extraction.entries).map((entry) => ({
+      const refs = [
+        ...readme.extractions.flatMap((extraction) => extraction.entries),
+        ...FALLBACK_ENTRIES,
+        ...editorialCards,
+      ].map((entry) => ({
         owner: entry.owner,
         repo: entry.repo,
       }));
@@ -273,7 +285,7 @@ export default async function Page({
    * version carried over from another repository, and no fallback value anywhere in this path.
    */
   const releaseNotes = await readRepoReleaseNotes(
-    indexedCards.map((card) => ({ owner: card.owner, repo: card.repo })),
+    indexedCards.filter((card) => card.url).map((card) => ({ owner: card.owner, repo: card.repo })),
     fetch,
   );
 
@@ -360,6 +372,13 @@ export default async function Page({
     return okLane && okStatus && okQuery;
   });
 
+  const localProjects = portfolioProjects.filter((project) =>
+    !project.links.some((link) => link.href.startsWith("https://github.com/")));
+  const filteredLocalProjects = localProjects.filter((project) =>
+    (!lane || project.lane === lane) && (!status || project.status === status) &&
+    (!q || [project.name, project.summary, project.proves, ...project.stack]
+      .join(" ").toLowerCase().includes(q.trim().toLowerCase())));
+
   return (
     <div className="container-index py-[var(--space-7)]">
       <section>
@@ -442,7 +461,7 @@ export default async function Page({
               data-index-fp={indexFingerprint}
               data-upstream-contaminated={overrideIneffective ? "true" : "false"}
             >
-              Showing {mergedFiltered.length} of {indexedCards.length} projects. {publicIndex.freshness}
+              Showing {mergedFiltered.length + filteredLocalProjects.length} of {indexedCards.length + localProjects.length} projects. {publicIndex.freshness}
               {publicIndex.enrichmentPartial
                 ? " Some repository metadata could not be read, so those fields are omitted."
                 : ""}{" "}
@@ -481,21 +500,28 @@ export default async function Page({
             const project = curatedByRepo.get(`${card.owner}/${card.repo}`.toLowerCase());
             const release = releaseNotes.byRepo[`${card.owner}/${card.repo}`] ?? null;
             return project ? (
-              <ProjectIndexCard key={project.slug} project={project} release={release} />
+              <ProjectIndexCard key={project.slug} card={card} project={{
+                ...project,
+                links: project.links.filter((link) => !link.href.startsWith("https://github.com/") ||
+                  link.href.replace(/\/$/, "").toLowerCase() === card.url.toLowerCase()),
+              }} release={release} />
             ) : (
               <ImportedIndexCard key={`${card.owner}/${card.repo}`} card={card} release={release} />
             );
           })}
+          {filteredLocalProjects.map((project) => (
+            <ProjectIndexCard key={project.slug} project={project} release={null} />
+          ))}
         </div>
 
-        {mergedFiltered.length === 0 ? (
+        {mergedFiltered.length + filteredLocalProjects.length === 0 ? (
           <p className="surface meta mt-[var(--space-5)]">No projects match this filter.</p>
         ) : null}
 
         {publicIndex.pending.length ? (
           <details className="mt-[var(--space-4)]">
             <summary className="meta cursor-pointer">
-              Listed in an index but not shown ({publicIndex.pending.length})
+              Repository links withheld ({publicIndex.pending.length})
             </summary>
             <ul className="mt-[var(--space-2)] list-none pl-0">
               {publicIndex.pending.map((entry, i) => (
@@ -505,7 +531,7 @@ export default async function Page({
                 // unique within this static server-rendered list without publishing the identity.
                 <li key={`${entry.display}-${i}`} className="meta">
                   {/* `display` is the public name; `entry.key` remains the machine identity in the data. */}
-                  {entry.display} — {entry.reason}
+                  {entry.reason}
                 </li>
               ))}
             </ul>
