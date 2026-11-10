@@ -5,7 +5,7 @@ import Link from "next/link";
 import SecretAvatar from "@/components/SecretAvatar";
 import { usePathname } from "next/navigation";
 import Drawer from "@/components/ui/Drawer";
-import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, PenSquare, User2, LucideHammer, Compass, Gamepad2 } from "lucide-react";
+import { Github, Linkedin, Mail, FileText, Menu, X, Home, FolderKanban, PenSquare, User2, LucideHammer, Compass, Gamepad2, BriefcaseBusiness } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { GradientIcon } from "@/components/ui";
@@ -24,6 +24,7 @@ const nav = [
   // No "/contact" entry — D1 consolidated connect/contact and /contact now redirects
   // to /connect. The URL still resolves for existing links.
   { href: "/arcade", label: "Arcade", icon: Gamepad2 },
+  { href: "/consulting", label: "Consulting", icon: BriefcaseBusiness },
   { href: "/connect", label: "Connect", icon: Compass },
 ];
 
