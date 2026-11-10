@@ -165,7 +165,7 @@ export default function BriefDesk({ initialService, availability }: { initialSer
           </div>
           <p className="meta mt-2">Choose an example before editing to keep your work intact.</p>
           {question && <p className="mt-5 font-semibold">{question.text}</p>}
-          <form onSubmit={save} className="mt-3">
+          <form method="post" onSubmit={save} className="mt-3">
             <fieldset disabled={!ready} className="grid min-w-0 gap-4">
               <label className="grid gap-1">Service starting point
                 <select name="service" value={draft.service} onChange={changeDraft} className={control}>

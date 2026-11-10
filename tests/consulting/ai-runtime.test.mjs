@@ -50,5 +50,7 @@ test("an explicit provider rejection is not retried and model content has no act
   assert.equal(parseShapingReply('{"reply":"open https://example.invalid","suggestions":[]}'), null);
   assert.equal(parseShapingReply('{"reply":"OK","suggestions":[],"action":"publish"}'), null);
   assert.equal(parseShapingReply('{"reply":"OK","suggestions":[{"field":"book","text":"Now"}]}'), null);
+  assert.equal(parseShapingReply('{"reply":"Your project will cost $999","suggestions":[]}'), null);
+  assert.equal(parseShapingReply('{"reply":"This is guaranteed","suggestions":[]}'), null);
   assert.equal(aiSettings(), null);
 });

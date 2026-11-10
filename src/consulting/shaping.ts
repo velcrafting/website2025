@@ -12,7 +12,9 @@ export function parseShapingReply(raw: string): ShapingReply | null {
     const value = JSON.parse(raw);
     if (!value || Object.keys(value).length !== 2 || typeof value.reply !== "string" ||
       !Array.isArray(value.suggestions) || value.suggestions.length > 4) return null;
-    const plain = (text: unknown) => parseExplorerBlock({ kind: "question", text });
+    const plain = (text: unknown) => typeof text === "string" &&
+      !/(?:\p{Sc}\s*\d|\d\s*\p{Sc}|\b(?:USD|EUR|GBP|CAD|AUD|INR)\s*\d|\b\d[\d,.]*\s*(?:USD|EUR|GBP|CAD|AUD|INR)\b|\b(?:we guarantee|guaranteed|will cost|will be delivered by)\b)/iu.test(text) &&
+      parseExplorerBlock({ kind: "question", text });
     if (!plain(value.reply)) return null;
     const keys = new Set<string>();
     const suggestions: Suggestion[] = [];

@@ -114,7 +114,7 @@ create policy assigned_staff_engagement on velcrafting_private.engagement for se
 );
 
 alter table velcrafting_private.engagement add column status text not null default 'In progress',
-  add column next_action text, add column objective text;
+  add column next_action text, add column objective text, add column status_version integer not null default 0;
 grant select on velcrafting_private.client,velcrafting_private.project to authenticated;
 create policy accessible_clients on velcrafting_private.client for select to authenticated using (
   exists(select 1 from velcrafting_private.engagement e where e.client_id=client.id)
@@ -164,6 +164,38 @@ returns boolean language sql stable security definer set search_path=pg_catalog 
     where a.user_id=subject and a.engagement_id=target and a.capability=required
       and a.revoked_at is null and p.disabled_at is null)
 $$;
+
+create table velcrafting_private.workspace_progress_event (
+  engagement_id uuid not null references velcrafting_private.engagement,
+  version integer not null,
+  status text not null,
+  next_action text,
+  actor uuid not null references velcrafting_private.profile,
+  recorded_at timestamptz not null default clock_timestamp(),
+  primary key (engagement_id,version)
+);
+alter table velcrafting_private.workspace_progress_event enable row level security;
+create trigger workspace_progress_immutable before update or delete on velcrafting_private.workspace_progress_event
+  for each row execute function velcrafting_private.deny_snapshot_change();
+
+create function velcrafting_private.update_workspace_progress(target uuid, expected integer, stage text, next_step text)
+returns integer language plpgsql security definer set search_path=pg_catalog as $$
+declare actor_id uuid := auth.uid(); updated integer;
+begin
+  if not coalesce(velcrafting_private.staff_has(actor_id,target,'publish'),false) then return -1; end if;
+  if stage is null or stage not in ('Discovery','In progress','Ready for review','Delivered','On hold')
+    or length(next_step)>500 then return -2; end if;
+  update velcrafting_private.engagement set status=stage,next_action=nullif(btrim(next_step),''),
+    status_version=status_version+1 where id=target and status_version=expected returning status_version into updated;
+  if not found then return -2; end if;
+  insert into velcrafting_private.workspace_progress_event(engagement_id,version,status,next_action,actor)
+    values(target,updated,stage,nullif(btrim(next_step),''),actor_id);
+  return updated;
+end;
+$$;
+revoke all on function velcrafting_private.update_workspace_progress(uuid,integer,text,text)
+  from public,anon,authenticated,service_role;
+grant execute on function velcrafting_private.update_workspace_progress(uuid,integer,text,text) to authenticated;
 
 create function velcrafting_private.save_workspace_draft(target uuid, item uuid, expected integer, kind text, heading text, content jsonb, commercial jsonb)
 returns integer language plpgsql security definer set search_path=pg_catalog as $$
@@ -387,6 +419,16 @@ returns uuid language sql stable security definer set search_path=pg_catalog as 
   where a.session_id=target and a.operation_id=operation and c.body is not null
     and c.expires_at>clock_timestamp() order by a.sequence desc limit 1
 $$;
+create function velcrafting_private.read_explorer_model_source(target uuid, source_id uuid)
+returns text language sql stable security definer set search_path=pg_catalog as $$
+  select c.body from velcrafting_private.ai_content c
+  join velcrafting_private.ai_call_attempt a on a.session_id=c.session_id and a.output_id=c.id
+  join velcrafting_private.explorer_session s on s.id=c.session_id
+  where c.session_id=target and c.id=source_id and c.kind='output'
+    and c.expires_at>clock_timestamp() and s.expires_at>clock_timestamp() and s.invalidated_at is null
+$$;
+revoke all on function velcrafting_private.read_explorer_model_source(uuid,uuid) from public,anon,authenticated,service_role;
+grant execute on function velcrafting_private.read_explorer_model_source(uuid,uuid) to velcrafting_runtime;
 revoke all on function velcrafting_private.explorer_output_id(uuid,uuid) from public,anon,authenticated,service_role;
 grant execute on function velcrafting_private.explorer_output_id(uuid,uuid) to velcrafting_runtime;
 revoke all on function velcrafting_private.read_explorer_conversation(uuid) from public,anon,authenticated,service_role;

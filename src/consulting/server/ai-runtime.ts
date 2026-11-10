@@ -11,7 +11,7 @@ export function aiSettings() {
   const key = process.env.COMMAND_CODE_API_KEY;
   const retentionHours = Number(process.env.VELCRAFTING_AI_PAYLOAD_RETENTION_HOURS);
   if (process.env.VELCRAFTING_AI_ENABLED !== "1" || process.env.VELCRAFTING_EXPLORER_ENABLED !== "1" ||
-    !process.env.VELCRAFTING_AI_MAINTENANCE_TOKEN || process.env.COMMAND_CODE_VERIFIED_MODEL !== commandCode.model || !key ||
+    (process.env.VELCRAFTING_AI_MAINTENANCE_TOKEN?.length ?? 0) < 32 || process.env.COMMAND_CODE_VERIFIED_MODEL !== commandCode.model || !key ||
     !Number.isInteger(retentionHours) || retentionHours < 1 || retentionHours > 720) return null;
   return { key, retentionHours };
 }

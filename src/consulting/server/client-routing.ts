@@ -8,7 +8,7 @@ export function clientRoute(host: string | null, pathname: string) {
     return { kind: isClientHost(host) ? "pass" : "deny" } as const;
   }
   if (!isClientHost(host)) return { kind: "pass" } as const;
-  if ((pathname === "/api/consulting/auth" || pathname === "/api/consulting/workspace" || pathname === "/api/consulting/workspace/files") || pathname === "/logo.svg" || pathname === "/favicon.ico") {
+  if ((pathname === "/api/consulting/auth" || pathname === "/api/consulting/workspace" || pathname === "/api/consulting/workspace/files" || pathname === "/api/consulting/workspace/provision") || pathname === "/logo.svg" || pathname === "/favicon.ico") {
     return { kind: "pass" } as const;
   }
   if (pathname === "/" || pathname === "/login" ||

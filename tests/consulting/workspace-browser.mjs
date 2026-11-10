@@ -62,13 +62,42 @@ try {
   started = true;
   sql = postgres({ path: join(root, `.s.PGSQL.${dbPort}`), database: "postgres", username: "postgres", max: 1 });
   const schemaHash = createHash("sha256");
-  await loadWorkspaceSchema((statement) => { schemaHash.update(statement); return sql.unsafe(statement); });
+  await loadWorkspaceSchema((statement) => { schemaHash.update(statement); return sql.unsafe(statement); }, { provisioning: true });
   const id = await seedWorkspace((statement, ...args) => sql.unsafe(statement.replaceAll("@", "velcrafting_private."), args));
+  await sql`insert into velcrafting_private.workspace_provisioner(user_id) values(${id.issuer})`;
   const password = randomBytes(24).toString("hex");
   await sql.unsafe(`alter role velcrafting_runtime login password '${password}'`);
   auth = await fixtureAuth(Object.fromEntries(["viewer", "commercial", "betaUser", "drafter", "issuer", "recorder", "prospect"].map((name) => [name, id[name]])));
 
-  publicProxy = createServer((incoming, outgoing) => {
+  await sql`insert into velcrafting_private.ai_allowance(day,unit_limit) values ((now() at time zone 'UTC')::date,1)`;
+  const providerCalls = [];
+  const fixtureQuestion = "How should the fictional workshop hand off its results?";
+  const fixtureAnswer = JSON.stringify({ reply: "Who will own the handoff?",
+    suggestions: [{ field: "questions", text: "Name the owner after the handoff." }] });
+  publicProxy = createServer(async (incoming, outgoing) => {
+    if (incoming.url === "/__fixture_provider") {
+      try {
+        let raw = "";
+        for await (const chunk of incoming) raw += chunk;
+        const sent = JSON.parse(raw);
+        const [durable] = await sql`select a.dispatch_claimed_at,a.reservation_state,o.notice_version,c.body as context
+          from velcrafting_private.ai_call_attempt a join velcrafting_private.ai_operation o on o.id=a.operation_id
+          join velcrafting_private.ai_content c on c.id=a.input_context_id`;
+        assert.ok(durable.dispatch_claimed_at);
+        assert.equal(durable.reservation_state,"held");
+        assert.equal(durable.notice_version,"consulting-ai-recording-v1");
+        assert.equal(sent.model,"deepseek/deepseek-v4.1-flash");
+        assert.deepEqual(sent.messages.map(({role,content}) => ({role,content})),
+          [{role:"system",content:JSON.parse(durable.context).system},...JSON.parse(durable.context).messages]);
+        assert.equal(sent.messages.at(-1).content,fixtureQuestion);
+        providerCalls.push(sent.model);
+        outgoing.writeHead(200, { "content-type":"application/json", "x-request-id":"fiction-provider-receipt" });
+        outgoing.end(JSON.stringify({ id:"fiction-provider-response", object:"chat.completion", created:123456,
+          model:sent.model, choices:[{index:0,message:{role:"assistant",content:fixtureAnswer},finish_reason:"stop"}],
+          usage:{prompt_tokens:18,completion_tokens:12,total_tokens:30} }));
+      } catch (error) { log.push(String(error)); outgoing.writeHead(502); outgoing.end("{}"); }
+      return;
+    }
     const upstream = request({ hostname: "localhost", port: clientPort, path: incoming.url, method: incoming.method, headers: incoming.headers },
       (response) => { outgoing.writeHead(response.statusCode, response.headers); response.pipe(outgoing); });
     upstream.on("error", () => { outgoing.writeHead(502); outgoing.end(); });
@@ -77,10 +106,28 @@ try {
   const publicPort = await listen(publicProxy);
   const client = `http://localhost:${clientPort}`;
   const publicSite = `http://127.0.0.1:${publicPort}`;
+  const preload = join(root, "fixture-command-code.cjs");
+  await writeFile(preload, `
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (target, options) => {
+      const url = typeof target === 'string' ? target : target instanceof URL ? target.href : target.url;
+      if (url.startsWith('https://api.commandcode.ai/')) {
+        if (url !== 'https://api.commandcode.ai/provider/v1/chat/completions' ||
+            new Headers(options?.headers).get('authorization') !== 'Bearer fixture-only-key') {
+          throw new Error('Fixture refused a non-test dispatch');
+        }
+        return originalFetch('${publicSite}/__fixture_provider', options);
+      }
+      return originalFetch(target, options);
+    };
+  `);
   app = spawn(process.execPath, [resolve("node_modules/next/dist/bin/next"), "dev", "--hostname", "localhost", "--port", String(clientPort)], {
     cwd: appDir, env: {
       PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: "development", NEXT_TELEMETRY_DISABLED: "1",
-      CLIENT_SITE_ORIGIN: client, PUBLIC_SITE_ORIGIN: publicSite,
+      NODE_OPTIONS: `--require=${preload}`, CLIENT_SITE_ORIGIN: client, PUBLIC_SITE_ORIGIN: publicSite,
+      VELCRAFTING_AI_ENABLED: "1", VELCRAFTING_AI_MAINTENANCE_TOKEN: "fixture-only-maintenance-token00000",
+      VELCRAFTING_AI_PAYLOAD_RETENTION_HOURS: "1", COMMAND_CODE_API_KEY: "fixture-only-key",
+      COMMAND_CODE_VERIFIED_MODEL: "deepseek/deepseek-v4.1-flash",
       VELCRAFTING_SUPABASE_URL: auth.origin, VELCRAFTING_SUPABASE_PUBLISHABLE_KEY: "fixture-publishable-key",
       VELCRAFTING_CLIENT_AUTH_ENABLED: "1", VELCRAFTING_PROSPECT_AUTH_ENABLED: "1", VELCRAFTING_EXPLORER_ENABLED: "1",
       VELCRAFTING_RUNTIME_DATABASE_URL: `postgres://velcrafting_runtime:${password}@127.0.0.1:${dbPort}/postgres`,
@@ -185,6 +232,27 @@ try {
   assert.equal(alphaAttempt.status(), 404);
   const issuer = await context();
   const issuerPage = await signIn(issuer, "issuer");
+  const noScript = await browser.newContext({ javaScriptEnabled: false });
+  await noScript.addCookies(await issuer.cookies(client));
+  const unhydrated = await noScript.newPage();
+  await unhydrated.goto(client + "/staff/setup");
+  assert.equal(await unhydrated.getByRole("button",{name:"Create private engagement"}).isDisabled(),true);
+  await noScript.close();
+  await issuerPage.getByRole("link",{name:"Workspace setup"}).click();
+  await issuerPage.getByRole("textbox",{name:"Client name"}).fill("Fictional browser client");
+  await issuerPage.getByRole("textbox",{name:"Project title"}).fill("Fictional browser project");
+  await issuerPage.getByRole("textbox",{name:"Engagement title"}).fill("Fictional browser setup");
+  await issuerPage.getByRole("combobox",{name:"Workflow template"}).selectOption("communications-knowledge");
+  await issuerPage.getByRole("textbox",{name:"Objective"}).fill("Fictional browser onboarding objective");
+  const setupReply = issuerPage.waitForResponse((response) => response.url().endsWith("/api/consulting/workspace/provision"));
+  await issuerPage.getByRole("button",{name:"Create private engagement"}).click();
+  assert.equal((await setupReply).status(),201);
+  await issuerPage.getByRole("link",{name:"Review the private discovery draft"}).click();
+  await issuerPage.getByRole("heading",{name:"Author Fictional browser setup"}).waitFor();
+  await issuerPage.getByRole("combobox",{name:"Saved drafts"}).selectOption({label:"Discovery · v1"});
+  await issuerPage.getByRole("button",{name:"Preview saved revision 1"}).click();
+  await issuerPage.locator("dd").getByText("Fictional browser onboarding objective",{exact:true}).waitFor();
+  await issuerPage.goto(client + "/");
   const item = randomUUID();
   const draft = { engagementId: id.alpha, itemId: item, expected: 0, stage: "proposal", title: "Fictional browser draft", sections: [{ label: "Outcome", text: "Fictional scope" }], terms: "FICTION_UNTIL_ISSUED" };
   const mutation = (body) => post(issuer, client, "/api/consulting/workspace", body);
@@ -200,6 +268,16 @@ try {
   await issuerPage.getByRole("link", { name: "Alpha Engagement" }).click();
   await issuerPage.getByRole("link", { name: "Staff authoring" }).click();
   await issuerPage.getByRole("heading", { name: "Author Alpha Engagement" }).waitFor();
+  await issuerPage.getByLabel("Status",{exact:true}).selectOption("Ready for review");
+  await issuerPage.getByLabel("Next action and owner").fill("Fictional sponsor reviews the draft.");
+  const progressReply = issuerPage.waitForResponse((response) => response.url().endsWith("/api/consulting/workspace") &&
+    response.request().postDataJSON()?.action === "progress");
+  const progressNavigation = issuerPage.waitForNavigation({waitUntil:"networkidle"});
+  await issuerPage.getByRole("button",{name:"Save progress"}).click();
+  assert.equal((await progressReply).status(),200);
+  await progressNavigation;
+  const status = await viewer.request.get(client + `/engagements/${id.alpha}`);
+  assert.match(await status.text(),/Fictional sponsor reviews the draft/);
   await issuerPage.getByRole("textbox", { name: "Title" }).fill("Fictional UI discovery");
   await issuerPage.getByRole("textbox", { name: "Goals" }).fill("FICTIONAL_DISCOVERY_GOAL");
   const uiSave = issuerPage.waitForResponse((reply) => reply.url().endsWith("/api/consulting/workspace") && reply.request().method() === "POST");
@@ -274,6 +352,36 @@ try {
   assert.equal((await otherProspect.request.get(client + filePath)).status(), 404);
   assert.ok(auth.sends.every(({ shouldCreateUser }) => shouldCreateUser === false));
 
+  const chat = await context();
+  const chatPage = await chat.newPage();
+  await chatPage.goto(publicSite + "/consulting");
+  await chatPage.getByRole("textbox",{name:"Message",exact:true}).fill(fixtureQuestion);
+  assert.equal(await chatPage.getByRole("button",{name:"Send message"}).isDisabled(),true);
+  assert.equal(providerCalls.length,0);
+  await chatPage.getByRole("checkbox",{name:/read the recording notice/}).check();
+  const sendRequest = chatPage.waitForRequest((request) => request.url().endsWith("/api/consulting/shaping") && request.method()==="POST");
+  const reply = chatPage.waitForResponse((response) => response.url().endsWith("/api/consulting/shaping") && response.request().method()==="POST");
+  await chatPage.getByRole("button",{name:"Send message"}).click();
+  const original = (await sendRequest).postDataJSON();
+  const answer = await reply;
+  assert.equal(answer.status(),200,await answer.text());
+  await chatPage.getByText("Who will own the handoff?",{exact:true}).waitFor();
+  const result = await answer.json();
+  assert.deepEqual(providerCalls,["deepseek/deepseek-v4.1-flash"]);
+  assert.equal((await p(chat,"shaping",original)).status(),409);
+  assert.equal(providerCalls.length,1);
+  const [usage] = await sql`select u.provider_request_id,u.actual_model,u.cost_state,u.input_tokens,u.output_tokens,a.output_id
+    from velcrafting_private.ai_usage_evidence u join velcrafting_private.ai_call_attempt a on a.id=u.attempt_id`;
+  assert.deepEqual(usage,{ provider_request_id:"fiction-provider-receipt",actual_model:"deepseek/deepseek-v4.1-flash",
+    cost_state:"unavailable",input_tokens:18,output_tokens:12,output_id:result.sourceMessageId });
+  const now = new Date().toISOString();
+  const snapshot = { id:randomUUID(),version:1,createdAt:now,revisedAt:now,state:"in_progress",service:"review",
+    fields:{ questions:{text:"Name the owner after the handoff.",source:"model_suggestion",confirmation:"suggested",
+      sourceMessageIds:[result.sourceMessageId]} },
+    scope:{level:"",breadth:"",readiness:"",audience:"",involvement:""},corrections:[],example:false };
+  assert.equal((await p(chat,"brief",snapshot)).status(),200);
+  assert.equal((await p(otherProspect,"brief",snapshot)).status(),409);
+
   await sql`update velcrafting_private.client_membership set revoked_at=now() where user_id=${id.viewer}`;
   assert.equal((await viewer.request.get(client + filePath)).status(), 404);
   assert.equal((await viewer.request.get(client + ownExport)).status(), 404);
@@ -281,12 +389,12 @@ try {
 
   const [database] = await sql`select current_setting('server_version') as version`;
   const receipt = {
-    evidence: "Chromium with fixture Auth and disposable native PostgreSQL",
+    evidence: "Chromium with fixture Auth, Command Code HTTP stand-in and disposable native PostgreSQL",
     commit: gitHead.stdout.trim(), cleanCheckout: !gitStatus.stdout.trim(),
     appSnapshotSha256: snapshotHash.digest("hex"), schemaSha256: schemaHash.digest("hex"),
     node: process.version, chromium: browser.version(), postgres: database.version,
     artifacts: ["workspace-home-desktop.png", "workspace-engagement-mobile.png", "workspace-engagement-mobile-text-200.png"],
-    checks: ["email code denial and verification", "home to engagement to downloaded private file", "tenant/phase and host isolation", "commercial export projection", "staff authoring, exact preview, issue, private file upload and named agreement recording", "named draft and issue with conflict/retry", "200% root text scaling and reduced motion", "capability-bound prospect claim and replay denial", "revocation with an existing session"],
+    checks: ["email code denial and verification", "home to engagement to downloaded private file", "tenant/phase and host isolation", "commercial export projection", "named setup from workflow template and explicit progress update", "staff authoring, exact preview, issue, private file upload and named agreement recording", "named draft and issue with conflict/retry", "200% root text scaling and reduced motion", "capability-bound prospect claim and replay denial", "revocation with an existing session", "actual shaping route committed before provider, usage persisted, duplicate suppressed and model provenance scoped"],
   };
   await writeFile(join(artifacts, "evidence.json"), JSON.stringify(receipt, null, 2) + "\n");
   console.log(JSON.stringify({ ...receipt, artifactDirectory: artifacts }));
