@@ -38,3 +38,14 @@ schema, keep it out of the Supabase Data API by default and review grants/RLS
 separately ([Supabase guidance](https://supabase.com/docs/guides/api/securing-your-api)).
 The [Command Code documentation](https://commandcode.ai/docs/provider) describes
 the compatible endpoint, but is not proof of this account's model access.
+
+A separate local booking contract slice exercises BOOK-03, BOOK-09 and
+BOOK-10 **with fixtures only**. A resolved event and verified contact must
+match the stored confirmation version, intended recipients and booking
+reference. Readiness requires Meet, both participants' observed private
+Drive access and literal Calendar attachments for the exact brief revision
+and prepared notes. Explicit no-brief plans require notes without a PDF.
+Three Node tests cover stale consent, wrong event/recipient, missing
+attachments, wrong brief revision/integrity, missing access and the no-brief
+path. The contract has no Cal or Google client, webhook, durable worker,
+share mutation or booking endpoint. These tests do not pass real BOOK-03.
