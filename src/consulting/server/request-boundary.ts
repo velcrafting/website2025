@@ -31,7 +31,7 @@ export function isClientMutation(request: Request) {
 export const isUuid = (value: unknown): value is string =>
   typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
-export const noStore = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };
+export const noStore = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers: noStore });
 
 export async function boundedJson(request: Request, limit = 24_000): Promise<unknown> {

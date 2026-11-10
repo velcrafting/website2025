@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireWorkspaceIdentity } from "@/consulting/server/workspace";
 import { accessActions, workflowTemplates, workspaceProvisionOptions } from "@/consulting/server/workspace-provision";
@@ -10,6 +11,8 @@ export default async function WorkspaceSetup() {
   return <section>
     <h1>Workspace setup</h1>
     <p className="mt-3">Set up a private engagement or manage access for a verified person.</p>
+    {options.canCreate && process.env.VELCRAFTING_BOOKING_ENABLED === "1" &&
+      <p className="mt-3"><Link href="/staff/intake">Review shared booking briefs</Link></p>}
     <ProvisionForm {...options} templates={Object.entries(workflowTemplates)} actions={Object.entries(accessActions)} />
   </section>;
 }
