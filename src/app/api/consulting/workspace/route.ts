@@ -1,11 +1,15 @@
 import { z } from "zod";
 import { asStakeholder } from "@/consulting/server/database";
-import { workspaceDraft, workspaceIdentity } from "@/consulting/server/workspace";
+import { workspaceDraft, workspaceIdentity, workspaceStatuses } from "@/consulting/server/workspace";
 import { boundedJson, isClientMutation, json } from "@/consulting/server/request-boundary";
 
 const publish = z.strictObject({
   action: z.literal("publish"), engagementId: z.uuid(), itemId: z.uuid(),
   version: z.number().int().min(1).max(10_000), prior: z.number().int().min(0).max(10_000), retry: z.uuid(),
+});
+const progress = z.strictObject({
+  action: z.literal("progress"), engagementId: z.uuid(), expected: z.number().int().min(0),
+  status: z.enum(workspaceStatuses), nextAction: z.string().trim().max(500),
 });
 const agreement = z.strictObject({
   action: z.literal("agreement"), engagementId: z.uuid(), itemId: z.uuid(),
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
     const actor = await workspaceIdentity();
     if (!actor) return json({ error: "Not found" }, 404);
     const body = await boundedJson(request, 28_000).catch(() => null);
-    const command = z.union([publish, agreement, workspaceDraft]).safeParse(body);
+    const command = z.union([publish, agreement, progress, workspaceDraft]).safeParse(body);
     if (!command.success) return json({ error: "Invalid document or revision" }, 400);
     const input = command.data;
     const result = await asStakeholder(actor.id, async (tx) => {
@@ -33,6 +37,11 @@ export async function POST(request: Request) {
       if (input.action === "publish") {
         const [row] = await tx<{ version: number }[]>`select velcrafting_private.publish_workspace_draft(
           ${input.engagementId},${input.itemId},${input.version},${input.prior},${input.retry}) as version`;
+        return row.version;
+      }
+      if (input.action === "progress") {
+        const [row] = await tx<{ version: number }[]>`select velcrafting_private.update_workspace_progress(
+          ${input.engagementId},${input.expected},${input.status},${input.nextAction}) as version`;
         return row.version;
       }
       const [row] = await tx<{ recorded: boolean }[]>`select velcrafting_private.record_workspace_agreement(

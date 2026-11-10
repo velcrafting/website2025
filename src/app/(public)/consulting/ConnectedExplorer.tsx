@@ -103,7 +103,7 @@ function Conversation({ brief, dirty, canApply, apply }: {
       </li>)}
     </ol>}
     {turns.length > 0 && <p className="meta mt-3">Suggestions can fill unused fields in a new revision. Save unsaved edits before applying a suggestion. Existing values and corrections stay as entered.</p>}
-    <form onSubmit={(event) => void send(event)} className="mt-4 grid max-w-prose gap-3" aria-describedby="ai-recording-notice">
+    <form method="post" onSubmit={(event) => void send(event)} className="mt-4 grid max-w-prose gap-3" aria-describedby="ai-recording-notice">
       <label className="flex items-start gap-2">
         <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} disabled={busy} />
         I have read the recording notice and agree to send my message for AI assistance.
@@ -311,7 +311,7 @@ function Booking({ organizer, visitor, base, brief, dirty }: {
         {status.startsAt && <p><time dateTime={status.startsAt}>{formatBookingTime(status.startsAt, status.timeZone)}</time></p>}
         {meet && <p><a href={meet} target="_blank" rel="noopener noreferrer">Open Google Meet</a></p>}
       </div>}
-      <form onSubmit={(event) => void act("confirm", event)} className="mt-4 grid max-w-prose gap-3">
+      <form method="post" onSubmit={(event) => void act("confirm", event)} className="mt-4 grid max-w-prose gap-3">
         <fieldset className="grid gap-2" disabled={busy}>
           <legend className="font-semibold">Meeting material</legend>
           <label className="flex items-start gap-2">

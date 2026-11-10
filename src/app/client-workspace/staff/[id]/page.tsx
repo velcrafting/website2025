@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getStageFields, requireWorkspaceIdentity, stages, stageTitles, workspaceDrafts, workspaceEngagement } from "@/consulting/server/workspace";
+import { getStageFields, requireWorkspaceIdentity, stages, stageTitles, workspaceDrafts, workspaceEngagement, workspaceStatuses } from "@/consulting/server/workspace";
 import DraftForm from "./DraftForm";
 
 export default async function StaffPage({ params }: { params: Promise<{id: string}> }) {
@@ -19,7 +19,8 @@ export default async function StaffPage({ params }: { params: Promise<{id: strin
     <p><Link href={`/engagements/${id}`}>Back to engagement</Link></p>
     <h1 className="mt-3">Author {data.engagement.title}</h1>
     <p className="mt-3">Save a private draft, preview the saved revision, then publish it for the intended audience.</p>
-    <DraftForm id={id} capabilities={data.capabilities} baseline={data.accepted.at(-1)} stages={stages.map((value) =>
+    <DraftForm id={id} progress={{ status:data.engagement.status, version:data.engagement.status_version,
+      nextAction:data.engagement.next_action, statuses:workspaceStatuses }} capabilities={data.capabilities} baseline={data.accepted.at(-1)} stages={stages.map((value) =>
       ({value,label: stageTitles[value],sections: getStageFields(value)}))}
       drafts={[...drafts,...issuedForRecorder].map((draft) => ({...draft,sections:draft.body.sections ?? []}))} />
   </section>;

@@ -1,19 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-export async function loadWorkspaceSchema(exec) {
+export async function loadWorkspaceSchema(exec, { provisioning = false } = {}) {
   await exec(`
     create role anon;
     create role authenticated;
     create role service_role bypassrls;
     create role editorial;
     create schema auth;
-    create table auth.users (id uuid primary key);
+    create table auth.users (id uuid primary key, email_confirmed_at timestamptz default now());
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to authenticated;
   `);
-  for (const file of ["004-client-workspace-boundary.sql", "005-ai-attempt-ledger.sql", "006-consulting-identity-workspace.sql"]) {
+  for (const file of ["004-client-workspace-boundary.sql", "005-ai-attempt-ledger.sql", "006-consulting-identity-workspace.sql",
+    ...(provisioning ? ["008-workspace-provisioning.sql"] : [])]) {
     await exec(await readFile(new URL("../../../db/postgres/" + file, import.meta.url), "utf8"));
   }
 }

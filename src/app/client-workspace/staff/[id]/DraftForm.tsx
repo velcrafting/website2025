@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Button from "@/components/ui/Button";
+
+const subscribe = () => () => {};
 
 type Candidate = { item_id: string; version: number; prior: number; title: string; stage: string; sections: {label:string;text:string}[]; terms?: string };
 type Choice = { value: string; label: string; sections: readonly string[] };
 
-export default function DraftForm({ id, stages, drafts, capabilities, baseline }: {
+export default function DraftForm({ id, stages, drafts, capabilities, baseline, progress }: {
   id: string; stages: Choice[]; drafts: Candidate[]; capabilities: string[]; baseline?: {item_id:string;version:number};
+  progress: {status:string;version:number;nextAction:string|null;statuses:readonly string[]};
 }) {
+  const ready = useSyncExternalStore(subscribe, () => true, () => false);
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [kind, setKind] = useState(stages[0].value);
   const [notice, setNotice] = useState("");
@@ -25,13 +29,26 @@ export default function DraftForm({ id, stages, drafts, capabilities, baseline }
     } catch (error) { setNotice(error instanceof Error ? error.message : "Could not save."); }
     finally { setBusy(false); }
   };
-  return <div className="mt-5 grid max-w-3xl gap-5">
+  return <fieldset disabled={!ready} className="mt-5 grid min-w-0 max-w-3xl gap-5">
+    {capabilities.includes("publish") && <form method="post" className="grid gap-3 border-b border-rule pb-5" onSubmit={(event) => {
+      event.preventDefault(); const form = new FormData(event.currentTarget);
+      void post({ action:"progress", engagementId:id, expected:progress.version, status:form.get("status"), nextAction:form.get("nextAction") });
+    }}>
+      <h2>Engagement progress</h2>
+      <div><label htmlFor="workspace-progress-status">Status</label>
+        <select id="workspace-progress-status" className="field mt-1 w-full" name="status" defaultValue={progress.status}>
+          {progress.statuses.map((status) => <option key={status}>{status}</option>)}
+        </select>
+      </div>
+      <label>Next action and owner<input className="field mt-1 w-full" name="nextAction" maxLength={500} defaultValue={progress.nextAction ?? ""} /></label>
+      <div><Button disabled={busy}>Save progress</Button></div>
+    </form>}
     <label>Saved drafts<select className="field mt-1 w-full" onChange={(event) => {
       const candidate = drafts.find(({item_id}) => item_id === event.target.value) ?? null;
       setSelected(candidate); setKind(candidate?.stage ?? stages[0].value); setPreview(false); setCommercial(false);
     }}><option value="">New draft</option>{drafts.map((draft) =>
       <option key={draft.item_id} value={draft.item_id}>{draft.title} · v{draft.version}</option>)}</select></label>
-    {capabilities.includes("draft") && <form key={selected?.item_id ?? "new"} className="grid gap-3" onSubmit={(event) => {
+    {capabilities.includes("draft") && <form method="post" key={selected?.item_id ?? "new"} className="grid gap-3" onSubmit={(event) => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       const terms = String(form.get("terms") ?? "").trim();
@@ -60,7 +77,7 @@ export default function DraftForm({ id, stages, drafts, capabilities, baseline }
             version: selected.version, prior: selected.prior, retry: crypto.randomUUID() })}>Publish this revision</Button>}
       </section>}
       {capabilities.includes("publish") && selected.prior > 0 &&
-        <form className="mt-5 grid gap-3" onSubmit={async (event) => {
+        <form method="post" className="mt-5 grid gap-3" onSubmit={async (event) => {
           event.preventDefault(); const form = new FormData(event.currentTarget);
           const file = form.get("file");
           if (!(file instanceof File) || !file.size || file.size > 3_000_000) {
@@ -82,7 +99,7 @@ export default function DraftForm({ id, stages, drafts, capabilities, baseline }
           <div><Button disabled={busy}>Store private file</Button></div>
         </form>}
       {capabilities.includes("record_agreement") && selected.stage === "proposal" && selected.prior > 0 &&
-        <form className="mt-5 grid gap-3" onSubmit={(event) => {
+        <form method="post" className="mt-5 grid gap-3" onSubmit={(event) => {
           event.preventDefault(); const form = new FormData(event.currentTarget);
           const time = new Date(String(form.get("time")));
           if (!Number.isFinite(time.getTime())) return;
@@ -99,5 +116,5 @@ export default function DraftForm({ id, stages, drafts, capabilities, baseline }
         </form>}
     </div>}
     <p role="status">{notice}</p>
-  </div>;
+  </fieldset>;
 }

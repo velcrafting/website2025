@@ -5,6 +5,7 @@ import { asStakeholder } from "./database";
 import { verifiedIdentity } from "./auth";
 import { isClientHost, isUuid } from "./request-boundary";
 
+export const workspaceStatuses = ["Discovery","In progress","Ready for review","Delivered","On hold"] as const;
 export const stages = ["discovery","quote","proposal","kickoff","updates","decisions","delivery"] as const;
 export type Stage = typeof stages[number];
 export const stageTitles: Record<Stage, string> = {
@@ -47,13 +48,13 @@ export async function requireWorkspaceIdentity() {
 
 export type Engagement = {
   id: string; title: string; client: string; project: string; client_id: string; project_id: string;
-  status: string; objective: string | null; next_action: string | null; updated: Date | null;
+  status: string; status_version: number; objective: string | null; next_action: string | null; updated: Date | null;
 };
 
 export async function workspaceEngagements(user: string, scope?: { id: string; kind: "client" | "project" }) {
   if (scope && !isUuid(scope.id)) return [];
   return asStakeholder(user, (tx) => tx<Engagement[]>`
-    select e.id,e.title,e.client_id,e.project_id,c.name as client,p.title as project,e.status,e.objective,e.next_action,
+    select e.id,e.title,e.client_id,e.project_id,c.name as client,p.title as project,e.status,e.status_version,e.objective,e.next_action,
       (select max(r.published_at) from velcrafting_private.published_revision r where r.engagement_id=e.id) as updated
     from velcrafting_private.engagement e
     join velcrafting_private.client c on c.id=e.client_id
@@ -70,7 +71,7 @@ type Draft = { item_id: string; version: number; title: string; stage: Stage; bo
 export async function workspaceEngagement(user: string, id: string) {
   if (!isUuid(id)) return null;
   return asStakeholder(user, async (tx) => {
-    const [engagement] = await tx<Engagement[]>`select e.id,e.title,e.client_id,e.project_id,c.name as client,p.title as project,e.status,e.objective,e.next_action,
+    const [engagement] = await tx<Engagement[]>`select e.id,e.title,e.client_id,e.project_id,c.name as client,p.title as project,e.status,e.status_version,e.objective,e.next_action,
       (select max(r.published_at) from velcrafting_private.published_revision r where r.engagement_id=e.id) as updated
       from velcrafting_private.engagement e join velcrafting_private.client c on c.id=e.client_id
       join velcrafting_private.project p on p.id=e.project_id where e.id=${id}`;

@@ -6,7 +6,12 @@ let pool: ReturnType<typeof postgres> | undefined;
 
 export async function consultingSql() {
   const dsn = process.env.VELCRAFTING_RUNTIME_DATABASE_URL;
-  if (!dsn || new URL(dsn).username !== "velcrafting_runtime") throw new Error("Restricted consulting database is unavailable");
+  if (!dsn) throw new Error("Restricted consulting database is unavailable");
+  const endpoint = new URL(dsn);
+  if (!["postgres:","postgresql:"].includes(endpoint.protocol) || !/^velcrafting_runtime(?:\.[a-z0-9]+)?$/.test(endpoint.username) ||
+      (!["127.0.0.1", "localhost"].includes(endpoint.hostname) && endpoint.searchParams.get("sslmode") !== "verify-full")) {
+    throw new Error("Restricted consulting database is unavailable");
+  }
   if (!pool) pool = postgres(dsn, { max: 4, prepare: false, connect_timeout: 5, idle_timeout: 20 });
   const [role] = await pool<{ usable: boolean }[]>`
     select current_user = 'velcrafting_runtime' and session_user = current_user and
