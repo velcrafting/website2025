@@ -4,13 +4,13 @@
 // for the current Next 15 build and verify the generated middleware manifest when changing its path.
 import { NextRequest, NextResponse } from "next/server";
 
+import { createServerClient } from "@supabase/ssr";
+import { authSettings } from "@/consulting/server/auth-settings";
+import { clientRoute } from "@/consulting/server/client-routing";
+import { configuredOrigin, noStore } from "@/consulting/server/request-boundary";
+
 export const config = {
-  matcher: [
-    // Admin dashboard and APIs
-    "/admin/:path*",
-    // Admin-ish newsletter endpoints (server-only use via curl/Postman)
-    "/api/newsletter/:path*",
-  ],
+  matcher: ["/((?!_next/static|_next/image|_next/webpack-hmr).*)"],
 };
 
 const ADMIN_KEY = process.env.ADMIN_KEY;
@@ -31,8 +31,33 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const { pathname } = url;
 
+  const route = clientRoute(req.headers.get("host"), pathname);
+  if (route.kind === "deny") return new NextResponse("Not found", { status: 404, headers: noStore });
+  if (route.kind === "rewrite") {
+    const origin = configuredOrigin(process.env.CLIENT_SITE_ORIGIN);
+    if (!origin) return new NextResponse("Not found", { status: 404, headers: noStore });
+    const destination = new URL(route.path + url.search, origin);
+    let response = NextResponse.rewrite(destination, { request: { headers: req.headers }, headers: noStore });
+    const settings = authSettings("client");
+    if (settings && req.cookies.getAll().some(({ name }) => name === settings.options.name || name.startsWith(settings.options.name + "."))) {
+      const auth = createServerClient(settings.url, settings.key, {
+        cookieOptions: settings.options,
+        cookies: {
+          getAll: () => req.cookies.getAll(),
+          setAll(changes) {
+            for (const { name, value } of changes) req.cookies.set(name, value);
+            response = NextResponse.rewrite(destination, { request: { headers: req.headers }, headers: noStore });
+            for (const { name, value, options } of changes) response.cookies.set(name, value, { ...options, ...settings.options });
+          },
+        },
+      });
+      await auth.auth.getClaims().catch(() => null);
+    }
+    return response;
+  }
+
   /* ---------- Protect admin pages ---------- */
-  if (pathname.startsWith("/admin")) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     if (pathname === "/admin/login" || pathname === "/admin/login/") {
       return NextResponse.next();
     }

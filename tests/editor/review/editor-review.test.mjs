@@ -734,7 +734,7 @@ await test("A5: an unauthenticated preview exposes no draft body and is not cach
   const dbPath = freshDb("gateb-b3-preview-deny-");
   const loader = makeLoader();
   const created = await createIssueFixture(loader, "preview-deny");
-  const preview = loader.load("src/app/admin/editor/preview/[revisionId]/route.ts");
+  const preview = loader.load("src/app/(public)/admin/editor/preview/[revisionId]/route.ts");
   signedOut();
 
   const response = await preview.GET(
@@ -759,7 +759,7 @@ await test("an authenticated preview returns the draft with a private, no-store 
   freshDb("gateb-b3-preview-allow-");
   const loader = makeLoader();
   const created = await createIssueFixture(loader, "preview-allow");
-  const preview = loader.load("src/app/admin/editor/preview/[revisionId]/route.ts");
+  const preview = loader.load("src/app/(public)/admin/editor/preview/[revisionId]/route.ts");
   signedIn();
 
   const response = await preview.GET(
@@ -785,7 +785,7 @@ await test("an authenticated preview returns the draft with a private, no-store 
 await test("a preview of an unknown revision returns 404 without leaking anything", async () => {
   freshDb("gateb-b3-preview-missing-");
   const loader = makeLoader();
-  const preview = loader.load("src/app/admin/editor/preview/[revisionId]/route.ts");
+  const preview = loader.load("src/app/(public)/admin/editor/preview/[revisionId]/route.ts");
   signedIn();
 
   const response = await preview.GET(

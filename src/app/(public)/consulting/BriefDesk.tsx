@@ -5,11 +5,13 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import {
   briefMarkdown, briefSections, briefText, fieldLabels, maxFieldLength, parseService, reviseBrief,
-  scopeChoices, services, type BriefRevision, type Service,
+  scopeChoices, services, type BriefRevision, type FieldKey, type Service,
 } from "@/consulting/brief";
 import { assistedShaping } from "@/consulting/availability";
 import { parseExplorerBlock } from "@/consulting/catalog";
 import { exampleBrief, examples } from "@/consulting/fixtures";
+import type { Suggestion } from "@/consulting/shaping";
+import ConnectedExplorer, { type ExplorerAvailability } from "./ConnectedExplorer";
 import { chooseDeskEntry, draftFromRevision, fields, newDesk, readDesk, scopeKeys, writeDesk, type DeskState } from "@/consulting/desk-storage";
 
 const stamp = () => ({ id: crypto.randomUUID(), now: new Date().toISOString() });
@@ -25,7 +27,7 @@ function download(content: BlobPart, type: string, name: string) {
 
 const control = "block w-full rounded-[var(--radius-surface)] border border-rule bg-paper px-3 py-2 text-ink";
 
-export default function BriefDesk({ initialService }: { initialService: Service }) {
+export default function BriefDesk({ initialService, availability }: { initialService: Service; availability: ExplorerAvailability }) {
   const [desk, setDesk] = useState(() => newDesk(initialService));
   const [storage, setStorage] = useState<"loading" | "available" | "unavailable">("loading");
   const [notice, setNotice] = useState("");
@@ -90,6 +92,30 @@ export default function BriefDesk({ initialService }: { initialService: Service 
     }
   }
 
+  function canApply(field: FieldKey) {
+    return ready && !dirty && !brief?.fields[field];
+  }
+
+  function applySuggestion(suggestion: Suggestion, sourceId: string) {
+    if (!canApply(suggestion.field)) return;
+    const base = reviseBrief(brief, brief?.version ?? 0, draft, stamp());
+    const next: BriefRevision = {
+      ...base,
+      fields: {
+        ...base.fields,
+        [suggestion.field]: { text: suggestion.text, source: "model_suggestion", confirmation: "suggested", sourceMessageIds: [sourceId] },
+      },
+    };
+    updateDesk({ ...desk, brief: next, draft: draftFromRevision(next.service, next), dirty: false });
+    setNotice(`Suggestion saved in revision ${next.version}.`);
+  }
+
+  function restoreBrief(saved: BriefRevision) {
+    if (brief || dirty || !ready) return;
+    updateDesk({ ...desk, brief: saved, draft: draftFromRevision(saved.service, saved), dirty: false });
+    setNotice(`Online revision ${saved.version} restored.`);
+  }
+
   async function exportBrief(format: "pdf" | "md" | "copy") {
     if (!brief || dirty) return;
     const name = `velcrafting-brief-v${brief.version}`;
@@ -119,7 +145,7 @@ export default function BriefDesk({ initialService }: { initialService: Service 
     <section id="explorer" aria-labelledby="explorer-title" className="section-gap scroll-mt-6">
       <p className="meta">Project explorer</p>
       <h2 id="explorer-title" className="mt-2">Shape a discussion brief</h2>
-      <p className="mt-3 max-w-prose">{assistedShaping.message}</p>
+      <p className="mt-3 max-w-prose">{availability.shaping ? "Edit a brief yourself or send a message for help shaping it." : assistedShaping.message}</p>
       {storage === "available" && <p className="meta mt-3">Your saved brief and unsaved edits stay in this tab’s browser session, including after a refresh. Export a copy before closing this tab.</p>}
       <nav aria-label="Project explorer" className="mt-4 flex flex-wrap gap-2">
         <Button asChild variant="outline" size="sm"><a href="#brief-editor">Edit brief</a></Button>
@@ -198,6 +224,8 @@ export default function BriefDesk({ initialService }: { initialService: Service 
         </div>
       </div>
       <p role="status" className="mt-3">{notice}</p>
+      {ready && <ConnectedExplorer availability={availability} brief={brief} dirty={dirty} canApply={canApply}
+        apply={applySuggestion} restore={restoreBrief} />}
     </section>
   );
 }

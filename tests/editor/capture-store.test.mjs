@@ -39,7 +39,7 @@ function buildFormData(fields) {
 async function run(action, fields, { authorized = true } = {}) {
   const root = prepContentRoot();
   const cookieStore = authorized ? new Map([["admin", ADMIN_KEY]]) : new Map();
-  const mod = loadPageModule("src/app/admin/new/page.tsx", {
+  const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
     env: makeEnv(authorized),
     cwd: root,
     cookieStore,

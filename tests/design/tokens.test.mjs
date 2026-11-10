@@ -36,7 +36,8 @@ function suite(name) {
 }
 
 const globals = read("src/app/globals.css");
-const layout = read("src/app/layout.tsx");
+const rootLayout = read("src/app/layout.tsx");
+const layout = read("src/app/(public)/layout.tsx");
 
 // The concept-03 palette, exactly as approved in VELCRAFTING_DESIGN_PRINCIPLES.md.
 const PRIMITIVES = {
@@ -158,7 +159,7 @@ check("the skip link is rendered in the shell", layout.includes('className="skip
 check("main carries the skip target id", /id="main"/.test(layout));
 check(
   "the approved serif and sans are loaded as CSS variables",
-  layout.includes("--font-source-serif") && layout.includes("--font-source-sans"),
+  rootLayout.includes("--font-source-serif") && rootLayout.includes("--font-source-sans"),
 );
 check(
   "the rail is sticky rather than a fixed-height scroll region",
@@ -169,19 +170,19 @@ suite("S08–S10: surfaces use tokens, not page-specific values");
 
 const RETIRED_IN_SURFACES = /neutral-\d|text-white|bg-black|#[0-9a-fA-F]{3,6}\b/;
 const SURFACES = [
-  "src/app/page.tsx",
-  "src/app/connect/page.tsx",
-  "src/app/contact/page.tsx",
-  "src/app/projects/page.tsx",
-  "src/app/issues/page.tsx",
-  "src/app/issues/[slug]/page.tsx",
+  "src/app/(public)/page.tsx",
+  "src/app/(public)/connect/page.tsx",
+  "src/app/(public)/contact/page.tsx",
+  "src/app/(public)/projects/page.tsx",
+  "src/app/(public)/issues/page.tsx",
+  "src/app/(public)/issues/[slug]/page.tsx",
   "src/components/home/HomePathSelector.tsx",
   "src/components/connect/ShareButton.tsx",
   "src/components/connect/UnavailableAction.tsx",
   "src/components/layout/Sidebar.tsx",
   "src/components/layout/MobileHeader.tsx",
-  "src/app/admin/editor/page.tsx",
-  "src/app/admin/editor/[id]/page.tsx",
+  "src/app/(public)/admin/editor/page.tsx",
+  "src/app/(public)/admin/editor/[id]/page.tsx",
   "src/editor/render/styles.ts",
 ];
 
@@ -242,7 +243,7 @@ console.log(
 
 suite("S08: /connect honesty rules");
 
-const connect = read("src/app/connect/page.tsx");
+const connect = read("src/app/(public)/connect/page.tsx");
 check("the required identity copy is present", connect.includes("Steven Pajewski") && connect.includes("call me"));
 check("the primary contact action downloads the vCard", connect.includes('href="/steven-pajewski.vcf"') && connect.includes("download"));
 check("the vCard asset exists", existsSync(pathResolve(REPO, "public/steven-pajewski.vcf")));
@@ -286,7 +287,7 @@ check("the vCard carries no invented private contact fields", !/TEL|EMAIL/i.test
 
 suite("S09: project index vocabulary");
 
-const projects = read("src/app/projects/page.tsx");
+const projects = read("src/app/(public)/projects/page.tsx");
 check("status is stated in words", projects.includes("Local-only — not publicly hosted"));
 // Both markers must exist before their order means anything: `indexOf` returns -1
 // for a missing marker, and -1 < anything would pass this check vacuously.
