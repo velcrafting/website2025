@@ -47,6 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // /connect replaced /contact here under D1: /contact is a permanent redirect, and a
     // redirecting URL does not belong in a sitemap. The surviving page is now listed.
     { url: `${base}/connect`, priority: 0.6, changeFrequency: "monthly", lastModified: now },
+    { url: `${base}/consulting`, priority: 0.7, changeFrequency: "monthly", lastModified: now },
     { url: `${base}/art`, priority: 0.4, changeFrequency: "monthly", lastModified: now },
   ];
 

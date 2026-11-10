@@ -20,6 +20,7 @@ import {
   FilePlus2,
   Send,
   Compass,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -45,6 +46,7 @@ const nav = [
   // redirects to /connect, so a second nav item would only name a page that leaves
   // immediately. The URL still resolves for old links (src/app/contact/page.tsx).
   { href: "/arcade", label: "Arcade", icon: Gamepad2 },
+  { href: "/consulting", label: "Consulting", icon: BriefcaseBusiness },
   { href: "/connect", label: "Connect", icon: Compass },
 ];
 
