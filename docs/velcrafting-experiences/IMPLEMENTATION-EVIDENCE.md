@@ -1,51 +1,78 @@
 # Implementation evidence
 
-Started November 10, 2026. Application base: `7a2da367d924c67133dce7a32daaafcbaf271480`.
-Handoff: [PR #8](https://github.com/velcrafting/website2025/pull/8) at
-`60b8381c593447f9c0b1c9cafea18cdbdcde2a29`. All 32 ZIP documents matched its Git
-blobs byte for byte. Development is in an isolated checkout; the dirty original
-checkout was left alone. No live integration is enabled.
+The application started at `7a2da367`. The ZIP matched all 32 files in
+[handoff PR #8](https://github.com/velcrafting/website2025/pull/8) at `60b8381`.
+The implementation is in the isolated checkout. None of these PRs activates
+a live service or applies a hosted migration.
 
-| Slice / requirements | Implementation and evidence | Remaining gate |
+| Slice | What works and evidence | Still open |
 | --- | --- | --- |
-| Phase 0: source and dependency map | Next 15.5.25, React/DOM 19.1.0, npm lock, Node 22. Public root layout owns sidebar, mobile header, guided navigation and SEO; middleware currently guards the editorial admin. `src/config/site.ts` owns contact and Cal destinations. | Reserve `/client-workspace` for private routes. When adding them, move the public chrome/SEO into a public route group and put the private shell in its own group, sharing only HTML, typography and theme. Gate the internal namespace and client-host aliases before data access. No private route or host rewrite exists yet. |
-| Phase 0: renderer choice | npm registry reports `@json-render/react@0.22.0` requires React `^19.2.3`. `src/consulting/catalog.ts` uses the native React fallback with a typed, text-only catalog. No manifest or lock change. | Extend the catalog deliberately when connecting model output; invalid actions, markup and external destinations stay out. |
-| PUB-01, PUB-02, PUB-04, PUB-11 / E2E-11 (public portion) | Node 22 production build served on loopback at [the review URL](http://127.0.0.1:3128/consulting). Playwright Chromium exercised all six stages out of order by keyboard with visible focus. Checked wide editor/brief columns at 1600px, stacked brief at 390px, reflow at 320px, CSS zoom at 200%, reduced motion and a JavaScript-disabled context. Software and communications questions are distinct fixtures. | No assistive-device test or live model evaluation. |
-| PUB-03, PUB-06, PUB-09, PUB-10 / E2E-06 (local portion) | Browser saved a partial fictional brief as v2, kept a typed correction across service navigation, retained unknowns, downloaded PDF and Markdown with the selected version in the filename and copied the exact text. Poppler extracted and rendered the one-page PDF, including the accent and literal markup in the test correction. Node tests cover stale edits, deterministic bytes and invalid catalog payloads. | Browser state is transient. No verified resume, server export or share grant. Built-in PDF font supports Windows-1252; text outside it keeps its original characters in Markdown/copy. Unicode font support is required before broad PDF release. |
-| PUB-07, PUB-08 / BOOK-01, BOOK-03, BOOK-09, BOOK-10 | Existing Cal destination verified in the rendered link; no brief data in its URL. Booking preparation and client sign-in show unavailable states. | Cal/Google account, exact event lookup, Meet, both intended participants, private literal PDF and notes attachments and recipient access have not been exercised. Explicit no-brief must still attach notes. |
+| [#9 public](https://github.com/velcrafting/website2025/pull/9), `2997eee`, phases 0–1, PUB-01/03/06/07/11, EXPORT-01, E2E-06/11 | Six nonlinear stages and editable partial briefs. A separate Cal tab receives neither the brief nor the opener/referrer. Saved and unsaved work survives refresh and a fresh history return with BFCache disabled. Chromium covered keyboard, desktop and mobile reflow, 2× viewport zoom, reduced motion, no JS, and an actual PDF download. PDFKit + pinned OFL Noto fonts rendered three selectable pages. Poppler verified extraction of Latin names, combining accents, Greek, Cyrillic, Japanese, shaped Devanagari, and a 1,120-character token. | RTL scripts, unsupported characters and emoji explicitly fall back to exact Markdown/copy. The worker cannot record a selected-brief meeting ready without a correct PDF. |
+| [#10 identity, workspace and ledger](https://github.com/velcrafting/website2025/pull/10), `53930e0`, phases 2/3/5, DP-01–12/14, AI-01–08, E2E-01–05/12–15 | `004–006` define separate named grants, draft/issued revisions, commercial projection, exact agreement records and protected downloads. A native PostgreSQL 18.6 + Chromium run with a loopback Auth stand-in exercised the workspace route and a private download, alternate hosts, revocation, explicit publication and a current-session-only prospect claim. PGlite covered the SQL boundary and restart/retention cases. A separate native test observed competing connections block on the last allowance unit and verified one claim. The AI SDK compatible adapter sent exactly one request to a controlled transport for the configured Command Code model, with no fallback. | Hosted Supabase Auth, role provisioning and delivery, production domains, account model ID and metering, retention schedule, client provisioning and release review. The browser test used a local Auth stand-in; it does not verify hosted OTP or Storage policies. |
+| [#11 booking](https://github.com/velcrafting/website2025/pull/11), phase 4, BOOK-02/04–10, E2E-07–09 | `007`, signed webhook receipts, Cal lookup, durable jobs and Google adapters connect the local path. A current confirmation and verified contact must still match before each mutation and ready. A complete app-managed registry reconciles superseded PDFs and booking-derived grants; notes update only the managed agenda range. Ten PGlite / controlled HTTP tests covered replays, a missed cancellation, lost file acknowledgment, stale authorization, no-brief cleanup and read-back evidence. | Real BOOK-03: correct Cal event and organizer calendar, Meet, owner/visitor participation, literal PDF and notes, both participants opening both private files. Controlled visitor OAuth content probes are required for this implementation to mark ready; a grant response alone is insufficient. |
 
-Checks on the public slice: Node 22 `npm run lint`, `npm run typecheck --
---incremental false`, `npm run build`, `npm run test:design-tokens` (81/81),
-`npm run test:component-contracts` (14/14), and
-`node --test tests/consulting/brief.test.mjs` (3/3). The browser run used the
-production build with no live integration credentials or real records.
+The prior review's Windows-1252-only renderer and transient-state fallback are
+superseded. Session storage stays on the browser tab; server persistence begins
+only with an explicit save/share/send action. No reminder or newsletter is
+enrolled by verification. The client host never relies on the public admin key.
 
-Phase 2 starts in a separate stacked candidate. The files under `db/postgres`
-are local schema candidates, not applied hosted migrations. The application
-does not connect to these tables or expose a private route.
+## Reproduce
 
-| Requirement | Local evidence | Remaining gate |
-| --- | --- | --- |
-| DP-01–06, DP-08, DP-11 (SQL portion) | Applied both candidate SQL files to disposable PGlite Postgres 0.5.16. SQL ran as two fictional authenticated stakeholders, an identity with no grants, anonymous, editorial and service roles. Direct queries could not read another tenant, an ungranted phase, restricted terms, or AI content. A commercial grant exposed only its own terms. Cross-tenant foreign keys and snapshot updates failed. Revoking membership cut access with the same test identity and did not restore old grants when membership was reinstated. | JWT, OTP, Supabase Data API, direct file access, private route, scoped staff mutations, exact draft publication, agreement evidence and background job authorization still need implementation and real integration checks. |
-| E2E-01–03 (fixture portion) | The dispatcher entered a fictional transport only after the input, operation, reserved attempt and dispatch marker were readable after closing and reopening a file-backed database. Duplicate submissions, unavailable allowance, busy sessions, storage failure and unknown commit acknowledgement did not dispatch. An interrupted attempt retained pending cost; fixture output was stored separately with cost unavailable. | No live adapter or provider credentials. Account catalog must confirm DeepSeek v4.1 Flash on Command Code's Provider API. Verify limits, streaming, response/usage fields, retention, rate/concurrency limits, atomic reservation on real Postgres and reconciliation before enabling. Retry and repair dispatch are disabled in this slice; each future physical attempt requires its own record. |
+Use Node 22 and the committed lockfile. Install Chromium with
+`npx playwright install chromium`, or set `CONSULTING_CHROMIUM_PATH` to a local
+Chromium executable. PDF verification needs Poppler (`pdftotext`, `pdfinfo`,
+`pdffonts`, `pdftoppm`).
 
-To rerun the SQL evidence, use a local unpacked PGlite 0.5.16 entrypoint and set
-`VELCRAFTING_PGLITE_MODULE` to its absolute `dist/index.js` path, then run
-`node --test tests/consulting/postgres-boundaries.test.mjs` under Node 22. The
-suite creates its own temporary store; it does not accept a remote database
-URL. The test auth roles and provider response are fixtures. For the real
-schema, keep it out of the Supabase Data API by default and review grants/RLS
-separately ([Supabase guidance](https://supabase.com/docs/guides/api/securing-your-api)).
-The [Command Code documentation](https://commandcode.ai/docs/provider) describes
-the compatible endpoint, but is not proof of this account's model access.
+- `npm run test:consulting:export`: deterministic revision and rendered PDF
+  checks, with fictional PDF, page renders and extracted text under
+  `CONSULTING_PDF_ARTIFACTS` when set.
+- Run `npm run dev -- --hostname 127.0.0.1 --port 3139`, then
+  `npm run test:consulting:browser`. Set `CONSULTING_BROWSER_ARTIFACTS` for the
+  screenshots, downloadable fixture exports and commit receipt. Cal is intercepted.
+- `npm run test:consulting:postgres` uses locked PGlite 0.5.16 by default.
+  To include real concurrency, point `VELCRAFTING_NATIVE_PG_BIN` at PostgreSQL
+  18's `bin` directory. On Apple Silicon a reproducible isolated binary is
+  `npm pack @embedded-postgres/darwin-arm64@18.6.0-beta.19`; extract the
+  verified npm tarball outside the repo and use `package/native/bin`.
+  The harness starts a disposable server; never point the tests at a remote DB.
+- With the same native binary, run `npm run test:consulting:workspace-browser`.
+  It starts a disposable local Postgres and Auth stand-in on loopback, tests
+  the actual Next workspace routes, and can retain sanitized artifacts using
+  `VELCRAFTING_WORKSPACE_ARTIFACTS`. It runs no hosted services.
+- `npm run test:consulting:connected-browser` launches a loopback fixture with
+  the real routes rendered and consulting API requests intercepted. It tests
+  the recording notice, idempotency, visitor edits, optional OTP, exact
+  sharing and withdrawal without a database credential or any provider call.
+- `npm run test:consulting:ai` and `npm run test:consulting:booking` run the
+  adapter and persistence checks with controlled responses. A test response,
+  Vercel preview or successful build is not production verification.
 
-A separate local booking contract slice exercises BOOK-03, BOOK-09 and
-BOOK-10 **with fixtures only**. A resolved event and verified contact must
-match the stored confirmation version, intended recipients and booking
-reference. Readiness requires Meet, both participants' observed private
-Drive access and literal Calendar attachments for the exact brief revision
-and prepared notes. Explicit no-brief plans require notes without a PDF.
-Three Node tests cover stale consent, wrong event/recipient, missing
-attachments, wrong brief revision/integrity, missing access and the no-brief
-path. The contract has no Cal or Google client, webhook, durable worker,
-share mutation or booking endpoint. These tests do not pass real BOOK-03.
+## Next actions
+
+1. **Phase 2/5, DP-01/05/11/14:** In an owner-designated development Supabase
+   project, review and apply `004–007` in order, configure the dedicated
+   `velcrafting_runtime` login as NOINHERIT with no ownership/bypass role,
+   and keep `velcrafting_private` off the Data API. Verify invite-only client
+   OTP, separate prospect provisioning, actual logout/revocation and direct
+   file denial for two controlled users. The auth code follows
+   [Supabase SSR guidance](https://supabase.com/docs/guides/auth/server-side/nextjs).
+   Needs the development project, test users, sender and migration authorization.
+   Disable the auth flags and revoke only the temporary test credentials if
+   verification fails. Do not change the existing editorial database.
+2. **Phase 3, AI-01/02/04/06/07:** Confirm the entitled account exposes
+   `deepseek/deepseek-v4.1-flash` through
+   [Command Code's Provider API](https://commandcode.ai/docs/provider).
+   Adopt a payload lifetime and authorize one small fictional request
+   (one reserved allowance unit, at most 750 output tokens, no retry).
+   Enable bounded maintenance only for the designated development environment.
+   Confirm the attempt, request ID, actual returned model and usage in the
+   ledger. Stop after the first request and disable the flag; reconcile an
+   ambiguous attempt from provider evidence without replaying it.
+3. **Phase 4, BOOK-03/05/06/09/10:** Authorize a controlled Cal event type
+   (starting candidate: the existing 30-minute link), the opaque
+   `velcraftingIntent` field, signed webhook and designated Google calendar
+   and test participants. Run a selected-brief test and an explicit no-brief
+   test only with authorized recipients. Verify the actual literal PDF and
+   notes, Meet and read access from both accounts. Without proof, leave
+   preparation pending; on failure disable reconciliation, inspect durable
+   receipts and remove only app-owned artifacts or grants after authorization.

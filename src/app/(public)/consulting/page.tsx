@@ -11,6 +11,7 @@ import { parseService, services } from "@/consulting/brief";
 import { stages } from "@/consulting/fixtures";
 import { aiSettings } from "@/consulting/server/ai-runtime";
 import { authSettings } from "@/consulting/server/auth-settings";
+import { bookingSettings } from "@/consulting/server/booking-intent";
 import { configuredOrigin } from "@/consulting/server/request-boundary";
 import BriefDesk from "./BriefDesk";
 
@@ -32,7 +33,7 @@ export default async function ConsultingPage({
   const availability = {
     shaping: Boolean(publicHost && aiSettings()),
     prospect,
-    booking: false,
+    booking: Boolean(prospect && bookingSettings()),
     bookingUrl: SITE.bookingUrl,
   };
   const clientSignIn = authSettings("client")?.origin;
