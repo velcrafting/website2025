@@ -24,12 +24,16 @@
     "test:format-date": "node --experimental-strip-types tests/design/format-date.test.mjs",
     "test:component-contracts": "node tests/design/component-contracts.test.mjs",
     "test:consulting:browser": "node tests/consulting/public-browser.mjs",
-    "test:consulting:export": "node --test tests/consulting/brief.test.mjs tests/consulting/public-pdf.test.mjs"
+    "test:consulting:export": "node --test tests/consulting/brief.test.mjs tests/consulting/public-pdf.test.mjs",
+    "test:consulting:postgres": "node --test tests/consulting/postgres-boundaries.test.mjs tests/consulting/workspace-boundaries.test.mjs tests/consulting/workspace-provision.test.mjs",
+    "test:consulting:ai": "node --test tests/consulting/ai-runtime.test.mjs",
+    "test:consulting:workspace-browser": "node tests/consulting/workspace-browser.mjs"
   },
   "engines": {
     "node": ">=22.5"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.89",
     "@calcom/embed-react": "^1.5.3",
     "@mdx-js/react": "^3.1.0",
     "@radix-ui/react-dialog": "1.1.23",
@@ -39,15 +43,18 @@
     "@radix-ui/react-switch": "1.3.7",
     "@radix-ui/react-tabs": "1.1.21",
     "@radix-ui/react-tooltip": "1.2.16",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.0",
     "@vercel/kv": "^3.0.0",
     "@vercel/og": "latest",
+    "ai": "7.0.168",
     "class-variance-authority": "0.7.1",
     "clsx": "latest",
     "fontkit": "2.0.4",
     "framer-motion": "^12.23.12",
     "gray-matter": "^4.0.3",
     "lucide-react": "latest",
-    "next": "^15.5.25",
+    "next": "15.5.29",
     "next-seo": "latest",
     "pdfkit": "0.20.2",
     "postgres": "3.4.9",
@@ -56,12 +63,14 @@
     "react-dom": "latest",
     "resend": "^6.0.2",
     "tailwind-merge": "3.7.0",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/mdx": "^3.1.0",
-    "@next/mdx": "^15.5.25",
+    "@next/mdx": "15.5.29",
     "@shadcn/lint": "0.1.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@tailwindcss/typography": "^0.5.16",

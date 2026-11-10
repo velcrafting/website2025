@@ -30,7 +30,7 @@ const { listItems, getRevision, listRevisions } = loader.load(
   "src/editor/repository/revisions.ts",
 );
 
-const PAGE = "src/app/admin/editor/[id]/page.tsx";
+const PAGE = "src/app/(public)/admin/editor/[id]/page.tsx";
 const ADMIN_KEY = "test-admin-key-xyz";
 
 let passed = 0;

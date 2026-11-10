@@ -19,3 +19,22 @@ Checks on the public slice: Node 22 `npm run lint`, `npm run typecheck --
 `npm run test:component-contracts` (14/14), and
 `node --test tests/consulting/brief.test.mjs` (3/3). The browser run used the
 production build with no live integration credentials or real records.
+
+Phase 2 starts in a separate stacked candidate. The files under `db/postgres`
+are local schema candidates, not applied hosted migrations. The application
+does not connect to these tables or expose a private route.
+
+| Requirement | Local evidence | Remaining gate |
+| --- | --- | --- |
+| DP-01–06, DP-08, DP-11 (SQL portion) | Applied both candidate SQL files to disposable PGlite Postgres 0.5.16. SQL ran as two fictional authenticated stakeholders, an identity with no grants, anonymous, editorial and service roles. Direct queries could not read another tenant, an ungranted phase, restricted terms, or AI content. A commercial grant exposed only its own terms. Cross-tenant foreign keys and snapshot updates failed. Revoking membership cut access with the same test identity and did not restore old grants when membership was reinstated. | JWT, OTP, Supabase Data API, direct file access, private route, scoped staff mutations, exact draft publication, agreement evidence and background job authorization still need implementation and real integration checks. |
+| E2E-01–03 (fixture portion) | The dispatcher entered a fictional transport only after the input, operation, reserved attempt and dispatch marker were readable after closing and reopening a file-backed database. Duplicate submissions, unavailable allowance, busy sessions, storage failure and unknown commit acknowledgement did not dispatch. An interrupted attempt retained pending cost; fixture output was stored separately with cost unavailable. | No live adapter or provider credentials. Account catalog must confirm DeepSeek v4.1 Flash on Command Code's Provider API. Verify limits, streaming, response/usage fields, retention, rate/concurrency limits, atomic reservation on real Postgres and reconciliation before enabling. Retry and repair dispatch are disabled in this slice; each future physical attempt requires its own record. |
+
+To rerun the SQL evidence, use a local unpacked PGlite 0.5.16 entrypoint and set
+`VELCRAFTING_PGLITE_MODULE` to its absolute `dist/index.js` path, then run
+`node --test tests/consulting/postgres-boundaries.test.mjs` under Node 22. The
+suite creates its own temporary store; it does not accept a remote database
+URL. The test auth roles and provider response are fixtures. For the real
+schema, keep it out of the Supabase Data API by default and review grants/RLS
+separately ([Supabase guidance](https://supabase.com/docs/guides/api/securing-your-api)).
+The [Command Code documentation](https://commandcode.ai/docs/provider) describes
+the compatible endpoint, but is not proof of this account's model access.

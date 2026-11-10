@@ -253,8 +253,8 @@ check("schema version 1 is accepted", () => {
 console.log("\nblock kinds: reader parity");
 
 const READERS = [
-  "src/app/issues/[slug]/page.tsx",
-  "src/app/admin/editor/preview/[revisionId]/route.ts",
+  "src/app/(public)/issues/[slug]/page.tsx",
+  "src/app/(public)/admin/editor/preview/[revisionId]/route.ts",
 ];
 
 check("both readers serve the bundle output rather than re-rendering blocks inline", () => {

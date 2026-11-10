@@ -105,7 +105,7 @@ const eslintConfig = [
   //
   // ENABLED for `src/app/**` and `src/components/**`, with two documented exclusions:
   //
-  //   1. `src/app/art/**` — OUTSIDE THIS ASSIGNMENT. Art is kept in its own planning
+  //   1. `src/app/(public)/art/**` — OUTSIDE THIS ASSIGNMENT. Art is kept in its own planning
   //      scope (see docs/2026-refresh.md §6 and the arcade proposal), so migrating it is
   //      not this package's work. It was briefly migrated by mistake and reverted.
   //   2. The unconsumed legacy component files listed in LEGACY_UNCONSUMED above — named
@@ -132,11 +132,11 @@ const eslintConfig = [
       "src/components/ui/**",
       "src/components/mdx/**",
       // Outside the assignment: Art keeps its own planning scope for the Bouncing Universe surface.
-      // Updated 2026-09-16: the arcade now exists at src/app/arcade and is built entirely from the
+      // Updated 2026-09-16: the arcade now exists at src/app/(public)/arcade and is built entirely from the
       // shared components (Card, Badge, Button, Drawer) with the site's own palette and no raw colour.
       // When Art's scope is picked up, /arcade is the worked example of that migration — so this
       // exclusion should not be read as "art cannot be migrated".
-      "src/app/art/**",
+      "src/app/(public)/art/**",
       // The unconsumed legacy files, named individually so the remaining debt is a
       // visible list that shrinks by migrating or deleting a file.
       ...LEGACY_UNCONSUMED.map((f) => `src/components/${f}`),
