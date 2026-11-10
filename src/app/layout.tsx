@@ -1,4 +1,6 @@
 // src/app/layout.tsx
+import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/seo";
 import { Geist_Mono, Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import Providers from "./providers";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
@@ -21,6 +23,8 @@ const sourceSans = Source_Sans_3({
   display: "swap",
 });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
+
+export const metadata: Metadata = { metadataBase: new URL(SITE_URL) };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

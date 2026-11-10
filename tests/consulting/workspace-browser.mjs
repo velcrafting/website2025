@@ -65,7 +65,10 @@ try {
   await loadWorkspaceSchema((statement) => { schemaHash.update(statement); return sql.unsafe(statement); }, { provisioning: true, intake: true });
   const id = await seedWorkspace((statement, ...args) => sql.unsafe(statement.replaceAll("@", "velcrafting_private."), args));
   await sql`insert into velcrafting_private.workspace_provisioner(user_id) values(${id.issuer})`;
-  await sql`update auth.users set email='issuer@workspace.example.invalid' where id=${id.issuer}`;
+  await sql`update auth.users set email = case
+    when id=${id.issuer} then 'issuer@workspace.example.invalid'
+    when id=${id.prospect} then 'prospect@workspace.example.invalid'
+    end where id in (${id.issuer},${id.prospect})`;
   const password = randomBytes(24).toString("hex");
   await sql.unsafe(`alter role velcrafting_runtime login password '${password}'`);
   auth = await fixtureAuth(Object.fromEntries(["viewer", "commercial", "betaUser", "drafter", "issuer", "recorder", "prospect"].map((name) => [name, id[name]])));

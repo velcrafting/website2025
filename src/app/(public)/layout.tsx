@@ -5,7 +5,6 @@ import { GuidedChatProvider } from "@/components/guided-chat";
 import { SITE_URL, SHARE_CARD_DESCRIPTION, SHARE_CARD_IMAGE, SHARE_CARD_TITLE, organizationSchema, personSchema } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
   title: {
     default: "Velcrafting",
     template: "%s · Velcrafting",
