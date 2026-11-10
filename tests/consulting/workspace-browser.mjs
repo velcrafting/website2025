@@ -62,9 +62,13 @@ try {
   started = true;
   sql = postgres({ path: join(root, `.s.PGSQL.${dbPort}`), database: "postgres", username: "postgres", max: 1 });
   const schemaHash = createHash("sha256");
-  await loadWorkspaceSchema((statement) => { schemaHash.update(statement); return sql.unsafe(statement); }, { provisioning: true });
+  await loadWorkspaceSchema((statement) => { schemaHash.update(statement); return sql.unsafe(statement); }, { provisioning: true, intake: true });
   const id = await seedWorkspace((statement, ...args) => sql.unsafe(statement.replaceAll("@", "velcrafting_private."), args));
   await sql`insert into velcrafting_private.workspace_provisioner(user_id) values(${id.issuer})`;
+  await sql`update auth.users set email = case
+    when id=${id.issuer} then 'issuer@workspace.example.invalid'
+    when id=${id.prospect} then 'prospect@workspace.example.invalid'
+    end where id in (${id.issuer},${id.prospect})`;
   const password = randomBytes(24).toString("hex");
   await sql.unsafe(`alter role velcrafting_runtime login password '${password}'`);
   auth = await fixtureAuth(Object.fromEntries(["viewer", "commercial", "betaUser", "drafter", "issuer", "recorder", "prospect"].map((name) => [name, id[name]])));
@@ -128,6 +132,8 @@ try {
       VELCRAFTING_AI_ENABLED: "1", VELCRAFTING_AI_MAINTENANCE_TOKEN: "fixture-only-maintenance-token00000",
       VELCRAFTING_AI_PAYLOAD_RETENTION_HOURS: "1", COMMAND_CODE_API_KEY: "fixture-only-key",
       COMMAND_CODE_VERIFIED_MODEL: "deepseek/deepseek-v4.1-flash",
+      VELCRAFTING_BOOKING_ENABLED: "1", VELCRAFTING_CAL_EVENT_TYPE_ID: "42",
+      VELCRAFTING_BOOKING_OWNER_EMAIL: "issuer@workspace.example.invalid",
       VELCRAFTING_SUPABASE_URL: auth.origin, VELCRAFTING_SUPABASE_PUBLISHABLE_KEY: "fixture-publishable-key",
       VELCRAFTING_CLIENT_AUTH_ENABLED: "1", VELCRAFTING_PROSPECT_AUTH_ENABLED: "1", VELCRAFTING_EXPLORER_ENABLED: "1",
       VELCRAFTING_RUNTIME_DATABASE_URL: `postgres://velcrafting_runtime:${password}@127.0.0.1:${dbPort}/postgres`,
@@ -278,6 +284,7 @@ try {
   await progressNavigation;
   const status = await viewer.request.get(client + `/engagements/${id.alpha}`);
   assert.match(await status.text(),/Fictional sponsor reviews the draft/);
+  assert.equal((await mutation({action:"progress",engagementId:id.alpha,expected:0,status:"Delivered",nextAction:"Stale fixture"})).status(),409);
   await issuerPage.getByRole("textbox", { name: "Title" }).fill("Fictional UI discovery");
   await issuerPage.getByRole("textbox", { name: "Goals" }).fill("FICTIONAL_DISCOVERY_GOAL");
   const uiSave = issuerPage.waitForResponse((reply) => reply.url().endsWith("/api/consulting/workspace") && reply.request().method() === "POST");
@@ -352,6 +359,39 @@ try {
   assert.equal((await otherProspect.request.get(client + filePath)).status(), 404);
   assert.ok(auth.sends.every(({ shouldCreateUser }) => shouldCreateUser === false));
 
+  const intakeNow = new Date().toISOString();
+  const selectedBrief = { id:randomUUID(),version:1,createdAt:intakeNow,revisedAt:intakeNow,state:"in_progress",service:"review",
+    fields:{
+      outcome:{text:"Fictional visitor wants a better review handoff.",source:"visitor",confirmation:"stated",sourceMessageIds:[]},
+      audience:{text:"FICTIONAL_EXAMPLE_DO_NOT_CONVERT",source:"fictional_example",confirmation:"suggested",sourceMessageIds:[]},
+    }, scope:{level:"",breadth:"",readiness:"",audience:"",involvement:""},corrections:[],example:true };
+  const savedBrief = await p(prospect,"brief",selectedBrief);
+  assert.equal(savedBrief.status(),200);
+  const share = await p(prospect,"booking",{idempotencyKey:randomUUID(),material:{state:"shared_for_booking",brief:await savedBrief.json()}});
+  assert.equal(share.status(),201);
+  const {intentId,confirmationVersion} = await share.json();
+  await sql`insert into velcrafting_private.booking(uid,intent_id,confirmation_version,state,starts_at,time_zone,organizer,
+    visitor_email,participants,calendar_id,event_uid,provider_updated_at)
+    values('fixture-intake-booking',${intentId},${confirmationVersion},'confirmed',now()+interval '1 day',
+      'UTC','issuer@workspace.example.invalid',${email},
+      ${sql.json(["issuer@workspace.example.invalid",email])},'fixture-calendar','fixture-intake-event',now())`;
+  // The booking record above is a local provider-observation fixture, not a Cal booking.
+  await issuerPage.goto(client + "/staff/intake");
+  assert.equal((await viewer.request.get(client + "/staff/intake")).status(),404);
+  await issuerPage.getByRole("heading",{name:"Booking intake"}).waitFor();
+  await issuerPage.getByRole("combobox",{name:/Confirmed booking/}).selectOption(intentId);
+  await issuerPage.getByRole("combobox",{name:/Destination engagement/}).selectOption(id.alpha);
+  await issuerPage.getByRole("button",{name:"Review shared brief"}).click();
+  await issuerPage.getByText("Fictional visitor wants a better review handoff.",{exact:true}).waitFor();
+  assert.equal(await issuerPage.getByText("FICTIONAL_EXAMPLE_DO_NOT_CONVERT").count(),0);
+  await issuerPage.locator('input[value="outcome"]').check();
+  const converted = issuerPage.waitForResponse((response) => response.url().endsWith("/api/consulting/workspace/intake"));
+  await issuerPage.getByRole("button",{name:"Create private Discovery draft"}).click();
+  assert.equal((await converted).status(),201);
+  const {itemId: convertedItem} = await (await converted).json();
+  assert.equal((await viewer.request.get(client + `/documents/${id.alpha}/${convertedItem}/1/download`)).status(),404);
+  await issuerPage.getByRole("link",{name:"Open the engagement’s private drafts"}).waitFor();
+
   const chat = await context();
   const chatPage = await chat.newPage();
   await chatPage.goto(publicSite + "/consulting");
@@ -394,7 +434,7 @@ try {
     appSnapshotSha256: snapshotHash.digest("hex"), schemaSha256: schemaHash.digest("hex"),
     node: process.version, chromium: browser.version(), postgres: database.version,
     artifacts: ["workspace-home-desktop.png", "workspace-engagement-mobile.png", "workspace-engagement-mobile-text-200.png"],
-    checks: ["email code denial and verification", "home to engagement to downloaded private file", "tenant/phase and host isolation", "commercial export projection", "named setup from workflow template and explicit progress update", "staff authoring, exact preview, issue, private file upload and named agreement recording", "named draft and issue with conflict/retry", "200% root text scaling and reduced motion", "capability-bound prospect claim and replay denial", "revocation with an existing session", "actual shaping route committed before provider, usage persisted, duplicate suppressed and model provenance scoped"],
+    checks: ["email code denial and verification", "home to engagement to downloaded private file", "tenant/phase and host isolation", "commercial export projection", "named setup from workflow template and explicit progress update", "staff authoring, exact preview, issue, private file upload and named agreement recording", "named draft and issue with conflict/retry", "200% root text scaling and reduced motion", "capability-bound prospect claim and replay denial", "revocation with an existing session", "actual shaping route committed before provider, usage persisted, duplicate suppressed and model provenance scoped", "exact shared booking revision converted into an unpublished Discovery draft"],
   };
   await writeFile(join(artifacts, "evidence.json"), JSON.stringify(receipt, null, 2) + "\n");
   console.log(JSON.stringify({ ...receipt, artifactDirectory: artifacts }));

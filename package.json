@@ -27,7 +27,9 @@
     "test:consulting:export": "node --test tests/consulting/brief.test.mjs tests/consulting/public-pdf.test.mjs",
     "test:consulting:postgres": "node --test tests/consulting/postgres-boundaries.test.mjs tests/consulting/workspace-boundaries.test.mjs tests/consulting/workspace-provision.test.mjs",
     "test:consulting:ai": "node --test tests/consulting/ai-runtime.test.mjs",
-    "test:consulting:workspace-browser": "node tests/consulting/workspace-browser.mjs"
+    "test:consulting:workspace-browser": "node tests/consulting/workspace-browser.mjs",
+    "test:consulting:booking": "node --test tests/consulting/meeting-contract.test.mjs tests/consulting/booking-persistence.test.mjs tests/consulting/workspace-intake.test.mjs",
+    "test:consulting:connected-browser": "node tests/consulting/run-connected-browser.mjs"
   },
   "engines": {
     "node": ">=22.5"
