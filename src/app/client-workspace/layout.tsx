@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { isClientHost } from "@/consulting/server/request-boundary";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Velcrafting client workspace", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Velcrafting client workspace", openGraph: null, twitter: null, robots: { index: false, follow: false } };
 
 export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   if (!isClientHost((await headers()).get("host"))) notFound();

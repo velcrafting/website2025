@@ -1,4 +1,4 @@
-import { createBusinessCardImage, SHARE_CARD_SIZE } from "../_og/business-card";
+import { createBusinessCardImage, SHARE_CARD_SIZE } from "./_og/business-card";
 import { SITE_URL } from "@/lib/seo";
 
 export const runtime = "edge";
