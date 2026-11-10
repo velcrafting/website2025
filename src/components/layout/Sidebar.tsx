@@ -31,7 +31,7 @@ import { GradientIcon } from "../ui";
 import { GuidedChatTrigger } from "@/components/guided-chat";
 import dynamic from "next/dynamic";
 const SidebarArtPanel = dynamic(
-  () => import("@/app/art/components/SidebarArtPanel"),
+  () => import("@/app/(public)/art/components/SidebarArtPanel"),
   { ssr: false }
 );
 // import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -44,7 +44,7 @@ const nav = [
   { href: "/tools", label: "Tools", icon: LucideHammer },
   // No "/contact" entry: D1 consolidated the connect/contact surfaces and /contact
   // redirects to /connect, so a second nav item would only name a page that leaves
-  // immediately. The URL still resolves for old links (src/app/contact/page.tsx).
+  // immediately. The URL still resolves for old links (src/app/(public)/contact/page.tsx).
   { href: "/arcade", label: "Arcade", icon: Gamepad2 },
   { href: "/consulting", label: "Consulting", icon: BriefcaseBusiness },
   { href: "/connect", label: "Connect", icon: Compass },

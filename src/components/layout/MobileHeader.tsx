@@ -13,7 +13,7 @@ import { SITE } from "@/config/site";
 import { GuidedChatTrigger } from "@/components/guided-chat";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
-const SidebarArtPanel = dynamic(() => import("@/app/art/components/SidebarArtPanel"), { ssr: false });
+const SidebarArtPanel = dynamic(() => import("@/app/(public)/art/components/SidebarArtPanel"), { ssr: false });
 
 const nav = [
   { href: "/", label: "Home", icon: Home },

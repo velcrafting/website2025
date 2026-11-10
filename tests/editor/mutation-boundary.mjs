@@ -280,7 +280,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map();
     const env = makeEnv(false); // ADMIN_KEY absent
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -312,7 +312,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -351,7 +351,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -390,7 +390,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -417,7 +417,7 @@ async function testAdminNew() {
   await test("admin/new: raw traversal in pillar -> zero effects, redirect to /admin", async (root) => {
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -451,7 +451,7 @@ async function testAdminNew() {
   await test("admin/new: raw NUL in slug -> zero effects, redirect to /admin", async (root) => {
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -486,7 +486,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -527,7 +527,7 @@ async function testAdminNew() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/new/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/new/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -570,7 +570,7 @@ async function testAdminEdit() {
     prepContentRoot(root);
     const cookieStore = new Map();
     const env = makeEnv(false);
-    const mod = loadPageModule("src/app/admin/edit/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/edit/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -602,7 +602,7 @@ async function testAdminEdit() {
   await test("admin/edit: authorized, original missing -> zero fs effects", async (root) => {
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/edit/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/edit/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -635,7 +635,7 @@ async function testAdminEdit() {
     mkdirSync(pillarDir, { recursive: true });
     const existing = join(pillarDir, "existing.mdx");
     writeFileSync(existing, "---\ntitle: x\n---\n\nbody\n");
-    const mod = loadPageModule("src/app/admin/edit/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/edit/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -674,7 +674,7 @@ async function testAdminEdit() {
     mkdirSync(pillarDir, { recursive: true });
     const existing = join(pillarDir, "existing.mdx");
     writeFileSync(existing, "---\ntitle: x\n---\n\nbody\n");
-    const mod = loadPageModule("src/app/admin/edit/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/edit/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -713,7 +713,7 @@ async function testAdminNewsletter() {
     prepContentRoot(root);
     const cookieStore = new Map();
     const env = makeEnv(false);
-    const mod = loadPageModule("src/app/admin/newsletter/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/newsletter/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -743,7 +743,7 @@ async function testAdminNewsletter() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/newsletter/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/newsletter/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -773,7 +773,7 @@ async function testAdminNewsletter() {
   await test("admin/newsletter: repeated send (double-click) -> zero fs effects", async (root) => {
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/newsletter/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/newsletter/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -797,7 +797,7 @@ async function testAdminNewsletter() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/newsletter/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/newsletter/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -831,7 +831,7 @@ async function testAdminNewsletter() {
     prepContentRoot(root);
     const cookieStore = new Map([["admin", "test-admin-key-xyz"]]);
     const env = makeEnv(true);
-    const mod = loadPageModule("src/app/admin/newsletter/page.tsx", {
+    const mod = loadPageModule("src/app/(public)/admin/newsletter/page.tsx", {
       env,
       cwd: root,
       cookieStore,
@@ -856,7 +856,7 @@ async function testAdminNewsletter() {
 
   await test("admin/newsletter: send cannot reach a provider — Resend is not imported in the action body", async () => {
     const src = readFileSync(
-      pathResolve(REPO, "src/app/admin/newsletter/page.tsx"),
+      pathResolve(REPO, "src/app/(public)/admin/newsletter/page.tsx"),
       "utf8",
     );
     // The action body (everything inside `async function handle`) must not

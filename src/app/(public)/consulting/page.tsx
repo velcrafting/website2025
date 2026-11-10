@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -8,6 +9,9 @@ import { portfolioProjects } from "@/lib/portfolio-projects";
 import { meetingPreparation } from "@/consulting/availability";
 import { parseService, services } from "@/consulting/brief";
 import { stages } from "@/consulting/fixtures";
+import { aiSettings } from "@/consulting/server/ai-runtime";
+import { authSettings } from "@/consulting/server/auth-settings";
+import { configuredOrigin } from "@/consulting/server/request-boundary";
 import BriefDesk from "./BriefDesk";
 
 export const metadata: Metadata = {
@@ -22,6 +26,16 @@ export default async function ConsultingPage({
   searchParams: Promise<{ service?: string | string[] }>;
 }) {
   const selectedService = parseService((await searchParams).service);
+  const publicOrigin = configuredOrigin(process.env.PUBLIC_SITE_ORIGIN);
+  const publicHost = publicOrigin && (await headers()).get("host") === new URL(publicOrigin).host;
+  const prospect = Boolean(publicHost && process.env.VELCRAFTING_EXPLORER_ENABLED === "1" && authSettings("prospect"));
+  const availability = {
+    shaping: Boolean(publicHost && aiSettings()),
+    prospect,
+    booking: false,
+    bookingUrl: SITE.bookingUrl,
+  };
+  const clientSignIn = authSettings("client")?.origin;
   const work = portfolioProjects.filter(({ slug }) => slug === "veldesk" || slug === "yolo26-mlx-swift");
 
   return (
@@ -78,7 +92,7 @@ export default async function ConsultingPage({
         </div>
       </section>
 
-      <BriefDesk initialService={selectedService} />
+      <BriefDesk initialService={selectedService} availability={availability} />
 
       <section aria-labelledby="work-title" className="section-gap border-t border-rule pt-6">
         <h2 id="work-title">Selected work</h2>
@@ -96,12 +110,14 @@ export default async function ConsultingPage({
 
       <section id="schedule" aria-labelledby="schedule-title" className="section-gap scroll-mt-6 border-t border-rule pt-6">
         <h2 id="schedule-title">Schedule a conversation</h2>
-        <p className="mt-3 max-w-prose">{meetingPreparation.message} No brief is required. You can also get in touch by email.</p>
+        <p className="mt-3 max-w-prose">{meetingPreparation.message} Scheduling opens in a new tab so you can return to your brief. No brief is required. You can also get in touch by email.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild><a href={SITE.bookingUrl}>Open scheduling on Cal.com</a></Button>
+          {availability.booking && <Button asChild variant="outline"><a href="#integrated-scheduling">Prepare meeting materials</a></Button>}
+          <Button asChild><a href={SITE.bookingUrl} target="_blank" rel="noopener noreferrer">Open scheduling on Cal.com (new tab)</a></Button>
           <Button asChild variant="outline"><a href={`mailto:${SITE.email}`}>Email Velcrafting</a></Button>
         </div>
-        <p className="meta mt-4">Client sign in is unavailable here.</p>
+        {clientSignIn ? <p className="mt-4"><a href={new URL("/login", clientSignIn).href}>Client sign in</a></p>
+          : <p className="meta mt-4">Client sign in is unavailable here.</p>}
       </section>
     </div>
   );
