@@ -1,69 +1,181 @@
+import PDFDocument from "pdfkit";
+import { create, type Font } from "fontkit";
 import { briefSections, briefTitle, type BriefRevision } from "./brief";
 
-const winAnsi = "€\0‚ƒ„…†‡ˆ‰Š‹Œ\0Ž\0\0‘’“”•–—˜™š›œ\0žŸ";
+export const briefPdfFontFiles = {
+  standard: "NotoSans-Regular.ttf",
+  devanagari: "NotoSansDevanagari-Regular.ttf",
+  japanese: "NotoSansJP-Regular.otf",
+} as const;
 
-function pdfString(value: string): string {
-  return Array.from(value, (character) => {
-    const code = character.charCodeAt(0);
-    if (code >= 32 && code <= 126) return character.replace(/[()\\]/g, "\\$&");
-    if (code >= 160 && code <= 255) return "\\" + code.toString(8);
-    const index = winAnsi.indexOf(character);
-    if (index >= 0 && character !== "\0") return "\\" + (128 + index).toString(8);
-    // shortcut: the built-in PDF font covers Windows-1252; embed a licensed Unicode font before broader PDF support.
-    throw new Error("The PDF font cannot display some characters in this brief. Download Markdown or use Copy brief to keep the original text.");
-  }).join("");
+export type BriefPdfFont = keyof typeof briefPdfFontFiles;
+export type BriefPdfFonts = (name: BriefPdfFont) => Promise<Uint8Array>;
+
+type Run = { font: BriefPdfFont; text: string };
+type Word = Run[];
+
+const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" });
+const words = new Intl.Segmenter("en", { granularity: "word" });
+const devanagari = /\p{Script_Extensions=Devanagari}/u;
+const japanese = /[\p{Script_Extensions=Han}\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}]/u;
+const unsafeDirection = /[\p{Script=Arabic}\p{Script=Hebrew}\p{Bidi_Control}]/u;
+const unsupported = "PDF export cannot render every character in this revision. Download Markdown or copy the brief to preserve the original text.";
+const show = (value: string) => value.replace(/\t/g, "    ");
+const margin = 48;
+
+function append(runs: Run[], run: Run) {
+  const last = runs.at(-1);
+  if (last?.font === run.font) last.text += run.text;
+  else runs.push({ ...run });
 }
 
-export function briefPdf(brief: BriefRevision): Uint8Array<ArrayBuffer> {
-  // All PDF syntax and escaped streams are ASCII, so string offsets are byte offsets.
-  const objects: string[] = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-  ];
-  const pages: string[] = [];
-  let stream = "";
-  let y = 744;
-
-  function line(text: string, size: number, font: number) {
-    stream += `BT /F${font} ${size} Tf 1 0 0 1 48 ${y} Tm (${pdfString(text)}) Tj ET\n`;
-    y -= size + 4;
+async function layout(brief: BriefRevision, loadFont: BriefPdfFonts) {
+  const fonts = new Map<BriefPdfFont, { bytes: Uint8Array; face: Font }>();
+  async function getFont(name: BriefPdfFont) {
+    const cached = fonts.get(name);
+    if (cached) return cached;
+    const bytes = await loadFont(name);
+    // Fontkit accepts Uint8Array in both environments. Its types still require Buffer.
+    const face = create(bytes as Buffer);
+    if (!("hasGlyphForCodePoint" in face)) throw new Error("Unexpected PDF font file.");
+    const font = { bytes, face };
+    fonts.set(name, font);
+    return font;
   }
-
-  function finishPage() {
-    const streamId = objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);
-    const pageId = objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamId} 0 R >>`);
-    pages.push(`${pageId} 0 R`);
-    stream = "";
-    y = 744;
-  }
-
-  line(briefTitle, 21, 2);
+  const primary = await getFont("standard");
+  const sections: { heading: string; paragraphs: Word[][] }[] = [];
   for (const [heading, value] of briefSections(brief)) {
-    if (y < 84) finishPage();
-    y -= 7;
-    line(heading, 13, 2);
-    for (const paragraph of value.replace(/\t/g, "    ").split("\n")) {
-      let remaining = paragraph;
-      do {
-        if (y < 52) finishPage();
-        const space = remaining.lastIndexOf(" ", 84);
-        const end = remaining.length <= 84 ? remaining.length : space > 0 ? space : 84;
-        line(remaining.slice(0, end), 10, 1);
-        remaining = remaining.slice(end).replace(/^ /, "");
-      } while (remaining);
+    const paragraphs: Word[][] = [];
+    for (const paragraph of value.split("\n")) {
+      const row: Word[] = [];
+      for (const { segment: word } of words.segment(paragraph)) {
+        const runs: Run[] = [];
+        for (const { segment } of graphemes.segment(word)) {
+          if (unsafeDirection.test(segment)) throw new Error(unsupported);
+          const codePoints = Array.from(show(segment), (char) => char.codePointAt(0)!);
+          const covers = (font: Font) => codePoints.every((code) => font.hasGlyphForCodePoint(code));
+          let name: BriefPdfFont = "standard";
+          if (!covers(primary.face)) {
+            // A glyph in a font does not imply usable shaping. Support tested LTR scripts only.
+            if (devanagari.test(segment)) name = "devanagari";
+            else if (japanese.test(segment)) name = "japanese";
+            else throw new Error(unsupported);
+            if (!covers((await getFont(name)).face)) throw new Error(unsupported);
+          }
+          append(runs, { font: name, text: segment });
+        }
+        row.push(runs);
+      }
+      paragraphs.push(row);
+    }
+    sections.push({ heading, paragraphs });
+  }
+  return { fonts, sections };
+}
+
+export async function briefPdf(brief: BriefRevision, loadFont: BriefPdfFonts): Promise<Uint8Array<ArrayBuffer>> {
+  const { fonts, sections } = await layout(brief, loadFont);
+  const date = new Date(brief.revisedAt);
+  const doc = new PDFDocument({
+    size: "LETTER",
+    pdfVersion: "1.7",
+    margins: { top: margin, right: margin, bottom: margin, left: margin },
+    font: "",
+    autoFirstPage: false,
+    tagged: true,
+    lang: "en-US",
+    displayTitle: true,
+    info: { Title: briefTitle, CreationDate: date, ModDate: date },
+  });
+  for (const [name, { bytes }] of fonts) doc.registerFont(name, bytes);
+  doc.font("standard").addPage();
+  const structure = doc.struct("Document");
+  doc.addStructure(structure);
+  const output = new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    doc.on("data", (chunk: Uint8Array) => chunks.push(chunk));
+    doc.on("error", reject);
+    doc.on("end", () => {
+      const buffer = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0));
+      let offset = 0;
+      for (const chunk of chunks) {
+        buffer.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      resolve(buffer);
+    });
+  });
+  const width = doc.page.width - margin * 2;
+  let y = margin;
+  function ensureSpace(height: number) {
+    if (y + height <= doc.page.height - margin) return;
+    doc.continueOnNewPage();
+    y = margin;
+  }
+  function heading(level: "H1" | "H2", text: string, size: number) {
+    structure.add(doc.struct(level, {}, () => {
+      doc.font("standard").fontSize(size).fillColor("#253a2c").text(text, margin, y, { lineBreak: false });
+    }));
+    y += size + 6;
+  }
+  function runWidth(run: Run) {
+    return doc.font(run.font).fontSize(11).widthOfString(show(run.text));
+  }
+  function renderLine(runs: Run[]) {
+    ensureSpace(17);
+    let x = margin;
+    if (runs.length) {
+      // Supply logical text for text extraction when OpenType reorders or substitutes glyphs.
+      doc.markContent("Span", { actual: runs.map((run) => run.text).join("") });
+      for (const run of runs) {
+        const advance = runWidth(run);
+        doc.fillColor("#242824").text(show(run.text), x, y + 12, { lineBreak: false, baseline: "alphabetic" });
+        x += advance;
+      }
+      doc.endMarkedContent();
+    }
+    y += 17;
+  }
+  function paragraph(row: Word[]) {
+    let line: Run[] = [];
+    function place(runs: Run[]) {
+      const next = line.map((run) => ({ ...run }));
+      for (const run of runs) append(next, run);
+      if (next.reduce((sum, run) => sum + runWidth(run), 0) > width) return false;
+      line = next;
+      return true;
+    }
+    function flush() {
+      renderLine(line);
+      line = [];
+    }
+    for (const word of row) {
+      if (place(word)) continue;
+      if (line.length) flush();
+      if (place(word)) continue;
+      for (const run of word) {
+        for (const { segment } of graphemes.segment(run.text)) {
+          const piece = [{ font: run.font, text: segment }];
+          if (place(piece)) continue;
+          flush();
+          if (!place(piece)) throw new Error(unsupported);
+        }
+      }
+    }
+    flush();
+  }
+
+  heading("H1", briefTitle, 24);
+  for (const section of sections) {
+    ensureSpace(45);
+    y += 8;
+    heading("H2", section.heading, 13);
+    for (const row of section.paragraphs) {
+      if (row.length) structure.add(doc.struct("P", {}, () => paragraph(row)));
+      else renderLine([]);
     }
   }
-  finishPage();
-  objects[1] = `<< /Type /Pages /Kids [${pages.join(" ")}] /Count ${pages.length} >>`;
-  let pdf = "%PDF-1.4\n";
-  const offsets = objects.map((object, index) => {
-    const offset = pdf.length;
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-    return offset.toString().padStart(10, "0") + " 00000 n \n";
-  });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.join("")}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return new TextEncoder().encode(pdf);
+  structure.end();
+  doc.end();
+  return output;
 }

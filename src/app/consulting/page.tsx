@@ -96,9 +96,9 @@ export default async function ConsultingPage({
 
       <section id="schedule" aria-labelledby="schedule-title" className="section-gap scroll-mt-6 border-t border-rule pt-6">
         <h2 id="schedule-title">Schedule a conversation</h2>
-        <p className="mt-3 max-w-prose">{meetingPreparation.message} No brief is required. You can also get in touch by email.</p>
+        <p className="mt-3 max-w-prose">{meetingPreparation.message} Scheduling opens in a new tab so you can return to your brief. No brief is required. You can also get in touch by email.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild><a href={SITE.bookingUrl}>Open scheduling on Cal.com</a></Button>
+          <Button asChild><a href={SITE.bookingUrl} target="_blank" rel="noopener noreferrer">Open scheduling on Cal.com (new tab)</a></Button>
           <Button asChild variant="outline"><a href={`mailto:${SITE.email}`}>Email Velcrafting</a></Button>
         </div>
         <p className="meta mt-4">Client sign in is unavailable here.</p>
