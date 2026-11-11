@@ -2,6 +2,8 @@ import { fieldLabels, maxFieldLength, scopeChoices, services, type BriefRevision
 
 export const fields = Object.keys(fieldLabels) as FieldKey[];
 export const scopeKeys = Object.keys(scopeChoices) as (keyof typeof scopeChoices)[];
+export const guideSteps = ["problem", "outcome", "audience", "constraints", "review"] as const;
+export type GuideStep = (typeof guideSteps)[number];
 
 export type BriefDraft = {
   service: Service;
@@ -15,6 +17,7 @@ export type DeskState = {
   draft: BriefDraft;
   dirty: boolean;
   example: "software" | "communications" | null;
+  step?: GuideStep;
 };
 
 const storageKey = "velcrafting.consulting.desk.v1";
@@ -79,6 +82,7 @@ export function readDesk(storage: Storage): DeskState | null {
   try {
     const value: unknown = JSON.parse(raw);
     if (isRecord(value) && isService(value.entry) && typeof value.dirty === "boolean" &&
+        (value.step === undefined || guideSteps.includes(value.step as GuideStep)) &&
         [null, "software", "communications"].includes(value.example as DeskState["example"]) &&
         (value.brief === null || isBrief(value.brief)) &&
         isRecord(value.draft) && isService(value.draft.service) && isScope(value.draft.scope) &&

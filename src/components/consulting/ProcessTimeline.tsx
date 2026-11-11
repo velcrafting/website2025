@@ -1,4 +1,5 @@
 import type { stages as consultingStages } from "@/consulting/fixtures";
+import Button from "@/components/ui/Button";
 import styles from "./process-timeline.module.css";
 
 export default function ProcessTimeline({ stages }: { stages: typeof consultingStages }) {
@@ -59,7 +60,10 @@ export default function ProcessTimeline({ stages }: { stages: typeof consultingS
           </section>
         ))}
       </fieldset>
-      <p className="mt-3 text-sm text-muted">Some stages can combine. We agree on the scope and update schedule together.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <Button asChild variant="outline"><a href="#explorer">Start with your own problem <span aria-hidden="true">↓</span></a></Button>
+        <p className="max-w-prose text-sm text-muted">Some stages can combine. We agree on the scope and update schedule together.</p>
+      </div>
     </section>
   );
 }

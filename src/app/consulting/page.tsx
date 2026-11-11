@@ -37,8 +37,8 @@ export default async function ConsultingPage({
       <header className="grid items-end gap-4 border-b border-rule pb-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div>
           <p className="meta uppercase tracking-wide">Velcrafting · Consulting</p>
-          <h1 className="mt-3 max-w-[21ch]">Turn complicated work into useful systems.</h1>
-          <p className="mt-4 max-w-prose text-lg">Velcrafting helps teams decide what to build, make recurring work easier, and explain what they offer clearly to customers and search tools.</p>
+          <h1 className="mt-3 max-w-[21ch]">Fix the work that keeps getting stuck.</h1>
+          <p className="mt-4 max-w-prose text-lg">Steven helps you find what’s slowing your team down, fix the workflow, software, or messaging with you, and hand over a solution your team can run.</p>
           <p className="mt-3 max-w-prose">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide. Remote work combines working sessions with written scope, decisions and handoff.</p>
         </div>
         <div className="flex flex-wrap items-start gap-2 md:justify-end">
@@ -48,6 +48,8 @@ export default async function ConsultingPage({
       </header>
 
       <ProcessTimeline stages={stages} />
+
+      <BriefDesk initialService={selectedService} />
 
       <section className="section-gap border-t border-rule pt-6" aria-labelledby="services-title">
         <h2 id="services-title">How Velcrafting can help</h2>
@@ -63,10 +65,6 @@ export default async function ConsultingPage({
         </ul>
         <Link href="/consulting?service=unsure#explorer" className="inline-flex min-h-11 items-center">Not sure yet</Link>
       </section>
-
-      {/* The fictional walkthrough never populates the visitor's brief. */}
-
-      <BriefDesk initialService={selectedService} />
 
       <section aria-labelledby="work-title" className="section-gap border-t border-rule pt-6">
         <h2 id="work-title">Selected work</h2>

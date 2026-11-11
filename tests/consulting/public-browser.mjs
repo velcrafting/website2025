@@ -51,7 +51,7 @@ try {
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
   await page.getByRole("link", { name: "Communications and knowledge" }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
-  assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).inputValue(), "communications");
+  assert.equal(await page.locator('select[name="service"]').inputValue(), "communications");
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();
@@ -72,7 +72,19 @@ try {
     path: join(out, "consulting-timeline-desktop.png"), caret: "initial", animations: "disabled",
   });
 
+  await page.getByRole("link", { name: "Start with your own problem" }).click();
+  assert.equal(new URL(page.url()).hash, "#explorer");
+  assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
+  await page.getByRole("button", { name: "Next: outcome" }).click();
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "What would better look like?");
+  await page.getByRole("textbox", { name: "Desired outcome" }).fill("Fictional outcome for the guided brief");
+  assert.ok(await page.locator("#your-brief").getByText("Fictional outcome for the guided brief", { exact: true }).isVisible());
+  await page.locator("#explorer").screenshot({
+    path: join(out, "consulting-guided-brief-desktop.png"), caret: "initial", animations: "disabled",
+  });
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  assert.equal(await problem(page).inputValue(), saved);
   await page.getByRole("button", { name: "Save draft revision" }).click();
   await page.getByText("Revision 1 saved.", { exact: true }).waitFor();
   await problem(page).fill(unsaved);
@@ -90,8 +102,10 @@ try {
   async function checkRestored() {
     await page.getByText("Unsaved changes. Save a revision before exporting.", { exact: true }).waitFor();
     assert.equal(await problem(page).inputValue(), unsaved);
+    const savedDetails = page.locator("#your-brief details");
+    if (!(await savedDetails.evaluate((element) => element.open))) await savedDetails.locator("summary").click();
     assert.ok(await page.getByText(`Visitor stated: ${saved}`, { exact: true }).isVisible());
-    assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).inputValue(), "workflow");
+    assert.equal(await page.locator('select[name="service"]').inputValue(), "workflow");
     assert.ok(await page.getByRole("button", { name: "Download PDF" }).isDisabled());
   }
 
@@ -108,6 +122,21 @@ try {
   await otherTab.goto(new URL("/consulting", base).href);
   await otherTab.getByRole("button", { name: "Save draft revision" }).waitFor();
   assert.equal(await problem(otherTab).inputValue(), "");
+  await otherTab.getByRole("button", { name: "Next: outcome" }).click();
+  await otherTab.getByRole("textbox", { name: "Desired outcome" }).fill("Another tab, another outcome");
+  await otherTab.getByRole("button", { name: "Next: people" }).click();
+  await otherTab.reload();
+  await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
+  await otherTab.getByRole("button", { name: "Next: constraints" }).click();
+  await otherTab.getByRole("button", { name: "Review brief" }).click();
+  await otherTab.getByText("Add more context or scope choices", { exact: true }).click();
+  await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
+  await otherTab.getByRole("navigation", { name: "Brief steps" }).getByRole("button", { name: "Outcome" }).click();
+  assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
+  await otherTab.getByRole("button", { name: "Save draft revision" }).click();
+  await otherTab.getByText("Revision 1 saved.", { exact: true }).waitFor();
+  await otherTab.getByText("See saved revision", { exact: true }).click();
+  assert.ok(await otherTab.getByText(/Delivery level: Prototype/).isVisible());
   await otherTab.close();
 
   await page.getByRole("button", { name: "Save draft revision" }).click();
@@ -147,7 +176,7 @@ try {
   await mobile.locator("#process").screenshot({
     path: join(out, "consulting-timeline-mobile.png"), caret: "initial", animations: "disabled",
   });
-  await mobile.getByRole("link", { name: "Explore your project" }).click();
+  await mobile.getByRole("link", { name: "Start with your own problem" }).click();
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -184,6 +213,7 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
+    guide: "timeline entry, one question at a time, live preview, back, skip, refresh, and optional scope",
     scheduling: "intercepted Cal link; no provider booking",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",
