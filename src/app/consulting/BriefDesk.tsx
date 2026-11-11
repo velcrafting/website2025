@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Button from "@/components/ui/Button";
+import { bookingLinkWithProblem, maxBookingProblemLength } from "@/consulting/booking-link";
 import {
   briefMarkdown, briefSections, briefText, fieldLabels, maxFieldLength, normalizeBriefField, parseService, reviseBrief,
   scopeChoices, services, type BriefRevision, type Service,
@@ -26,20 +27,19 @@ function download(content: BlobPart, type: string, name: string) {
 const control = "block w-full rounded-[var(--radius-surface)] border border-rule bg-paper px-3 py-2 text-ink";
 
 const prompts = {
-  problem: { question: "What keeps getting stuck?", hint: "Tell Steven where the work slows down, gets repeated, or falls through the cracks.", placeholder: "We review the same requests in email and a spreadsheet…" },
+  problem: { question: "What keeps getting stuck?", hint: "A sentence or two is enough. Leave out confidential details.", placeholder: "We review the same requests in email and a spreadsheet…" },
   outcome: { question: "What would better look like?", hint: "Describe what should be easier for you or your team.", placeholder: "One place to see what needs a decision…" },
   audience: { question: "Who needs this to work?", hint: "Think about the people doing the work and anyone who needs to approve it.", placeholder: "Our operations team and the people sending requests…" },
-  constraints: { question: "What should Steven work around?", hint: "Add any tools, deadlines, or requirements you already know about.", placeholder: "We need to keep using our existing inbox…" },
-  review: { question: "Your project brief", hint: "Review what you wrote, then save a copy to keep or bring to a call." },
+  constraints: { question: "Any blockers?", hint: "What tools, deadlines, or requirements should we work around?", placeholder: "We need to keep using our existing inbox…" },
+  review: { question: "Review & book a meeting", hint: "Check what you wrote before choosing a time." },
 } as const;
 
-export default function BriefDesk({ initialService, bookingUrl }: { initialService: Service; bookingUrl: string }) {
+export default function BriefDesk({ initialService, bookingUrl, contactEmail }: { initialService: Service; bookingUrl: string; contactEmail: string }) {
   const [desk, setDesk] = useState(() => newDesk(initialService));
   const [storage, setStorage] = useState<"loading" | "available" | "unavailable">("loading");
   const [notice, setNotice] = useState("");
   const { brief, dirty, draft, example } = desk;
   const ready = storage !== "loading";
-  const started = desk.step !== undefined || dirty || brief !== null;
   const step = desk.step ?? "problem";
   const stepIndex = guideSteps.indexOf(step);
   const nextStep = guideSteps[stepIndex + 1];
@@ -47,8 +47,9 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
   const problem = normalizeBriefField(draft.fields.problem ?? "");
   const savedProblem = brief?.fields.problem;
   const hasProblem = !!problem && (!savedProblem || savedProblem.source === "visitor" || problem !== normalizeBriefField(savedProblem.text));
+  const scheduleUrl = step === "review" && hasProblem ? bookingLinkWithProblem(bookingUrl, problem) : null;
   const heading = useRef<HTMLHeadingElement>(null);
-  const focusQuestion = useRef<FocusOptions | null>(null);
+  const focusQuestion = useRef(false);
 
   const updateDesk = useCallback((next: DeskState) => {
     setDesk(next);
@@ -76,19 +77,14 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
 
   useEffect(() => {
     if (focusQuestion.current) {
-      heading.current?.focus(focusQuestion.current);
-      focusQuestion.current = null;
+      heading.current?.focus();
+      focusQuestion.current = false;
     }
-  }, [started, step]);
-
-  function start() {
-    focusQuestion.current = { preventScroll: true };
-    updateDesk({ ...desk, step });
-  }
+  }, [step]);
 
   function goTo(next: GuideStep) {
     if (next === step) return;
-    focusQuestion.current = {};
+    focusQuestion.current = true;
     updateDesk({ ...desk, step: next });
   }
 
@@ -146,18 +142,11 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
 
   return (
     <section id="explorer" tabIndex={-1} aria-labelledby="intake-title" className="min-w-0 scroll-mt-6">
-      <div id={!hasProblem ? "schedule" : undefined} tabIndex={-1} className="scroll-mt-6">
-        <div className="flex flex-wrap justify-between gap-x-3 font-sans text-sm font-medium text-muted">
-          <span id="intake-title" className="font-semibold">Your real problem</span>
-          {started && <span>{step === "review" ? "Review" : `Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>}
-        </div>
-        {!started && <>
-          <p className="mt-2">What’s getting in your team’s way? A sentence is enough to save a brief or book a call.</p>
-          <Button type="button" className="mt-4 text-start" disabled={!ready} onClick={start}>Start with your own problem</Button>
-          <noscript><p className="mt-3 text-sm">The brief and scheduling require JavaScript. You can still explore the stages or email Steven.</p></noscript>
-        </>}
+      <div id="schedule" tabIndex={-1} className="flex scroll-mt-6 flex-wrap justify-between gap-x-3 font-sans text-sm font-medium text-muted">
+        <span id="intake-title" className="font-semibold">Your real problem</span>
+        <span>{step === "review" ? "Review" : `Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>
       </div>
-      {started && <div id="brief-editor">
+      <div id="brief-editor">
         <div aria-hidden="true" className="mt-3 grid grid-cols-5 gap-1">
           {guideSteps.map((key, index) => (
             <span key={key} className={`h-0.5 rounded-full ${index <= stepIndex ? "bg-accent" : "bg-rule"}`} />
@@ -165,6 +154,7 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
         </div>
         <h3 id="brief-question" ref={heading} tabIndex={-1} className="mt-3 text-xl">{prompts[step].question}</h3>
         <p id="brief-question-hint" className="mt-2">{prompts[step].hint}</p>
+        <noscript><p className="mt-3 text-sm">The brief and scheduling require JavaScript. You can still explore the stages or email Steven.</p></noscript>
         {storage === "unavailable" && (
           <p role="status" className="mt-3">Browser storage is unavailable. Keep this page open or export a copy before leaving.</p>
         )}
@@ -177,7 +167,7 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
                   id={`guide-${key}`}
                   name={key}
                   rows={4}
-                  maxLength={maxFieldLength}
+                  maxLength={key === "problem" ? maxBookingProblemLength : maxFieldLength}
                   className={control}
                   value={draft.fields[key] ?? ""}
                   placeholder={prompts[key].placeholder}
@@ -203,28 +193,38 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
                   </dl>
                 ) : <p>You haven’t added any answers yet.</p>}
                 {!hasProblem && <p className="mt-3 font-medium">Describe your problem to save the brief or book a call.</p>}
+                {problem.length > maxBookingProblemLength && <p className="mt-3 font-medium">Shorten your problem to {maxBookingProblemLength} characters or fewer to book.</p>}
+                {scheduleUrl && <p className="mt-3 text-sm">Your problem goes in the Cal.com booking link and may appear on the invite.</p>}
               </div>
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
               {nextStep && <Button type="button" onClick={() => goTo(nextStep)}>
-                {nextStep === "review" ? "Review brief" : "Continue"}
+                  {nextStep === "review" ? "Review & book meeting" : "Continue"}
                 <span aria-hidden="true">→</span>
               </Button>}
-              {step === "review" && (!hasProblem ? (
-                <Button type="button" onClick={() => goTo("problem")}>Add your problem</Button>
-              ) : brief && !dirty ? (
-                <Button type="button" onClick={() => void exportBrief("pdf")}>Download PDF</Button>
-              ) : (
-                <Button type="submit" value="save">Save brief</Button>
-              ))}
+              {step === "review" && !hasProblem && <Button type="button" onClick={() => goTo("problem")}>Add your problem</Button>}
+              {scheduleUrl && <Button asChild>
+                <a href={scheduleUrl} target="_blank" rel="noopener noreferrer">Choose a time on Cal.com <span aria-hidden="true">↗</span><span className="sr-only">(new tab)</span></a>
+              </Button>}
               {previousStep && step !== "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
               {step === "review" && hasProblem && <Button type="button" variant="ghost" size="sm" onClick={() => goTo("problem")}>Edit answers</Button>}
               {nextStep && nextStep !== "review" && (
-                <button type="button" className="min-h-11 text-sm underline underline-offset-4" onClick={() => goTo("review")}>Review &amp; export</button>
+                <button type="button" className="min-h-11 text-sm underline underline-offset-4" onClick={() => goTo("review")}>Review &amp; book meeting</button>
               )}
             </div>
             <p role="status" className={notice ? "mt-2 text-sm" : "sr-only"}>{notice}</p>
+
+            {step === "review" && hasProblem && <details className="mt-3 border-t border-rule">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Download or share the full brief</summary>
+              <p className="text-sm">Booking shares your problem only. To share the full brief, download the PDF and attach it to an email.</p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                {brief && !dirty ? <>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void exportBrief("pdf")}>Download PDF</Button>
+                  <a href={`mailto:${contactEmail}`} className="inline-flex min-h-11 items-center text-sm">Open email</a>
+                </> : <Button type="submit" value="save" variant="outline" size="sm">Save brief</Button>}
+              </div>
+            </details>}
 
             <details hidden={step !== "review"} className="mt-3 border-t border-rule">
               <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">More options</summary>
@@ -278,13 +278,7 @@ export default function BriefDesk({ initialService, bookingUrl }: { initialServi
         {storage === "available" && (step === "problem" || step === "review") && (
           <p className="mt-3 text-sm">{step === "problem" ? "Answers stay in this tab. You can explore before answering." : "Download a copy before closing this tab."}</p>
         )}
-        {hasProblem && <div id="schedule" tabIndex={-1} className="mt-3 scroll-mt-6 border-t border-rule">
-          <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 font-medium">
-            Schedule a call <span aria-hidden="true">↗</span><span className="sr-only">(Cal.com, new tab)</span>
-          </a>
-          <p className="text-sm">Cal.com opens separately and receives no brief.</p>
-        </div>}
-      </div>}
+      </div>
     </section>
   );
 }

@@ -46,7 +46,7 @@ export default async function ConsultingPage({
       </header>
 
       <ProcessTimeline stages={stages}>
-        <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} />
+        <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} contactEmail={SITE.email} />
       </ProcessTimeline>
 
       <div className="border-t border-rule">

@@ -15,14 +15,17 @@ const browser = await chromium.launch({
 });
 
 const saved = "Fictional saved context for Marisol Rivera";
-const unsaved = "Fictional unsaved follow-up for Renée García";
+const unsaved = "Fictional: Renée García needs intake & ownership help.";
 const problem = (page) => page.getByRole("textbox", { name: "Problem or current context" });
-const scheduling = (page) => page.getByRole("link", { name: /Schedule a call.*Cal\.com, new tab/ });
-const review = (page) => page.getByRole("button", { name: "Review & export", exact: true }).click();
+const scheduling = (page) => page.getByRole("link", { name: "Choose a time on Cal.com (new tab)", exact: true });
+const review = (page) => page.getByRole("button", { name: "Review & book meeting", exact: true }).click();
 const next = (page) => page.getByRole("button", { name: "Continue", exact: true }).click();
 const edit = (page) => page.getByRole("button", { name: "Edit answers", exact: true }).click();
-const save = (page) => page.getByRole("button", { name: "Save brief", exact: true }).click();
-const start = (page) => page.getByRole("button", { name: "Start with your own problem", exact: true });
+async function save(page) {
+  const disclosure = page.getByText("Download or share the full brief", { exact: true });
+  if (!(await disclosure.evaluate((element) => element.parentElement.open))) await disclosure.click();
+  await page.getByRole("button", { name: "Save brief", exact: true }).click();
+}
 
 async function openOptions(page) {
   const details = page.locator("details").filter({ has: page.getByText("More options", { exact: true }) });
@@ -63,9 +66,7 @@ try {
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
   await page.getByRole("link", { name: "Communications and knowledge" }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
-  await start(page).click();
   assert.equal(await page.locator('select[name="service"]').inputValue(), "communications");
-  await page.evaluate(() => sessionStorage.removeItem("velcrafting.consulting.desk.v1"));
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();
@@ -88,20 +89,13 @@ try {
 
   const timelineIntake = page.locator("#process #explorer");
   assert.equal(await timelineIntake.count(), 1);
-  assert.equal(await timelineIntake.getByRole("textbox").count(), 0);
+  assert.equal(await timelineIntake.getByRole("textbox").count(), 1);
   assert.equal(await scheduling(page).count(), 0);
   const activeColumns = page.locator('[data-stage-panel="delivery"] > div');
   const what = await activeColumns.first().boundingBox();
   const example = await activeColumns.last().boundingBox();
   const intake = await timelineIntake.boundingBox();
   assert.ok(what.x < example.x && example.x < intake.x, "The intake is the right column");
-  await start(page).scrollIntoViewIfNeeded();
-  const scrollBeforeOpening = await page.evaluate(() => scrollY);
-  const urlBeforeOpening = page.url();
-  await start(page).click();
-  assert.equal(page.url(), urlBeforeOpening);
-  assert.equal(await page.evaluate(() => scrollY), scrollBeforeOpening, "Opening the intake keeps the viewport in place");
-  assert.equal(await page.evaluate(() => document.activeElement?.id), "brief-question");
   assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
   await page.locator('label[for="stage-discovery"]').click();
@@ -128,15 +122,26 @@ try {
   await edit(page);
   await problem(page).fill(unsaved);
   assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
+  assert.equal(await scheduling(page).count(), 0, "Send the problem from the review step");
+  assert.equal(externalRequests.length, 0, "Review and draft edits send no Cal request");
 
+  await review(page);
+  assert.ok(await page.getByText(/Your problem goes in the Cal.com booking link/).isVisible());
+  assert.equal(await page.getByRole("link", { name: "Open email" }).count(), 0);
+  assert.equal(externalRequests.length, 0, "Opening review sends no Cal request");
   const calPage = context.waitForEvent("page");
   await scheduling(page).click();
   const popup = await calPage;
   await popup.getByText("Fictional scheduling page").waitFor();
   assert.equal(new URL(page.url()).pathname, "/consulting");
   assert.equal(await popup.evaluate(() => window.opener), null);
-  assert.deepEqual(externalRequests, [{ url: "https://cal.com/spajewski/30min", referrer: undefined }]);
+  assert.equal(externalRequests.length, 1);
+  const sent = new URL(externalRequests[0].url);
+  assert.equal(sent.origin + sent.pathname, "https://cal.com/spajewski/30min");
+  assert.deepEqual([...sent.searchParams], [["notes", unsaved]]);
+  assert.equal(externalRequests[0].referrer, undefined);
   await popup.close();
+  await edit(page);
 
   async function checkRestored() {
     await problem(page).waitFor();
@@ -162,7 +167,6 @@ try {
 
   const otherTab = await context.newPage();
   await otherTab.goto(new URL("/consulting", base).href);
-  await start(otherTab).click();
   assert.equal(await problem(otherTab).inputValue(), "");
   await problem(otherTab).fill(" \t\n ");
   await next(otherTab);
@@ -171,7 +175,7 @@ try {
   await otherTab.reload();
   await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
   await next(otherTab);
-  await otherTab.getByRole("button", { name: "Review brief" }).click();
+  await review(otherTab);
   assert.ok(await otherTab.getByText("Describe your problem to save the brief or book a call.").isVisible());
   assert.equal(await scheduling(otherTab).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Save brief", exact: true }).count(), 0);
@@ -181,10 +185,11 @@ try {
   await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
   await otherTab.getByRole("button", { name: "Add your problem" }).click();
   await problem(otherTab).fill("A new request has no owner.");
-  assert.ok(await scheduling(otherTab).isVisible());
+  assert.equal(await scheduling(otherTab).count(), 0);
   await next(otherTab);
   assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
   await review(otherTab);
+  assert.ok(await scheduling(otherTab).isVisible());
   await save(otherTab);
   await otherTab.getByText("Revision 1 saved.", { exact: true }).waitFor();
   await openOptions(otherTab);
@@ -208,6 +213,7 @@ try {
   await review(page);
   await save(page);
   await page.getByText("Revision 3 saved.", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("link", { name: "Open email" }).getAttribute("href"), "mailto:steven@velcrafting.com");
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PDF" }).click();
   const pdf = await downloaded;
@@ -252,10 +258,7 @@ try {
   await mobile.locator("#process").screenshot({
     path: join(out, "consulting-timeline-mobile.png"), caret: "initial", animations: "disabled",
   });
-  await start(mobile).scrollIntoViewIfNeeded();
-  const mobileScroll = await mobile.evaluate(() => scrollY);
-  await start(mobile).click();
-  assert.equal(await mobile.evaluate(() => scrollY), mobileScroll);
+  assert.equal(await mobile.locator("#process #explorer").getByRole("textbox").count(), 1);
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -280,7 +283,6 @@ try {
     Object.defineProperty(window, "sessionStorage", { get() { throw new DOMException("Blocked in test", "SecurityError"); } });
   });
   await noStorage.goto(new URL("/consulting", base).href);
-  await start(noStorage).click();
   await noStorage.getByText(/Browser storage is unavailable/).waitFor();
   await problem(noStorage).fill(unsaved);
   assert.equal(await problem(noStorage).inputValue(), unsaved);
@@ -294,8 +296,8 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
-    guide: "intake opens in the third column with no navigation, stays mounted across stages, supports skipping and refresh",
-    scheduling: "blank, whitespace, and legacy fictional problems block completion and scheduling; clearing an answer closes the gate; Cal link intercepted",
+    guide: "intake open by default in the third column, stays mounted across stages, supports skipping and refresh",
+    scheduling: "blank, whitespace, and legacy samples block booking; explicit Cal navigation sends only the encoded problem; exact PDF shared separately",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",
     pdf: "browser download of revision 3; Poppler extracted exact multilingual text",

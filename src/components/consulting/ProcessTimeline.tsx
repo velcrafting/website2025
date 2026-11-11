@@ -6,7 +6,7 @@ export default function ProcessTimeline({ stages, children }: { stages: typeof c
   return (
     <section id="process" className="scroll-mt-6 py-8 md:py-10" aria-labelledby="process-title">
       <h2 id="process-title">Explore the process</h2>
-      <p className="mt-2 max-w-prose">Choose a stage to see how Steven works with you, or start with your own problem.</p>
+      <p className="mt-2 max-w-prose">Explore each stage or start with what you need help with.</p>
 
       <div className={styles.timeline}>
         <fieldset className={styles.rail}>
@@ -45,7 +45,7 @@ export default function ProcessTimeline({ stages, children }: { stages: typeof c
                   <h3 className={styles.stageTitle} id={`stage-title-${stage.id}`}>{stage.title}</h3>
                   <p className="mt-2">{stage.purpose}</p>
                   <dl className={styles.roles}>
-                    <div><dt>Steven</dt><dd>{stage.studio}</dd></div>
+                    <div><dt>How Steven helps</dt><dd>{stage.studio}</dd></div>
                     <div><dt>You</dt><dd>{stage.client}</dd></div>
                   </dl>
                 </div>
