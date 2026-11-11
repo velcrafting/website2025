@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Button from "@/components/ui/Button";
 import {
-  briefMarkdown, briefSections, briefText, fieldLabels, maxFieldLength, parseService, reviseBrief,
+  briefMarkdown, briefSections, briefText, fieldLabels, maxFieldLength, normalizeBriefField, parseService, reviseBrief,
   scopeChoices, services, type BriefRevision, type Service,
 } from "@/consulting/brief";
 import { parseExplorerBlock } from "@/consulting/catalog";
-import { exampleBrief, examples } from "@/consulting/fixtures";
 import {
   chooseDeskEntry, draftFromRevision, fields, guideSteps, newDesk, readDesk, scopeKeys, writeDesk,
   type DeskState, type GuideStep,
@@ -34,18 +33,22 @@ const prompts = {
   review: { question: "Your project brief", hint: "Review what you wrote, then save a copy to keep or bring to a call." },
 } as const;
 
-export default function BriefDesk({ initialService }: { initialService: Service }) {
+export default function BriefDesk({ initialService, bookingUrl }: { initialService: Service; bookingUrl: string }) {
   const [desk, setDesk] = useState(() => newDesk(initialService));
   const [storage, setStorage] = useState<"loading" | "available" | "unavailable">("loading");
   const [notice, setNotice] = useState("");
   const { brief, dirty, draft, example } = desk;
   const ready = storage !== "loading";
+  const started = desk.step !== undefined || dirty || brief !== null;
   const step = desk.step ?? "problem";
   const stepIndex = guideSteps.indexOf(step);
   const nextStep = guideSteps[stepIndex + 1];
   const previousStep = guideSteps[stepIndex - 1];
+  const problem = normalizeBriefField(draft.fields.problem ?? "");
+  const savedProblem = brief?.fields.problem;
+  const hasProblem = !!problem && (!savedProblem || savedProblem.source === "visitor" || problem !== normalizeBriefField(savedProblem.text));
   const heading = useRef<HTMLHeadingElement>(null);
-  const focusQuestion = useRef(false);
+  const focusQuestion = useRef<FocusOptions | null>(null);
 
   const updateDesk = useCallback((next: DeskState) => {
     setDesk(next);
@@ -73,22 +76,20 @@ export default function BriefDesk({ initialService }: { initialService: Service 
 
   useEffect(() => {
     if (focusQuestion.current) {
-      focusQuestion.current = false;
-      heading.current?.focus();
+      heading.current?.focus(focusQuestion.current);
+      focusQuestion.current = null;
     }
-  }, [step]);
+  }, [started, step]);
+
+  function start() {
+    focusQuestion.current = { preventScroll: true };
+    updateDesk({ ...desk, step });
+  }
 
   function goTo(next: GuideStep) {
     if (next === step) return;
-    focusQuestion.current = true;
+    focusQuestion.current = {};
     updateDesk({ ...desk, step: next });
-  }
-
-  function loadExample(key: keyof typeof examples) {
-    const next = exampleBrief(key, stamp());
-    if (step !== "review") focusQuestion.current = true;
-    updateDesk({ ...desk, brief: next, example: key, draft: draftFromRevision(next.service, next), dirty: false, step: "review" });
-    setNotice("Fictional example loaded as revision 1.");
   }
 
   function changeDraft(event: ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) {
@@ -107,6 +108,7 @@ export default function BriefDesk({ initialService }: { initialService: Service 
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hasProblem || step !== "review") return;
     const review = (event.nativeEvent as SubmitEvent).submitter?.getAttribute("value") === "review";
     try {
       const next = reviseBrief(brief, brief?.version ?? 0, { ...draft, review }, stamp());
@@ -118,7 +120,7 @@ export default function BriefDesk({ initialService }: { initialService: Service 
   }
 
   async function exportBrief(format: "pdf" | "md" | "copy") {
-    if (!brief || dirty) return;
+    if (!hasProblem || !brief || dirty) return;
     const name = `velcrafting-brief-v${brief.version}`;
     try {
       if (format === "copy") {
@@ -143,24 +145,29 @@ export default function BriefDesk({ initialService }: { initialService: Service 
   }
 
   return (
-    <section id="explorer" tabIndex={-1} aria-labelledby="brief-question" className="mx-auto w-full max-w-[44rem] scroll-mt-6">
-      <div id="brief-editor" className="min-w-0 rounded-[var(--radius-surface)] border border-rule bg-paper-raised p-4 sm:p-7">
-        <div className="flex flex-wrap justify-between gap-x-3 text-sm font-medium text-muted">
-          <span>Project brief</span>
-          <span>{step === "review" ? "Review" : `Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>
+    <section id="explorer" tabIndex={-1} aria-labelledby="intake-title" className="min-w-0 scroll-mt-6">
+      <div id={!hasProblem ? "schedule" : undefined} tabIndex={-1} className="scroll-mt-6">
+        <div className="flex flex-wrap justify-between gap-x-3 font-sans text-sm font-medium text-muted">
+          <span id="intake-title" className="font-semibold">Your real problem</span>
+          {started && <span>{step === "review" ? "Review" : `Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>}
         </div>
+        {!started && <>
+          <p className="mt-2">What’s getting in your team’s way? A sentence is enough to save a brief or book a call.</p>
+          <Button type="button" className="mt-4 text-start" disabled={!ready} onClick={start}>Start with your own problem</Button>
+          <noscript><p className="mt-3 text-sm">The brief and scheduling require JavaScript. You can still explore the stages or email Steven.</p></noscript>
+        </>}
+      </div>
+      {started && <div id="brief-editor">
         <div aria-hidden="true" className="mt-3 grid grid-cols-5 gap-1">
           {guideSteps.map((key, index) => (
             <span key={key} className={`h-0.5 rounded-full ${index <= stepIndex ? "bg-accent" : "bg-rule"}`} />
           ))}
         </div>
-        <h2 id="brief-question" ref={heading} tabIndex={-1} className="mt-5">{prompts[step].question}</h2>
+        <h3 id="brief-question" ref={heading} tabIndex={-1} className="mt-3 text-xl">{prompts[step].question}</h3>
         <p id="brief-question-hint" className="mt-2">{prompts[step].hint}</p>
         {storage === "unavailable" && (
           <p role="status" className="mt-3">Browser storage is unavailable. Keep this page open or export a copy before leaving.</p>
         )}
-        <noscript><p className="mt-4">Brief editing and downloads require JavaScript. You can still explore the stages and schedule a conversation.</p></noscript>
-
         <form method="post" onSubmit={save} className="mt-4">
           <fieldset disabled={!ready} className="min-w-0">
             {guideSteps.map((key) => key !== "review" && (
@@ -195,6 +202,7 @@ export default function BriefDesk({ initialService }: { initialService: Service 
                     ))}
                   </dl>
                 ) : <p>You haven’t added any answers yet.</p>}
+                {!hasProblem && <p className="mt-3 font-medium">Describe your problem to save the brief or book a call.</p>}
               </div>
             )}
 
@@ -203,13 +211,15 @@ export default function BriefDesk({ initialService }: { initialService: Service 
                 {nextStep === "review" ? "Review brief" : "Continue"}
                 <span aria-hidden="true">→</span>
               </Button>}
-              {step === "review" && (brief && !dirty ? (
+              {step === "review" && (!hasProblem ? (
+                <Button type="button" onClick={() => goTo("problem")}>Add your problem</Button>
+              ) : brief && !dirty ? (
                 <Button type="button" onClick={() => void exportBrief("pdf")}>Download PDF</Button>
               ) : (
                 <Button type="submit" value="save">Save brief</Button>
               ))}
               {previousStep && step !== "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
-              {step === "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo("problem")}>Edit answers</Button>}
+              {step === "review" && hasProblem && <Button type="button" variant="ghost" size="sm" onClick={() => goTo("problem")}>Edit answers</Button>}
               {nextStep && nextStep !== "review" && (
                 <button type="button" className="min-h-11 text-sm underline underline-offset-4" onClick={() => goTo("review")}>Review &amp; export</button>
               )}
@@ -254,19 +264,11 @@ export default function BriefDesk({ initialService }: { initialService: Service 
                     </div>)}
                   </dl>
                 </details>}
-                {brief && !dirty && (
+                {hasProblem && brief && !dirty && (
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => void exportBrief("md")}>Download Markdown</Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => void exportBrief("copy")}>Copy brief</Button>
                     {brief.state !== "reviewed" && <Button type="submit" value="review" variant="outline" size="sm">Mark reviewed</Button>}
-                  </div>
-                )}
-                {!brief && !dirty && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm">Try a fictional example</span>
-                    {(Object.keys(examples) as (keyof typeof examples)[]).map((key) => (
-                      <Button key={key} type="button" variant="outline" size="sm" onClick={() => loadExample(key)}>{examples[key].title}</Button>
-                    ))}
                   </div>
                 )}
               </div>
@@ -274,9 +276,15 @@ export default function BriefDesk({ initialService }: { initialService: Service 
           </fieldset>
         </form>
         {storage === "available" && (step === "problem" || step === "review") && (
-          <p className="mt-3 text-sm">{step === "problem" ? "Answers stay in this tab. You can skip any question." : "Download a copy before closing this tab."}</p>
+          <p className="mt-3 text-sm">{step === "problem" ? "Answers stay in this tab. You can explore before answering." : "Download a copy before closing this tab."}</p>
         )}
-      </div>
+        {hasProblem && <div id="schedule" tabIndex={-1} className="mt-3 scroll-mt-6 border-t border-rule">
+          <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 font-medium">
+            Schedule a call <span aria-hidden="true">↗</span><span className="sr-only">(Cal.com, new tab)</span>
+          </a>
+          <p className="text-sm">Cal.com opens separately and receives no brief.</p>
+        </div>}
+      </div>}
     </section>
   );
 }

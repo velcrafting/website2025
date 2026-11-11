@@ -1,9 +1,14 @@
 .timeline {
+  container-type: inline-size;
   min-inline-size: 0;
   margin-block-start: 1.25rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius-surface);
   background: var(--paper-raised);
+}
+
+.columns {
+  --panel-inset: clamp(1rem, 2vw, 1.625rem);
 }
 
 .rail {
@@ -25,12 +30,12 @@
   content: "";
 }
 
-.stop:first-child::before,
-.stop:nth-child(4)::before {
+.stop:first-of-type::before,
+.stop:nth-of-type(4)::before {
   inset-inline-start: 50%;
 }
 
-.stop:nth-child(3)::before,
+.stop:nth-of-type(3)::before,
 .stop:last-child::before {
   inset-inline-end: 50%;
 }
@@ -82,9 +87,7 @@
 }
 
 .panel {
-  --panel-inset: clamp(1rem, 3vw, 2rem);
   display: none;
-  grid-template-areas: "intro" "example" "roles";
   overflow-wrap: anywhere;
 }
 
@@ -97,20 +100,27 @@
   display: grid;
 }
 
-.intro {
-  grid-area: intro;
+.intro,
+.example,
+.intake {
+  min-inline-size: 0;
   padding: var(--panel-inset);
+}
+
+.example,
+.intake {
+  border-block-start: 1px solid var(--rule);
 }
 
 .stageTitle {
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  margin-block-start: 0.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
 }
 
 .roles {
-  grid-area: roles;
   display: grid;
-  gap: 1rem;
-  padding: var(--panel-inset);
+  gap: 0.75rem;
+  margin-block-start: 1rem;
 }
 
 .roles dt,
@@ -125,27 +135,14 @@
   margin: 0;
 }
 
-.example {
-  grid-area: example;
-  display: grid;
-  align-content: center;
-  gap: 0.75rem;
-  padding: var(--panel-inset);
-  background: var(--accent);
-}
-
-.caption {
-  color: var(--on-accent);
-  font-size: 0.9375rem;
-}
-
-.artifact {
-  padding: clamp(1rem, 2.5vw, 1.5rem);
-  border-radius: var(--radius-surface);
-  background: var(--paper-raised);
+.example .caption,
+.intro .caption {
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .artifactTitle {
+  margin-block-start: 0.5rem;
   font-size: 1.375rem;
   font-weight: 650;
 }
@@ -173,26 +170,39 @@
     padding: 0.875rem 1rem;
   }
 
-  .stop:nth-child(3)::before {
+  .stop:nth-of-type(3)::before {
     inset-inline-end: 0;
   }
 
-  .stop:nth-child(4)::before {
+  .stop:nth-of-type(4)::before {
     inset-inline-start: 0;
+  }
+}
+
+@container (min-width: 48rem) {
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr);
   }
 
   .panel {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
-    grid-template-areas: "intro example" "roles example";
-    min-block-size: 18rem;
+    min-block-size: 19rem;
+    block-size: 100%;
   }
 
-  .intro {
-    padding-block-end: 0;
+  .intake {
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--rule);
+  }
+}
+
+@container (min-width: 36rem) {
+  .panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .example {
-    border-radius: 0 0 var(--radius-surface) 0;
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--rule);
   }
 }

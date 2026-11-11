@@ -57,6 +57,10 @@ export type BriefRevision = Readonly<{
 export const maxFieldLength = 1200;
 export const discussionNote = "This is a discussion brief. Scope, pricing and commitments are confirmed after review.";
 
+export function normalizeBriefField(input: string): string {
+  return input.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").trim();
+}
+
 export function reviseBrief(
   current: BriefRevision | null,
   expectedVersion: number,
@@ -69,7 +73,7 @@ export function reviseBrief(
   for (const key of Object.keys(fieldLabels) as FieldKey[]) {
     const input = edit.fields[key];
     if (input === undefined) continue;
-    const value = input.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").trim();
+    const value = normalizeBriefField(input);
     if (value.length > maxFieldLength) throw new Error("A brief field is too long.");
     if (value !== (fields[key]?.text ?? "")) {
       corrections.push(key);

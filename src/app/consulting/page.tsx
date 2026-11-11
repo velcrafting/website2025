@@ -40,24 +40,17 @@ export default async function ConsultingPage({
           <p className="mt-3 max-w-prose">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide. Remote work combines working sessions with written scope, decisions and handoff.</p>
         </div>
         <div className="flex flex-wrap items-start gap-2 md:justify-end">
-          <Button asChild><a href="#explorer">Explore your project</a></Button>
+          <Button asChild><a href="#process">Explore your project</a></Button>
           <Button asChild variant="outline"><a href="#schedule">Schedule a conversation</a></Button>
         </div>
       </header>
 
-      <ProcessTimeline stages={stages} />
+      <ProcessTimeline stages={stages}>
+        <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} />
+      </ProcessTimeline>
 
-      <BriefDesk initialService={selectedService} />
-
-      <div className="mx-auto mt-4 w-full max-w-[44rem]">
-        <div id="schedule" tabIndex={-1} aria-label="Schedule a conversation" className="scroll-mt-6">
-          <div className="flex flex-wrap items-center gap-x-5">
-            <a href={SITE.bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 font-medium">Schedule a call <span aria-hidden="true">↗</span><span className="sr-only">(Cal.com, new tab)</span></a>
-            <a href={`mailto:${SITE.email}`} className="inline-flex min-h-11 items-center">Email Steven</a>
-          </div>
-          <p className="max-w-prose text-sm text-muted">Cal.com opens separately and receives no brief.</p>
-        </div>
-        <details className="mt-4 border-y border-rule">
+      <div className="border-t border-rule">
+        <details className="border-b border-rule">
           <summary className="min-h-11 cursor-pointer py-3 font-medium">Services and selected work</summary>
           <div className="space-y-6 pb-4">
             <section aria-labelledby="services-title">
@@ -85,6 +78,7 @@ export default async function ConsultingPage({
             </section>
           </div>
         </details>
+        <a href={`mailto:${SITE.email}`} className="inline-flex min-h-11 items-center">Email Steven</a>
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ const review = (page) => page.getByRole("button", { name: "Review & export", exa
 const next = (page) => page.getByRole("button", { name: "Continue", exact: true }).click();
 const edit = (page) => page.getByRole("button", { name: "Edit answers", exact: true }).click();
 const save = (page) => page.getByRole("button", { name: "Save brief", exact: true }).click();
+const start = (page) => page.getByRole("button", { name: "Start with your own problem", exact: true });
 
 async function openOptions(page) {
   const details = page.locator("details").filter({ has: page.getByText("More options", { exact: true }) });
@@ -62,7 +63,9 @@ try {
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
   await page.getByRole("link", { name: "Communications and knowledge" }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
+  await start(page).click();
   assert.equal(await page.locator('select[name="service"]').inputValue(), "communications");
+  await page.evaluate(() => sessionStorage.removeItem("velcrafting.consulting.desk.v1"));
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();
@@ -83,16 +86,32 @@ try {
     path: join(out, "consulting-timeline-desktop.png"), caret: "initial", animations: "disabled",
   });
 
-  await page.getByRole("link", { name: "Start with your own problem" }).click();
-  assert.equal(new URL(page.url()).hash, "#explorer");
+  const timelineIntake = page.locator("#process #explorer");
+  assert.equal(await timelineIntake.count(), 1);
+  assert.equal(await timelineIntake.getByRole("textbox").count(), 0);
+  assert.equal(await scheduling(page).count(), 0);
+  const activeColumns = page.locator('[data-stage-panel="delivery"] > div');
+  const what = await activeColumns.first().boundingBox();
+  const example = await activeColumns.last().boundingBox();
+  const intake = await timelineIntake.boundingBox();
+  assert.ok(what.x < example.x && example.x < intake.x, "The intake is the right column");
+  await start(page).scrollIntoViewIfNeeded();
+  const scrollBeforeOpening = await page.evaluate(() => scrollY);
+  const urlBeforeOpening = page.url();
+  await start(page).click();
+  assert.equal(page.url(), urlBeforeOpening);
+  assert.equal(await page.evaluate(() => scrollY), scrollBeforeOpening, "Opening the intake keeps the viewport in place");
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "brief-question");
   assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
+  await page.locator('label[for="stage-discovery"]').click();
+  assert.equal(await problem(page).inputValue(), saved, "Switching timeline stages preserves the intake");
   await next(page);
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "What would better look like?");
   await page.getByRole("textbox", { name: "Desired outcome" }).fill("Fictional outcome for the guided brief");
   assert.equal(await page.locator("#your-brief").count(), 0);
   assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
-  await page.locator("#explorer").screenshot({
+  await page.locator("#process").screenshot({
     path: join(out, "consulting-guided-brief-desktop.png"), caret: "initial", animations: "disabled",
   });
   await page.getByRole("button", { name: "Back", exact: true }).click();
@@ -143,7 +162,9 @@ try {
 
   const otherTab = await context.newPage();
   await otherTab.goto(new URL("/consulting", base).href);
+  await start(otherTab).click();
   assert.equal(await problem(otherTab).inputValue(), "");
+  await problem(otherTab).fill(" \t\n ");
   await next(otherTab);
   await otherTab.getByRole("textbox", { name: "Desired outcome" }).fill("Another tab, another outcome");
   await next(otherTab);
@@ -151,10 +172,16 @@ try {
   await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
   await next(otherTab);
   await otherTab.getByRole("button", { name: "Review brief" }).click();
+  assert.ok(await otherTab.getByText("Describe your problem to save the brief or book a call.").isVisible());
+  assert.equal(await scheduling(otherTab).count(), 0);
+  assert.equal(await otherTab.getByRole("button", { name: "Save brief", exact: true }).count(), 0);
+  assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await openOptions(otherTab);
   await otherTab.getByText("Add more context or scope choices", { exact: true }).click();
   await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
-  await edit(otherTab);
+  await otherTab.getByRole("button", { name: "Add your problem" }).click();
+  await problem(otherTab).fill("A new request has no owner.");
+  assert.ok(await scheduling(otherTab).isVisible());
   await next(otherTab);
   assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
   await review(otherTab);
@@ -163,6 +190,11 @@ try {
   await openOptions(otherTab);
   await otherTab.getByText("See saved revision", { exact: true }).click();
   assert.ok(await otherTab.getByText(/Delivery level: Prototype/).isVisible());
+  await edit(otherTab);
+  await problem(otherTab).fill("");
+  assert.equal(await scheduling(otherTab).count(), 0);
+  await review(otherTab);
+  assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await otherTab.close();
 
   await review(page);
@@ -193,6 +225,21 @@ try {
     "/consulting-fonts/NotoSansJP-Regular.otf",
     "/consulting-fonts/NotoSansDevanagari-Regular.ttf",
   ]);
+  const legacySample = await page.evaluate(() => {
+    const desk = JSON.parse(sessionStorage.getItem("velcrafting.consulting.desk.v1"));
+    desk.example = "software";
+    desk.brief.example = true;
+    desk.brief.fields.problem.source = "fictional_example";
+    return JSON.stringify(desk);
+  });
+  const legacyTab = await context.newPage();
+  await legacyTab.addInitScript((value) => sessionStorage.setItem("velcrafting.consulting.desk.v1", value), legacySample);
+  await legacyTab.goto(new URL("/consulting?service=workflow", base).href);
+  await legacyTab.getByRole("button", { name: "Add your problem" }).waitFor();
+  assert.equal(await scheduling(legacyTab).count(), 0);
+  assert.equal(await legacyTab.getByRole("button", { name: "Download PDF" }).count(), 0);
+  await legacyTab.close();
+
   const mobile = await context.newPage();
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.emulateMedia({ reducedMotion: "reduce" });
@@ -205,7 +252,10 @@ try {
   await mobile.locator("#process").screenshot({
     path: join(out, "consulting-timeline-mobile.png"), caret: "initial", animations: "disabled",
   });
-  await mobile.getByRole("link", { name: "Start with your own problem" }).click();
+  await start(mobile).scrollIntoViewIfNeeded();
+  const mobileScroll = await mobile.evaluate(() => scrollY);
+  await start(mobile).click();
+  assert.equal(await mobile.evaluate(() => scrollY), mobileScroll);
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
@@ -222,13 +272,15 @@ try {
   await staticPage.locator('label[for="stage-proposal"]').click();
   assert.ok(await staticPage.getByRole("radio", { name: "Proposal" }).isChecked());
   assert.ok(await staticPage.locator('[data-stage-panel="proposal"]').getByText("Out of scope").isVisible());
-  assert.equal(await scheduling(staticPage).getAttribute("target"), "_blank");
+  assert.equal(await scheduling(staticPage).count(), 0);
+  assert.ok(await staticPage.getByText(/brief and scheduling require JavaScript/).isVisible());
 
   const noStorage = await context.newPage();
   await noStorage.addInitScript(() => {
     Object.defineProperty(window, "sessionStorage", { get() { throw new DOMException("Blocked in test", "SecurityError"); } });
   });
   await noStorage.goto(new URL("/consulting", base).href);
+  await start(noStorage).click();
   await noStorage.getByText(/Browser storage is unavailable/).waitFor();
   await problem(noStorage).fill(unsaved);
   assert.equal(await problem(noStorage).inputValue(), unsaved);
@@ -242,8 +294,8 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
-    guide: "one panel from timeline entry through questions and review, opt-in service details, back, skip, refresh, and optional scope",
-    scheduling: "intercepted Cal link; no provider booking",
+    guide: "intake opens in the third column with no navigation, stays mounted across stages, supports skipping and refresh",
+    scheduling: "blank, whitespace, and legacy fictional problems block completion and scheduling; clearing an answer closes the gate; Cal link intercepted",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",
     pdf: "browser download of revision 3; Poppler extracted exact multilingual text",
