@@ -17,7 +17,16 @@ const browser = await chromium.launch({
 const saved = "Fictional saved context for Marisol Rivera";
 const unsaved = "Fictional unsaved follow-up for Renée García";
 const problem = (page) => page.getByRole("textbox", { name: "Problem or current context" });
-const scheduling = (page) => page.getByRole("link", { name: "Open scheduling on Cal.com (new tab)" });
+const scheduling = (page) => page.getByRole("link", { name: /Schedule a call.*Cal\.com, new tab/ });
+const review = (page) => page.getByRole("button", { name: "Review & export", exact: true }).click();
+const next = (page) => page.getByRole("button", { name: "Continue", exact: true }).click();
+const edit = (page) => page.getByRole("button", { name: "Edit answers", exact: true }).click();
+const save = (page) => page.getByRole("button", { name: "Save brief", exact: true }).click();
+
+async function openOptions(page) {
+  const details = page.locator("details").filter({ has: page.getByText("More options", { exact: true }) });
+  if (!(await details.evaluate((element) => element.open))) await details.locator(":scope > summary").click();
+}
 
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -46,6 +55,8 @@ try {
 
   const page = await context.newPage();
   await page.goto(new URL("/consulting?service=workflow", base).href);
+  assert.equal(await page.getByRole("heading", { name: "How Velcrafting can help" }).count(), 0);
+  await page.getByText("Services and selected work", { exact: true }).click();
   assert.ok(await page.getByRole("heading", { name: "How Velcrafting can help" }).isVisible());
   assert.ok(await page.getByText(/Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide/).isVisible());
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
@@ -76,19 +87,28 @@ try {
   assert.equal(new URL(page.url()).hash, "#explorer");
   assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
-  await page.getByRole("button", { name: "Next: outcome" }).click();
+  await next(page);
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "What would better look like?");
   await page.getByRole("textbox", { name: "Desired outcome" }).fill("Fictional outcome for the guided brief");
-  assert.ok(await page.locator("#your-brief").getByText("Fictional outcome for the guided brief", { exact: true }).isVisible());
+  assert.equal(await page.locator("#your-brief").count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
   await page.locator("#explorer").screenshot({
     path: join(out, "consulting-guided-brief-desktop.png"), caret: "initial", animations: "disabled",
   });
   await page.getByRole("button", { name: "Back", exact: true }).click();
   assert.equal(await problem(page).inputValue(), saved);
-  await page.getByRole("button", { name: "Save draft revision" }).click();
+  await review(page);
+  assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 0);
+  assert.ok(await page.locator("#your-brief").getByText("Fictional outcome for the guided brief", { exact: true }).isVisible());
+  assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).count(), 0);
+  await page.locator("#explorer").screenshot({
+    path: join(out, "consulting-brief-review-desktop.png"), caret: "initial", animations: "disabled",
+  });
+  await save(page);
   await page.getByText("Revision 1 saved.", { exact: true }).waitFor();
+  await edit(page);
   await problem(page).fill(unsaved);
-  assert.ok(await page.getByRole("button", { name: "Download PDF" }).isDisabled());
+  assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
 
   const calPage = context.waitForEvent("page");
   await scheduling(page).click();
@@ -100,13 +120,16 @@ try {
   await popup.close();
 
   async function checkRestored() {
-    await page.getByText("Unsaved changes. Save a revision before exporting.", { exact: true }).waitFor();
+    await problem(page).waitFor();
     assert.equal(await problem(page).inputValue(), unsaved);
-    const savedDetails = page.locator("#your-brief details");
-    if (!(await savedDetails.evaluate((element) => element.open))) await savedDetails.locator("summary").click();
+    await review(page);
+    await openOptions(page);
+    const savedSummary = page.getByText("See saved revision", { exact: true });
+    if (!(await savedSummary.evaluate((element) => element.parentElement.open))) await savedSummary.click();
     assert.ok(await page.getByText(`Visitor stated: ${saved}`, { exact: true }).isVisible());
     assert.equal(await page.locator('select[name="service"]').inputValue(), "workflow");
-    assert.ok(await page.getByRole("button", { name: "Download PDF" }).isDisabled());
+    assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
+    await edit(page);
   }
 
   await checkRestored();
@@ -120,32 +143,38 @@ try {
 
   const otherTab = await context.newPage();
   await otherTab.goto(new URL("/consulting", base).href);
-  await otherTab.getByRole("button", { name: "Save draft revision" }).waitFor();
   assert.equal(await problem(otherTab).inputValue(), "");
-  await otherTab.getByRole("button", { name: "Next: outcome" }).click();
+  await next(otherTab);
   await otherTab.getByRole("textbox", { name: "Desired outcome" }).fill("Another tab, another outcome");
-  await otherTab.getByRole("button", { name: "Next: people" }).click();
+  await next(otherTab);
   await otherTab.reload();
   await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
-  await otherTab.getByRole("button", { name: "Next: constraints" }).click();
+  await next(otherTab);
   await otherTab.getByRole("button", { name: "Review brief" }).click();
+  await openOptions(otherTab);
   await otherTab.getByText("Add more context or scope choices", { exact: true }).click();
   await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
-  await otherTab.getByRole("navigation", { name: "Brief steps" }).getByRole("button", { name: "Outcome" }).click();
+  await edit(otherTab);
+  await next(otherTab);
   assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
-  await otherTab.getByRole("button", { name: "Save draft revision" }).click();
+  await review(otherTab);
+  await save(otherTab);
   await otherTab.getByText("Revision 1 saved.", { exact: true }).waitFor();
+  await openOptions(otherTab);
   await otherTab.getByText("See saved revision", { exact: true }).click();
   assert.ok(await otherTab.getByText(/Delivery level: Prototype/).isVisible());
   await otherTab.close();
 
-  await page.getByRole("button", { name: "Save draft revision" }).click();
+  await review(page);
+  await save(page);
   await page.getByText("Revision 2 saved.", { exact: true }).waitFor();
   const unicode = "Fictional names for Andre\u0301, 山田花子, and प्रिया कृष्णा.";
   const markup = '<img src="https://external.invalid/brief">';
   const blockedBeforePdf = blockedRequests.length;
+  await edit(page);
   await problem(page).fill(`${unicode}\n${markup}`);
-  await page.getByRole("button", { name: "Save draft revision" }).click();
+  await review(page);
+  await save(page);
   await page.getByText("Revision 3 saved.", { exact: true }).waitFor();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PDF" }).click();
@@ -180,7 +209,7 @@ try {
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await mobile.screenshot({ path: join(out, "consulting-mobile.png") });
+  await mobile.locator("#explorer").screenshot({ path: join(out, "consulting-mobile.png") });
   const session = await context.newCDPSession(mobile);
   await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
   await mobile.waitForFunction(() => window.visualViewport?.scale === 2);
@@ -213,7 +242,7 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
-    guide: "timeline entry, one question at a time, live preview, back, skip, refresh, and optional scope",
+    guide: "one panel from timeline entry through questions and review, opt-in service details, back, skip, refresh, and optional scope",
     scheduling: "intercepted Cal link; no provider booking",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",

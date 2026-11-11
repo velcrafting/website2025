@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProcessTimeline from "@/components/consulting/ProcessTimeline";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { SITE } from "@/config/site";
 import { SITE_URL } from "@/lib/seo";
 import { portfolioProjects } from "@/lib/portfolio-projects";
-import { meetingPreparation } from "@/consulting/availability";
 import { parseService, services } from "@/consulting/brief";
 import { stages } from "@/consulting/fixtures";
 import BriefDesk from "./BriefDesk";
@@ -51,44 +49,43 @@ export default async function ConsultingPage({
 
       <BriefDesk initialService={selectedService} />
 
-      <section className="section-gap border-t border-rule pt-6" aria-labelledby="services-title">
-        <h2 id="services-title">How Velcrafting can help</h2>
-        <p className="mt-3">Choose the problem closest to yours to start a brief.</p>
-        <ul className="mt-4 grid gap-x-8 md:grid-cols-2">
-          {serviceIntents.map(([key, problem, outcome]) => (
-            <li key={key} id={key} className="scroll-mt-6 border-t border-rule py-3">
-              <h3><Link href={`/consulting?service=${key}#explorer`} className="inline-flex min-h-11 items-center">{services[key][0]}</Link></h3>
-              <p className="font-semibold">{problem}</p>
-              <p className="mt-1">{outcome}</p>
-            </li>
-          ))}
-        </ul>
-        <Link href="/consulting?service=unsure#explorer" className="inline-flex min-h-11 items-center">Not sure yet</Link>
-      </section>
-
-      <section aria-labelledby="work-title" className="section-gap border-t border-rule pt-6">
-        <h2 id="work-title">Selected work</h2>
-        <ul className="mt-4 grid gap-4 md:grid-cols-2">
-          {work.map((project) => <li key={project.slug}>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3>{project.name}</h3>
-              <Badge>{project.status === "active" ? "Active" : "Prototype"}</Badge>
-            </div>
-            <p className="mt-2 max-w-prose">{project.summary}</p>
-          </li>)}
-        </ul>
-        <Link className="mt-3 inline-flex min-h-11 items-center" href="/projects">See the project portfolio</Link>
-      </section>
-
-      <section id="schedule" aria-labelledby="schedule-title" className="section-gap scroll-mt-6 border-t border-rule pt-6">
-        <h2 id="schedule-title">Schedule a conversation</h2>
-        <p className="mt-3 max-w-prose">{meetingPreparation.message} Scheduling opens in a new tab so you can return to your brief. No brief is required. You can also get in touch by email.</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild><a href={SITE.bookingUrl} target="_blank" rel="noopener noreferrer">Open scheduling on Cal.com (new tab)</a></Button>
-          <Button asChild variant="outline"><a href={`mailto:${SITE.email}`}>Email Velcrafting</a></Button>
+      <div className="mx-auto mt-4 w-full max-w-[44rem]">
+        <div id="schedule" tabIndex={-1} aria-label="Schedule a conversation" className="scroll-mt-6">
+          <div className="flex flex-wrap items-center gap-x-5">
+            <a href={SITE.bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 font-medium">Schedule a call <span aria-hidden="true">↗</span><span className="sr-only">(Cal.com, new tab)</span></a>
+            <a href={`mailto:${SITE.email}`} className="inline-flex min-h-11 items-center">Email Steven</a>
+          </div>
+          <p className="max-w-prose text-sm text-muted">Cal.com opens separately and receives no brief.</p>
         </div>
-        <p className="meta mt-4">Client sign in is unavailable here.</p>
-      </section>
+        <details className="mt-4 border-y border-rule">
+          <summary className="min-h-11 cursor-pointer py-3 font-medium">Services and selected work</summary>
+          <div className="space-y-6 pb-4">
+            <section aria-labelledby="services-title">
+              <h2 id="services-title">How Velcrafting can help</h2>
+              <ul className="mt-3 grid gap-4 sm:grid-cols-2">
+                {serviceIntents.map(([key, problem, outcome]) => (
+                  <li key={key} id={key} className="scroll-mt-6 border-t border-rule pt-2">
+                    <h3><Link href={`/consulting?service=${key}#explorer`} className="inline-flex min-h-11 items-center">{services[key][0]}</Link></h3>
+                    <p className="font-semibold">{problem}</p>
+                    <p className="mt-1">{outcome}</p>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/consulting?service=unsure#explorer" className="inline-flex min-h-11 items-center">Not sure yet</Link>
+            </section>
+            <section aria-labelledby="work-title">
+              <h2 id="work-title">Selected work</h2>
+              <ul className="mt-3 grid gap-4 sm:grid-cols-2">
+                {work.map((project) => <li key={project.slug}>
+                  <h3>{project.name}</h3>
+                  <p className="mt-2">{project.summary}</p>
+                </li>)}
+              </ul>
+              <Link className="mt-3 inline-flex min-h-11 items-center" href="/projects">See the project portfolio</Link>
+            </section>
+          </div>
+        </details>
+      </div>
     </div>
   );
 }

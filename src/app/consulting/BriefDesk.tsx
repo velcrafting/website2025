@@ -27,11 +27,11 @@ function download(content: BlobPart, type: string, name: string) {
 const control = "block w-full rounded-[var(--radius-surface)] border border-rule bg-paper px-3 py-2 text-ink";
 
 const prompts = {
-  problem: { label: "Problem", question: "What keeps getting stuck?", hint: "Tell Steven where the work slows down, gets repeated, or falls through the cracks.", placeholder: "We review the same requests in email and a spreadsheet…" },
-  outcome: { label: "Outcome", question: "What would better look like?", hint: "Describe what should be easier for you or your team.", placeholder: "One place to see what needs a decision…" },
-  audience: { label: "People", question: "Who needs this to work?", hint: "Think about the people doing the work and anyone who needs to approve it.", placeholder: "Our operations team and the people sending requests…" },
-  constraints: { label: "Constraints", question: "What should Steven work around?", hint: "Add any tools, deadlines, or requirements you already know about.", placeholder: "We need to keep using our existing inbox…" },
-  review: { label: "Review", question: "Does this capture what you need?", hint: "Go back to change an answer, or save the brief as it is." },
+  problem: { question: "What keeps getting stuck?", hint: "Tell Steven where the work slows down, gets repeated, or falls through the cracks.", placeholder: "We review the same requests in email and a spreadsheet…" },
+  outcome: { question: "What would better look like?", hint: "Describe what should be easier for you or your team.", placeholder: "One place to see what needs a decision…" },
+  audience: { question: "Who needs this to work?", hint: "Think about the people doing the work and anyone who needs to approve it.", placeholder: "Our operations team and the people sending requests…" },
+  constraints: { question: "What should Steven work around?", hint: "Add any tools, deadlines, or requirements you already know about.", placeholder: "We need to keep using our existing inbox…" },
+  review: { question: "Your project brief", hint: "Review what you wrote, then save a copy to keep or bring to a call." },
 } as const;
 
 export default function BriefDesk({ initialService }: { initialService: Service }) {
@@ -143,67 +143,90 @@ export default function BriefDesk({ initialService }: { initialService: Service 
   }
 
   return (
-    <section id="explorer" aria-labelledby="explorer-title" className="scroll-mt-6 border-y border-rule py-8 md:py-10">
-      <h2 id="explorer-title">Let’s shape your project</h2>
-      <p className="mt-2 max-w-prose">Put the problem and the result you need into a brief you can bring to Steven. Skip anything you’re unsure about.</p>
-      {storage === "unavailable" && (
-        <p role="status" className="mt-3">Browser storage is unavailable. Keep this page open or save a revision and export a copy before leaving.</p>
-      )}
-      <noscript><p className="mt-4">Brief editing and downloads require JavaScript. You can still explore the stages and schedule a conversation.</p></noscript>
+    <section id="explorer" tabIndex={-1} aria-labelledby="brief-question" className="mx-auto w-full max-w-[44rem] scroll-mt-6">
+      <div id="brief-editor" className="min-w-0 rounded-[var(--radius-surface)] border border-rule bg-paper-raised p-4 sm:p-7">
+        <div className="flex flex-wrap justify-between gap-x-3 text-sm font-medium text-muted">
+          <span>Project brief</span>
+          <span>{step === "review" ? "Review" : `Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>
+        </div>
+        <div aria-hidden="true" className="mt-3 grid grid-cols-5 gap-1">
+          {guideSteps.map((key, index) => (
+            <span key={key} className={`h-0.5 rounded-full ${index <= stepIndex ? "bg-accent" : "bg-rule"}`} />
+          ))}
+        </div>
+        <h2 id="brief-question" ref={heading} tabIndex={-1} className="mt-5">{prompts[step].question}</h2>
+        <p id="brief-question-hint" className="mt-2">{prompts[step].hint}</p>
+        {storage === "unavailable" && (
+          <p role="status" className="mt-3">Browser storage is unavailable. Keep this page open or export a copy before leaving.</p>
+        )}
+        <noscript><p className="mt-4">Brief editing and downloads require JavaScript. You can still explore the stages and schedule a conversation.</p></noscript>
 
-      <div className="mt-5 grid min-w-0 rounded-[var(--radius-surface)] border border-rule bg-paper-raised lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <div id="brief-editor" className="min-w-0 scroll-mt-6 p-4 sm:p-6 lg:p-8">
-          <nav aria-label="Brief steps">
-            <ol className="flex flex-wrap gap-2">
-              {guideSteps.map((key, index) => (
-                <li key={key}>
-                  <button
-                    type="button"
-                    disabled={!ready}
-                    aria-current={key === step ? "step" : undefined}
-                    onClick={() => goTo(key)}
-                    className={`inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-chip)] border px-2.5 text-sm font-semibold ${
-                      key === step ? "border-accent bg-accent text-[color:var(--on-accent)]" : "border-rule text-ink hover:border-ink"
-                    }`}
-                  >
-                    <span aria-hidden="true">{index + 1}</span> {prompts[key].label}
-                  </button>
-                </li>
+        <form method="post" onSubmit={save} className="mt-4">
+          <fieldset disabled={!ready} className="min-w-0">
+            {guideSteps.map((key) => key !== "review" && (
+              <div key={key} hidden={step !== key}>
+                <label htmlFor={`guide-${key}`} className="sr-only">{fieldLabels[key]}</label>
+                <textarea
+                  id={`guide-${key}`}
+                  name={key}
+                  rows={4}
+                  maxLength={maxFieldLength}
+                  className={control}
+                  value={draft.fields[key] ?? ""}
+                  placeholder={prompts[key].placeholder}
+                  aria-describedby="brief-question-hint"
+                  onChange={changeDraft}
+                />
+              </div>
+            ))}
+
+            {step === "review" && (
+              <div id="your-brief">
+                {(draft.service !== "unsure" || example) && (
+                  <p className="text-sm text-muted">{[draft.service !== "unsure" ? services[draft.service][0] : "", example ? "Fictional example" : ""].filter(Boolean).join(" · ")}</p>
+                )}
+                {fields.some((key) => draft.fields[key]?.trim()) ? (
+                  <dl className="mt-3 divide-y divide-rule border-y border-rule">
+                    {fields.map((key) => draft.fields[key]?.trim() && (
+                      <div key={key} className="py-3">
+                        <dt className="text-sm font-semibold">{fieldLabels[key]}</dt>
+                        <dd className="mt-1 whitespace-pre-wrap break-words">{draft.fields[key]}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : <p>You haven’t added any answers yet.</p>}
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {nextStep && <Button type="button" onClick={() => goTo(nextStep)}>
+                {nextStep === "review" ? "Review brief" : "Continue"}
+                <span aria-hidden="true">→</span>
+              </Button>}
+              {step === "review" && (brief && !dirty ? (
+                <Button type="button" onClick={() => void exportBrief("pdf")}>Download PDF</Button>
+              ) : (
+                <Button type="submit" value="save">Save brief</Button>
               ))}
-            </ol>
-          </nav>
+              {previousStep && step !== "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
+              {step === "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo("problem")}>Edit answers</Button>}
+              {nextStep && nextStep !== "review" && (
+                <button type="button" className="min-h-11 text-sm underline underline-offset-4" onClick={() => goTo("review")}>Review &amp; export</button>
+              )}
+            </div>
+            <p role="status" className={notice ? "mt-2 text-sm" : "sr-only"}>{notice}</p>
 
-          <h3 id="brief-question" ref={heading} tabIndex={-1} className="mt-5">{prompts[step].question}</h3>
-          <p id="brief-question-hint" className="mt-2">{prompts[step].hint}</p>
-
-          <form method="post" onSubmit={save} className="mt-4">
-            <fieldset disabled={!ready} className="min-w-0">
-              {guideSteps.map((key) => key !== "review" && (
-                <div key={key} hidden={step !== key}>
-                  <label htmlFor={`guide-${key}`} className="sr-only">{fieldLabels[key]}</label>
-                  <textarea
-                    id={`guide-${key}`}
-                    name={key}
-                    rows={4}
-                    maxLength={maxFieldLength}
-                    className={control}
-                    value={draft.fields[key] ?? ""}
-                    placeholder={prompts[key].placeholder}
-                    aria-describedby="brief-question-hint"
-                    onChange={changeDraft}
-                  />
-                </div>
-              ))}
-
-              <div hidden={step !== "review"} className="space-y-4">
+            <details hidden={step !== "review"} className="mt-3 border-t border-rule">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">More options</summary>
+              <div className="grid gap-4 pb-2">
                 <label className="grid gap-1">Service starting point
                   <select name="service" value={draft.service} onChange={changeDraft} className={control}>
                     {Object.entries(services).map(([key, [label]]) => <option key={key} value={key}>{label}</option>)}
                   </select>
                 </label>
-                <details className="border-y border-rule">
-                  <summary className="min-h-11 cursor-pointer py-2 font-semibold">Add more context or scope choices</summary>
-                  <div className="grid gap-4 pb-4">
+                <details>
+                  <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium">Add more context or scope choices</summary>
+                  <div className="grid gap-4">
                     {fields.slice(4).map((key) => (
                       <label key={key} className="grid gap-1">{fieldLabels[key]}
                         <textarea name={key} rows={2} maxLength={maxFieldLength} className={control} value={draft.fields[key] ?? ""} onChange={changeDraft} />
@@ -222,68 +245,38 @@ export default function BriefDesk({ initialService }: { initialService: Service 
                     })}
                   </div>
                 </details>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {nextStep && <Button type="button" onClick={() => goTo(nextStep)}>
-                  {nextStep === "review" ? "Review brief" : `Next: ${prompts[nextStep].label.toLowerCase()}`}
-                  <span aria-hidden="true">→</span>
-                </Button>}
-                {previousStep && <Button type="button" variant="outline" onClick={() => goTo(previousStep)}>Back</Button>}
-                <Button type="submit" value="save" variant={step === "review" ? "default" : "outline"} disabled={!!brief && !dirty}>Save draft revision</Button>
-                {step === "review" && <Button type="submit" value="review" variant="outline" disabled={!dirty && brief?.state === "reviewed"}>Mark reviewed</Button>}
-              </div>
-            </fieldset>
-          </form>
-          {!brief && !dirty && (
-            <details className="mt-4">
-              <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Try a fictional example</summary>
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(examples) as (keyof typeof examples)[]).map((key) => (
-                  <Button key={key} type="button" variant="outline" size="sm" disabled={!ready} onClick={() => loadExample(key)}>
-                    {examples[key].title}
-                  </Button>
-                ))}
+                {brief && <details>
+                  <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium">See saved revision</summary>
+                  <dl className="grid gap-3">
+                    {briefSections(brief).map(([label, text]) => <div key={label}>
+                      <dt className="font-semibold">{label}</dt>
+                      <dd className="whitespace-pre-wrap break-words">{text}</dd>
+                    </div>)}
+                  </dl>
+                </details>}
+                {brief && !dirty && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => void exportBrief("md")}>Download Markdown</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void exportBrief("copy")}>Copy brief</Button>
+                    {brief.state !== "reviewed" && <Button type="submit" value="review" variant="outline" size="sm">Mark reviewed</Button>}
+                  </div>
+                )}
+                {!brief && !dirty && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm">Try a fictional example</span>
+                    {(Object.keys(examples) as (keyof typeof examples)[]).map((key) => (
+                      <Button key={key} type="button" variant="outline" size="sm" onClick={() => loadExample(key)}>{examples[key].title}</Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </details>
-          )}
-          <p role="status" className="mt-3">{notice}</p>
-        </div>
-
-        <aside id="your-brief" aria-labelledby="brief-preview-title" className="min-w-0 scroll-mt-6 rounded-b-[var(--radius-surface)] bg-accent p-4 sm:p-6 lg:rounded-bl-none lg:rounded-tr-[var(--radius-surface)] lg:p-8">
-          <div className="rounded-[var(--radius-surface)] bg-paper-raised p-4 sm:p-5">
-            <h3 id="brief-preview-title">Your brief</h3>
-            <p className="mt-1 text-sm text-muted">{services[draft.service][0]}{example ? " · Fictional example" : ""}</p>
-            {guideSteps.some((key) => key !== "review" && draft.fields[key]?.trim()) ? (
-              <dl className="mt-4 divide-y divide-rule border-y border-rule">
-                {guideSteps.map((key) => key !== "review" && draft.fields[key]?.trim() && (
-                  <div key={key} className="py-2">
-                    <dt className="font-semibold">{prompts[key].label}</dt>
-                    <dd className={`whitespace-pre-wrap break-words ${step === "review" ? "" : "line-clamp-3"}`}>{draft.fields[key]}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : <p className="mt-4">Your answers appear here as you go.</p>}
-            <p className="mt-4 text-sm">{dirty ? "Unsaved changes. Save a revision before exporting." : brief ? `Revision ${brief.version} ready to export.` : "You can save a partial brief at any point."}</p>
-            {brief && <details className="mt-3">
-              <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">See saved revision</summary>
-              <dl className="grid gap-3">
-                {briefSections(brief).map(([label, text]) => <div key={label}>
-                  <dt className="font-semibold">{label}</dt>
-                  <dd className="whitespace-pre-wrap break-words">{text}</dd>
-                </div>)}
-              </dl>
-            </details>}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {([["pdf", "Download PDF"], ["md", "Download Markdown"], ["copy", "Copy brief"]] as const).map(([format, label]) =>
-                <Button key={format} type="button" variant="outline" size="sm" disabled={!brief || dirty} onClick={() => void exportBrief(format)}>{label}</Button>
-              )}
-            </div>
-            {storage === "available" && <p className="mt-3 text-sm">Your answers stay in this tab, even if you refresh. Export a copy before closing it.</p>}
-          </div>
-        </aside>
+          </fieldset>
+        </form>
+        {storage === "available" && (step === "problem" || step === "review") && (
+          <p className="mt-3 text-sm">{step === "problem" ? "Answers stay in this tab. You can skip any question." : "Download a copy before closing this tab."}</p>
+        )}
       </div>
-      <p className="mt-4"><a href="#schedule">Prefer to talk it through? Schedule a conversation.</a></p>
     </section>
   );
 }

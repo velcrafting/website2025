@@ -60,9 +60,8 @@ export default function ProcessTimeline({ stages }: { stages: typeof consultingS
           </section>
         ))}
       </fieldset>
-      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="mt-4">
         <Button asChild variant="outline"><a href="#explorer">Start with your own problem <span aria-hidden="true">↓</span></a></Button>
-        <p className="max-w-prose text-sm text-muted">Some stages can combine. We agree on the scope and update schedule together.</p>
       </div>
     </section>
   );
