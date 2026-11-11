@@ -30,6 +30,10 @@
   content: "";
 }
 
+.stop:has(~ .stop .radio:checked)::before {
+  border-block-start-color: var(--accent);
+}
+
 .stop:first-of-type::before,
 .stop:nth-of-type(4)::before {
   inset-inline-start: 50%;
@@ -154,13 +158,18 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .stop::before {
+    transition: border-color 400ms ease-out;
+  }
+
+  .intro,
   .artifact {
-    animation: reveal 160ms ease-out;
+    animation: reveal 420ms ease-out;
   }
 
   @keyframes reveal {
-    from { opacity: 0.72; transform: translateY(0.2rem); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0.72; transform: translateX(-0.5rem); }
+    to { opacity: 1; transform: translateX(0); }
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import ProcessTimeline from "@/components/consulting/ProcessTimeline";
 import Button from "@/components/ui/Button";
 import { bookingLinkWithProblem, maxBookingProblemLength } from "@/consulting/booking-link";
 import {
@@ -8,6 +9,7 @@ import {
   scopeChoices, services, type BriefRevision, type Service,
 } from "@/consulting/brief";
 import { parseExplorerBlock } from "@/consulting/catalog";
+import { stages } from "@/consulting/fixtures";
 import {
   chooseDeskEntry, draftFromRevision, fields, guideSteps, newDesk, readDesk, scopeKeys, writeDesk,
   type DeskState, type GuideStep,
@@ -31,7 +33,10 @@ const prompts = {
   outcome: { question: "What would better look like?", hint: "Describe what should be easier for you or your team.", placeholder: "One place to see what needs a decision…" },
   audience: { question: "Who needs this to work?", hint: "Think about the people doing the work and anyone who needs to approve it.", placeholder: "Our operations team and the people sending requests…" },
   constraints: { question: "Any blockers?", hint: "What tools, deadlines, or requirements should we work around?", placeholder: "We need to keep using our existing inbox…" },
+  questions: { question: "What should we check in on?", hint: "Add any open questions or decisions you’d want to revisit.", placeholder: "How will we know the new process is saving time?" },
+  deliverables: { question: "What would a good handoff look like?", hint: "What would you like your team to have at the end?", placeholder: "A working setup and a short guide we can use ourselves…" },
 } as const;
+const optionalFields = fields.filter((field) => !guideSteps.some((step) => step === field));
 
 export default function BriefDesk({ initialService, bookingUrl, contactEmail }: { initialService: Service; bookingUrl: string; contactEmail: string }) {
   const [desk, setDesk] = useState(() => newDesk(initialService));
@@ -78,19 +83,25 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
 
   useEffect(() => {
     if (focusQuestion.current) {
-      heading.current?.focus();
+      const question = heading.current;
+      question?.focus({ preventScroll: true });
+      const bounds = question?.getBoundingClientRect();
+      if (question && bounds && (bounds.top < 0 || bounds.bottom > window.innerHeight)) {
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        question.scrollIntoView({ block: "start", behavior: reduceMotion ? "instant" : "smooth" });
+      }
       focusQuestion.current = false;
     }
   }, [step]);
 
-  function goTo(next: Exclude<GuideStep, "review">) {
+  function goTo(next: GuideStep, moveFocus = true) {
     if (next === step) return;
-    focusQuestion.current = true;
+    focusQuestion.current = moveFocus;
     updateDesk({ ...desk, step: next });
   }
 
   function continueIntake() {
-    if (nextStep && nextStep !== "review") {
+    if (nextStep) {
       goTo(nextStep);
     } else if (hasProblem) {
       bookingDialog.current?.showModal();
@@ -153,20 +164,15 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
     }
   }
 
-  return (
+  const intake = (
     <section id="explorer" tabIndex={-1} aria-labelledby="intake-title" className="min-w-0 scroll-mt-6">
       <div id="schedule" tabIndex={-1} className="flex scroll-mt-6 flex-wrap justify-between gap-x-3 font-sans text-sm font-medium text-muted">
         <span id="intake-title" className="font-semibold">Your real problem</span>
-        <span>{`Question ${stepIndex + 1} of ${guideSteps.length - 1}`}</span>
+        <span>{`Question ${stepIndex + 1} of ${guideSteps.length}`}</span>
       </div>
       <div id="brief-editor">
-        <div aria-hidden="true" className="mt-3 grid grid-cols-4 gap-1">
-          {guideSteps.slice(0, -1).map((key, index) => (
-            <span key={key} className={`h-0.5 rounded-full ${index <= stepIndex ? "bg-accent" : "bg-rule"}`} />
-          ))}
-        </div>
         <div className="mt-3 min-h-[5.5rem]">
-          <h3 id="brief-question" ref={heading} tabIndex={-1} className="text-xl">{prompts[step].question}</h3>
+          <h3 id="brief-question" ref={heading} tabIndex={-1} className="scroll-mt-6 text-xl">{prompts[step].question}</h3>
           <p id="brief-question-hint" className="mt-2">{step === "problem" && problemNeeded ? "Add a sentence about your problem to book." : prompts[step].hint}</p>
         </div>
         <noscript><p className="mt-3 text-sm">The brief and scheduling require JavaScript. You can still explore the stages or email Steven.</p></noscript>
@@ -175,7 +181,7 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
         )}
         <form method="post" onSubmit={save}>
           <fieldset disabled={!ready} className="min-w-0">
-            {guideSteps.map((key) => key !== "review" && (
+            {guideSteps.map((key) => (
               <div key={key} hidden={step !== key}>
                 <label htmlFor={`guide-${key}`} className="sr-only">{fieldLabels[key]}</label>
                 <textarea
@@ -193,13 +199,13 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
             ))}
 
             <div id="brief-actions" className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              {previousStep && previousStep !== "review" && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
+              {previousStep && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
               {previousStep && scheduleUrl && (
-                <Button type="button" variant={nextStep === "review" ? "default" : "outline"} size="compact" onClick={() => bookingDialog.current?.showModal()}>
+                <Button type="button" variant={nextStep ? "outline" : "default"} size="compact" onClick={() => bookingDialog.current?.showModal()}>
                   Submit &amp; Book
                 </Button>
               )}
-              {(nextStep !== "review" || !scheduleUrl) && (
+              {(nextStep || !scheduleUrl) && (
                 <Button type="button" size="compact" className="ml-auto" onClick={continueIntake}>Continue</Button>
               )}
             </div>
@@ -255,7 +261,7 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
                   <details>
                     <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium">Add more context or scope choices</summary>
                     <div className="grid gap-4">
-                      {fields.slice(4).map((key) => (
+                      {optionalFields.map((key) => (
                         <label key={key} className="grid gap-1">{fieldLabels[key]}
                           <textarea name={key} rows={2} maxLength={maxFieldLength} className={control} value={draft.fields[key] ?? ""} onChange={changeDraft} />
                         </label>
@@ -296,5 +302,10 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
         </form>
       </div>
     </section>
+  );
+  return (
+    <ProcessTimeline stages={stages} activeStage={stepIndex} onStageChange={(index) => goTo(guideSteps[index], false)}>
+      {intake}
+    </ProcessTimeline>
   );
 }

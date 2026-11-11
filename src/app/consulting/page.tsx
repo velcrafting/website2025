@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ProcessTimeline from "@/components/consulting/ProcessTimeline";
 import Button from "@/components/ui/Button";
 import { SITE } from "@/config/site";
 import { SITE_URL } from "@/lib/seo";
 import { portfolioProjects } from "@/lib/portfolio-projects";
 import { parseService, services } from "@/consulting/brief";
-import { stages } from "@/consulting/fixtures";
 import BriefDesk from "./BriefDesk";
 
 export const metadata: Metadata = {
@@ -45,9 +43,7 @@ export default async function ConsultingPage({
         </div>
       </header>
 
-      <ProcessTimeline stages={stages}>
-        <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} contactEmail={SITE.email} />
-      </ProcessTimeline>
+      <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} contactEmail={SITE.email} />
 
       <div className="border-t border-rule">
         <details className="border-b border-rule">

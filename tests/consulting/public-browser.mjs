@@ -80,6 +80,7 @@ try {
   assert.ok(await page.getByRole("radio", { name: "Quote" }).isChecked());
   assert.equal(await page.evaluate(() => document.activeElement?.id), "stage-quote");
   assert.ok(await page.getByRole("region", { name: "Quote" }).getByText("Quote outline").isVisible());
+  assert.ok(await page.getByRole("textbox", { name: "Desired outcome" }).isVisible());
   for (const [id, artifact] of [
     ["delivery", "Handoff packet"], ["proposal", "Proposal"], ["updates", "Progress note"],
     ["start", "Kickoff checklist"], ["discovery", "Discussion brief"], ["delivery", "Handoff packet"],
@@ -102,14 +103,18 @@ try {
   const example = await activeColumns.last().boundingBox();
   const intake = await timelineIntake.boundingBox();
   assert.ok(what.x < example.x && example.x < intake.x, "The intake is the right column");
+  await page.locator('label[for="stage-discovery"]').click();
   assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
+  await page.locator('label[for="stage-updates"]').click();
+  assert.ok(await page.getByRole("textbox", { name: "Open questions" }).isVisible());
   await page.locator('label[for="stage-discovery"]').click();
   assert.equal(await problem(page).inputValue(), saved, "Switching timeline stages preserves the intake");
   const footer = page.locator("#brief-actions");
   assert.deepEqual(await footer.getByRole("button").allTextContents(), ["Continue"]);
   const firstFooter = await footer.boundingBox();
   await next(page);
+  assert.ok(await page.getByRole("radio", { name: "Quote" }).isChecked());
   assert.deepEqual((await footer.getByRole("button").allTextContents()).map((s) => s.trim()), ["Back", "Submit & Book", "Continue"]);
   assert.equal((await footer.boundingBox()).y, firstFooter.y, "The footer keeps its vertical position across questions");
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "What would better look like?");
@@ -120,6 +125,7 @@ try {
     path: join(out, "consulting-guided-brief-desktop.png"), caret: "initial", animations: "disabled",
   });
   await page.getByRole("button", { name: "Back", exact: true }).click();
+  assert.ok(await page.getByRole("radio", { name: "Discovery" }).isChecked());
   assert.equal(await problem(page).inputValue(), saved);
   await review(page);
   await page.keyboard.press("Escape");
@@ -186,11 +192,16 @@ try {
   await problem(otherTab).fill(" \t\n ");
   await next(otherTab);
   assert.equal(await submit(otherTab).count(), 0);
+  assert.ok(await otherTab.getByRole("radio", { name: "Quote" }).isChecked());
   await otherTab.getByRole("textbox", { name: "Desired outcome" }).fill("Another tab, another outcome");
   await next(otherTab);
   await otherTab.reload();
   await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
-  await next(otherTab);
+  assert.ok(await otherTab.getByRole("radio", { name: "Proposal" }).isChecked());
+  for (const stage of ["Start", "Updates", "Delivery"]) {
+    await next(otherTab);
+    assert.ok(await otherTab.getByRole("radio", { name: stage, exact: true }).isChecked());
+  }
   await next(otherTab);
   assert.ok(await otherTab.getByText("Add a sentence about your problem to book.").isVisible());
   assert.equal(await scheduling(otherTab).count(), 0);
@@ -273,9 +284,11 @@ try {
   });
   await mobile.locator('label[for="stage-proposal"]').click();
   assert.ok(await mobile.locator('[data-stage-panel="proposal"]').getByText("Out of scope").isVisible());
+  assert.equal(await mobile.locator('[data-stage-panel="proposal"] > div').first().evaluate((el) => getComputedStyle(el).animationName), "none");
   await mobile.locator("#process").screenshot({
     path: join(out, "consulting-timeline-mobile.png"), caret: "initial", animations: "disabled",
   });
+  await mobile.locator('label[for="stage-discovery"]').click();
   assert.equal(await mobile.locator("#process #explorer").getByRole("textbox").count(), 1);
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);

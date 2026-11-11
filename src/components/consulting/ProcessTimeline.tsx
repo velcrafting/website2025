@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import type { stages as consultingStages } from "@/consulting/fixtures";
 import styles from "./process-timeline.module.css";
 
-export default function ProcessTimeline({ stages, children }: { stages: typeof consultingStages; children: ReactNode }) {
+export default function ProcessTimeline({ stages, activeStage, onStageChange, children }: {
+  stages: typeof consultingStages;
+  activeStage: number;
+  onStageChange: (index: number) => void;
+  children: ReactNode;
+}) {
   return (
     <section id="process" className="scroll-mt-6 py-8 md:py-10" aria-labelledby="process-title">
       <h2 id="process-title">Explore the process</h2>
@@ -19,7 +24,8 @@ export default function ProcessTimeline({ stages, children }: { stages: typeof c
                 name="consulting-stage"
                 id={`stage-${stage.id}`}
                 value={stage.id}
-                defaultChecked={index === 0}
+                checked={index === activeStage}
+                onChange={() => onStageChange(index)}
                 aria-controls={`stage-panel-${stage.id}`}
               />
               <label className={styles.control} htmlFor={`stage-${stage.id}`}>
