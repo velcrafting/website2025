@@ -1,12 +1,42 @@
 import { reviseBrief, type BriefField, type BriefRevision } from "./brief";
 
 export const stages = [
-  { id: "discovery", title: "Discovery", purpose: "Understand the problem, the people involved and what is still unknown.", studio: "Gather context and identify unknowns.", client: "Bring goals, constraints and relevant material.", output: "A brief and proposed next step.", example: "A fictional team wants a clearer way to review recurring requests. Who owns the final decision?" },
-  { id: "quote", title: "Quote", purpose: "Establish commercial direction when useful.", studio: "Explain the pricing basis, options and assumptions.", client: "Share budget direction or procurement requirements.", output: "A dated quote, or pricing within the proposal.", example: "The example quote identifies a pricing basis and assumptions. Amounts are intentionally omitted." },
-  { id: "proposal", title: "Proposal", purpose: "Make the work, responsibilities and completion checks concrete.", studio: "Define deliverables, exclusions and how we will check the work.", client: "Review scope and name the authorized decision maker.", output: "An identifiable version for external agreement.", example: "The team gets a reviewed workflow and a bounded prototype. Live rollout is outside this fictional scope." },
-  { id: "start", title: "Start", purpose: "Agree what is ready and what can begin.", studio: "Identify owners, dependencies and the first milestone.", client: "Provide agreed inputs and appropriate access.", output: "A practical readiness checklist.", example: "The team provides representative, nonsensitive examples and names a reviewer." },
-  { id: "updates", title: "Updates", purpose: "Show what changed and where a decision is needed.", studio: "Record dated work, evidence, blockers and next steps.", client: "Review the work and make named decisions.", output: "A preserved update and clear next action.", example: "The draft workflow is ready for review. A routing decision is still open." },
-  { id: "delivery", title: "Delivery", purpose: "Make the result usable by the people who will own it.", studio: "Provide final artifacts, instructions and remaining items.", client: "Review the result and take operating ownership.", output: "A handoff and agreed follow-up.", example: "The handoff includes the prototype, decision record, usage notes and remaining limitations." },
+  {
+    id: "discovery", title: "Discovery", purpose: "Get clear on the problem and what a useful result would look like.",
+    studio: "Map the current workflow and identify what we still need to learn.",
+    client: "Bring the goal, constraints and a few representative examples.",
+    output: "Discussion brief", sample: [["Goal", "Review incoming requests in one place."], ["Open question", "Who makes the final decision?"]],
+  },
+  {
+    id: "quote", title: "Quote", purpose: "Understand the basis for pricing when a separate quote helps.",
+    studio: "Explain the options and what affects the cost.",
+    client: "Share budget guidance or procurement requirements.",
+    output: "Quote outline", sample: [["Pricing basis", "One request review workflow."], ["Assumption", "The team supplies sample requests."]],
+  },
+  {
+    id: "proposal", title: "Proposal", purpose: "Agree on what we’ll deliver and how you’ll know it’s ready.",
+    studio: "Write the scope, exclusions and acceptance checks.",
+    client: "Review the scope and name who can approve it.",
+    output: "Proposal", sample: [["In scope", "A reviewed workflow and a testable prototype."], ["Out of scope", "Live rollout."]],
+  },
+  {
+    id: "start", title: "Start", purpose: "Get the people and inputs in place for the first milestone.",
+    studio: "Identify owners, dependencies and the first milestone.",
+    client: "Provide agreed inputs and appropriate access.",
+    output: "Kickoff checklist", sample: [["Inputs", "Representative, nonsensitive requests."], ["Reviewer", "A person who can test the workflow."]],
+  },
+  {
+    id: "updates", title: "Updates", purpose: "See what changed and where your decision is needed.",
+    studio: "Share progress, evidence and open decisions.",
+    client: "Review the work and resolve decisions in your scope.",
+    output: "Progress note", sample: [["Ready for review", "The draft request workflow."], ["Decision needed", "Where should exceptions go?"]],
+  },
+  {
+    id: "delivery", title: "Delivery", purpose: "Leave your team with something they can use and maintain.",
+    studio: "Hand over the work, operating notes and known limitations.",
+    client: "Review the result and confirm who owns it next.",
+    output: "Handoff packet", sample: [["Included", "Prototype, decision record and usage notes."], ["Follow-up", "Review exceptions after the first team trial."]],
+  },
 ] as const;
 
 export const examples = {

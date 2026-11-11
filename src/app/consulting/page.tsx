@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ProcessTimeline from "@/components/consulting/ProcessTimeline";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { SITE } from "@/config/site";
@@ -32,8 +33,8 @@ export default async function ConsultingPage({
   const work = portfolioProjects.filter(({ slug }) => slug === "veldesk" || slug === "yolo26-mlx-swift");
 
   return (
-    <div className="container-page pt-[var(--space-7)]">
-      <header className="grid items-end gap-6 border-b border-rule pb-[var(--space-6)] md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="container-page pt-8 md:pt-10">
+      <header className="grid items-end gap-4 border-b border-rule pb-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div>
           <p className="meta uppercase tracking-wide">Velcrafting · Consulting</p>
           <h1 className="mt-3 max-w-[21ch]">Turn complicated work into useful systems.</h1>
@@ -46,7 +47,9 @@ export default async function ConsultingPage({
         </div>
       </header>
 
-      <section className="section-gap" aria-labelledby="services-title">
+      <ProcessTimeline stages={stages} />
+
+      <section className="section-gap border-t border-rule pt-6" aria-labelledby="services-title">
         <h2 id="services-title">How Velcrafting can help</h2>
         <p className="mt-3">Choose the problem closest to yours to start a brief.</p>
         <ul className="mt-4 grid gap-x-8 md:grid-cols-2">
@@ -61,30 +64,7 @@ export default async function ConsultingPage({
         <Link href="/consulting?service=unsure#explorer" className="inline-flex min-h-11 items-center">Not sure yet</Link>
       </section>
 
-      <section className="section-gap grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]" aria-labelledby="process-title">
-        <div>
-          <p className="meta">How we work</p>
-          <h2 id="process-title" className="mt-2">Explore the process</h2>
-          <p className="mt-3 max-w-prose">The shape of the engagement depends on the work. Some stages combine, and updates follow the cadence we agree.</p>
-          <p className="mt-3">Open any stage to see what each side brings and what comes out of it.</p>
-        </div>
-        <div className="border-y border-rule">
-          {stages.map((stage, index) => (
-            <details key={stage.id} name="consulting-stage" open={index === 0} className="border-b border-rule last:border-b-0">
-              <summary className="min-h-11 cursor-pointer py-3 font-semibold">{stage.title}</summary>
-              <div className="grid gap-3 pb-4 pl-4">
-                <p>{stage.purpose}</p>
-                <dl className="grid gap-2 sm:grid-cols-3">
-                  <div><dt className="meta">Velcrafting</dt><dd>{stage.studio}</dd></div>
-                  <div><dt className="meta">You</dt><dd>{stage.client}</dd></div>
-                  <div><dt className="meta">Output</dt><dd>{stage.output}</dd></div>
-                </dl>
-                <div className="border-l border-rule pl-3"><p className="meta">Fictional example</p><p>{stage.example}</p></div>
-              </div>
-            </details>
-          ))}
-        </div>
-      </section>
+      {/* The fictional walkthrough never populates the visitor's brief. */}
 
       <BriefDesk initialService={selectedService} />
 

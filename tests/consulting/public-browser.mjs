@@ -54,11 +54,21 @@ try {
   assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).inputValue(), "communications");
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png") });
-  const stage = page.locator("summary").filter({ hasText: /^Delivery$/ });
-  await stage.focus();
-  await page.keyboard.press("Enter");
-  assert.ok(await stage.evaluate((summary) => summary.parentElement.open));
-  assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Delivery");
+  await page.getByRole("radio", { name: "Discovery" }).focus();
+  await page.keyboard.press("ArrowRight");
+  assert.ok(await page.getByRole("radio", { name: "Quote" }).isChecked());
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "stage-quote");
+  assert.ok(await page.getByRole("region", { name: "Quote" }).getByText("Quote outline").isVisible());
+  for (const [id, artifact] of [
+    ["delivery", "Handoff packet"], ["proposal", "Proposal"], ["updates", "Progress note"],
+    ["start", "Kickoff checklist"], ["discovery", "Discussion brief"], ["delivery", "Handoff packet"],
+  ]) {
+    await page.locator(`label[for="stage-${id}"]`).click();
+    const panel = page.locator(`[data-stage-panel="${id}"]`);
+    assert.ok(await panel.getByText(artifact, { exact: true }).last().isVisible());
+    assert.equal(await page.locator("[data-stage-panel]:visible").count(), 1);
+  }
+  await page.locator("#process").screenshot({ path: join(out, "consulting-timeline-desktop.png") });
 
   await problem(page).fill(saved);
   await page.getByRole("button", { name: "Save draft revision" }).click();
@@ -128,6 +138,9 @@ try {
   await mobile.emulateMedia({ reducedMotion: "reduce" });
   await mobile.goto(new URL("/consulting", base).href);
   await mobile.screenshot({ path: join(out, "consulting-services-mobile.png"), fullPage: true });
+  await mobile.locator('label[for="stage-proposal"]').click();
+  assert.ok(await mobile.locator('[data-stage-panel="proposal"]').getByText("Out of scope").isVisible());
+  await mobile.locator("#process").screenshot({ path: join(out, "consulting-timeline-mobile.png") });
   await mobile.getByRole("link", { name: "Explore your project" }).click();
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
@@ -142,8 +155,9 @@ try {
   await noJs.route("**/*", (route) => new URL(route.request().url()).origin === base.origin ? route.continue() : route.abort());
   const staticPage = await noJs.newPage();
   await staticPage.goto(new URL("/consulting", base).href);
-  await staticPage.locator("summary").filter({ hasText: /^Proposal$/ }).click();
-  assert.ok(await staticPage.locator("summary").filter({ hasText: /^Proposal$/ }).evaluate((summary) => summary.parentElement.open));
+  await staticPage.locator('label[for="stage-proposal"]').click();
+  assert.ok(await staticPage.getByRole("radio", { name: "Proposal" }).isChecked());
+  assert.ok(await staticPage.locator('[data-stage-panel="proposal"]').getByText("Out of scope").isVisible());
   assert.equal(await scheduling(staticPage).getAttribute("target"), "_blank");
 
   const noStorage = await context.newPage();
@@ -163,6 +177,7 @@ try {
     chromium: browser.version(),
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
+    process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
     scheduling: "intercepted Cal link; no provider booking",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",
