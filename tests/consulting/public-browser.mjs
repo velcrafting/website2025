@@ -109,8 +109,20 @@ try {
   await page.locator("#nutel-solutions summary").click();
   assert.ok(await selectedWork.getByText(/12 finance managers used the working prototype/).isVisible());
   assert.equal(await selectedWork.locator("li details[open]").count(), 1);
-  await page.locator("#nutel-solutions summary").click();
+  async function assertWorkCardsAligned() {
+    const bounds = await workCards.evaluateAll((cards) => cards.map((card) => {
+      const { top, bottom, width } = card.getBoundingClientRect();
+      return { top, bottom, width };
+    }));
+    assert.ok(bounds.every(({ top, bottom, width }) =>
+      top === bounds[0].top && bottom === bounds[0].bottom && Math.abs(width - bounds[0].width) < 1),
+    "The work cards share the same row edges without clipping their content");
+  }
+  await assertWorkCardsAligned();
+  await page.locator("#companyos summary").click();
   await page.locator("#still summary").click();
+  await assertWorkCardsAligned();
+  assert.equal(await selectedWork.locator("li details[open]").count(), 3);
   assert.equal(await selectedWork.getByRole("link", { name: "Visit Still" }).getAttribute("href"), "https://stillfaithful.app/");
   await page.locator("#main").screenshot({ path: join(out, "consulting-topic-cards.png"), animations: "disabled" });
   assert.ok(await page.getByText(/Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide/).isVisible());
@@ -122,6 +134,36 @@ try {
   await page.waitForFunction(() => document.querySelector('select[name="service"]')?.value === "communications");
   assert.ok(await problem(page).isVisible());
   assert.equal(await problem(page).inputValue(), "Fictional draft before choosing a service.");
+  await next(page);
+  const outcome = page.getByRole("textbox", { name: "Desired outcome" });
+  await outcome.fill("Fictional outcome: one place to see requests.");
+  await serviceCards.first().scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => !document.getElementById("process").getAnimations({ subtree: true }).length);
+  const guidePosition = () => page.evaluate(() => ({
+    document: performance.timeOrigin,
+    scroll: window.scrollY,
+    panelTop: document.getElementById("process").getBoundingClientRect().top,
+    panelHeight: document.getElementById("process").getBoundingClientRect().height,
+    animations: document.getElementById("process").getAnimations({ subtree: true }).length,
+  }));
+  const beforeSelection = await guidePosition();
+  for (const card of await serviceCards.all()) {
+    const label = await card.locator("span").first().textContent();
+    await card.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await card.getAttribute("aria-current"), "true");
+    assert.equal(await serviceCards.and(page.locator('[aria-current="true"]')).count(), 1);
+    assert.equal(await page.locator("#intake-title").textContent(), `Focus: ${label}`);
+    assert.deepEqual(await guidePosition(), beforeSelection, "Selecting a service neither moves nor animates the open guide");
+    assert.ok(await page.getByRole("radio", { name: "Quote" }).isChecked());
+    assert.equal(await outcome.inputValue(), "Fictional outcome: one place to see requests.");
+  }
+  await page.reload();
+  await page.waitForFunction(() => !document.querySelector("#brief-editor fieldset").disabled);
+  assert.equal(await page.locator("#intake-title").textContent(), "Focus: Clarify your message");
+  assert.equal(await outcome.inputValue(), "Fictional outcome: one place to see requests.");
+  await outcome.fill("");
+  await page.locator('label[for="stage-discovery"]').click();
   await problem(page).fill("");
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
@@ -378,6 +420,13 @@ try {
   await review(mobile);
   await bookingReview(mobile).screenshot({ path: join(out, "consulting-review-mobile.png") });
   await mobile.keyboard.press("Escape");
+  const mobileWork = mobile.locator("#selected-work");
+  await mobileWork.locator(":scope > summary").click();
+  for (const summary of await mobileWork.locator("li summary").all()) await summary.click();
+  assert.equal(await mobileWork.locator("li details[open]").count(), 3);
+  assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await mobileWork.screenshot({ path: join(out, "consulting-work-mobile.png") });
+  await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   const session = await context.newCDPSession(mobile);
   await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
   await mobile.waitForFunction(() => window.visualViewport?.scale === 2);
@@ -409,7 +458,8 @@ try {
     cleanCheckout: status === "",
     chromium: browser.version(),
     target: base.origin,
-    services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
+    services: "local and remote coverage, canonical URL, four keyboard selections with stable guide position and animation state, reopening, and reload persistence",
+    selectedWork: "equal-width and equal-height cards with one or all expanded on desktop; all expanded without horizontal overflow at 390px",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
     guide: "primary action fits at 1440×768 and default page fits at 1440×900; answer and visit status, first unanswered redirect, explicit skip, and all-answered booking verified",
     scheduling: "blank, whitespace, and legacy samples block booking; explicit Cal navigation sends only the encoded problem; exact PDF shared separately",

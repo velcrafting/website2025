@@ -50,6 +50,25 @@ details[open] > .summary::after {
   border-color: var(--link);
 }
 
+.serviceCard[aria-current] {
+  border-color: var(--link);
+  background: color-mix(in srgb, var(--link) 9%, var(--paper-raised));
+}
+
+.card {
+  flex: 1;
+}
+
+.card[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.card[open]::details-content {
+  display: flex;
+  flex: 1;
+}
+
 .card > .summary {
   align-items: flex-start;
   padding: 0.875rem 1rem;
@@ -64,9 +83,18 @@ details[open] > .summary::after {
 }
 
 .cardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
   margin-inline: 1rem;
   padding-block: 0.75rem 0.875rem;
   border-block-start: 1px solid var(--rule);
+}
+
+.cardBody > a {
+  align-self: flex-start;
+  margin-block-start: auto;
 }
 
 @media (min-width: 64rem) {

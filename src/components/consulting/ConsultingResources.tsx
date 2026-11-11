@@ -1,12 +1,15 @@
 import Link from "next/link";
+import type { Service } from "@/consulting/brief";
 import styles from "./disclosure.module.css";
 
-const services = [
+const serviceCards = [
   ["review", "Choose a direction", "Decide what to build or buy."],
   ["build", "Build a prototype", "Build what your tools are missing."],
   ["workflow", "Improve a workflow", "Automate repetitive work."],
   ["communications", "Clarify your message", "Make your offer easier to find."],
 ] as const;
+
+export const serviceCardTitles = Object.fromEntries(serviceCards.map(([key, title]) => [key, title])) as Record<Exclude<Service, "unsure">, string>;
 
 const work = [
   {
@@ -33,14 +36,23 @@ const work = [
   },
 ] as const;
 
-export function ConsultingServices() {
+export function ConsultingServices({ selectedService, onSelect }: {
+  selectedService: Service;
+  onSelect: (service: Exclude<Service, "unsure">) => void;
+}) {
   return (
     <section aria-labelledby="services-title" className="pt-2">
       <h2 id="services-title" className="text-xl!">How Velcrafting can help</h2>
       <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {services.map(([key, title, summary]) => (
+        {serviceCards.map(([key, title, summary]) => (
           <li key={key} id={key} className="min-w-0 scroll-mt-6">
-            <a href={`/consulting?service=${key}#explorer`} className={styles.serviceCard}>
+            <a href={`/consulting?service=${key}#explorer`} className={styles.serviceCard}
+              aria-current={selectedService === key ? "true" : undefined}
+              onClick={(event) => {
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                onSelect(key);
+              }}>
               <span className="font-semibold">{title}</span>
               <span className="text-sm text-muted">{summary}</span>
             </a>
@@ -57,9 +69,9 @@ export function SelectedWork() {
       <summary className={styles.summary}>
         <h2 className="text-xl!">Selected work</h2>
       </summary>
-      <ul className="grid items-start gap-3 pt-2 sm:grid-cols-3">
+      <ul className="grid gap-3 pt-2 sm:grid-cols-3">
         {work.map((project) => (
-          <li key={project.id} id={project.id} className="min-w-0">
+          <li key={project.id} id={project.id} className="flex min-w-0">
             <details className={styles.card}>
               <summary className={styles.summary}>
                 <span className="min-w-0">
@@ -71,7 +83,7 @@ export function SelectedWork() {
               <div className={styles.cardBody}>
                 <p className="text-sm">{project.detail}</p>
                 {"href" in project && (
-                  <a href={project.href} className="mt-1 inline-flex min-h-11 items-center text-sm">Visit Still</a>
+                  <a href={project.href} className="inline-flex min-h-11 items-center text-sm">Visit Still</a>
                 )}
               </div>
             </details>

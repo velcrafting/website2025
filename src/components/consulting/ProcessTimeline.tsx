@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type { stages as consultingStages } from "@/consulting/fixtures";
 import disclosure from "./disclosure.module.css";
 import styles from "./process-timeline.module.css";
@@ -12,16 +12,17 @@ const statusLabels = {
 };
 export type StageStatus = keyof typeof statusLabels;
 
-export default function ProcessTimeline({ stages, activeStage, statuses, attention, onStageChange, children }: {
+export default function ProcessTimeline({ stages, activeStage, statuses, attention, onStageChange, guideRef, children }: {
   stages: typeof consultingStages;
   activeStage: number;
   statuses: readonly StageStatus[];
   attention: { index: number; count: number } | null;
   onStageChange: (index: number) => void;
+  guideRef: Ref<HTMLDetailsElement>;
   children: ReactNode;
 }) {
   return (
-    <details id="process" className="scroll-mt-6 py-2" open>
+    <details ref={guideRef} id="process" className="scroll-mt-6 py-2" open>
       <summary className={disclosure.summary}>
         <h2 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xl!">
           <span>Explore the process</span>

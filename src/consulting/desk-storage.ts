@@ -37,7 +37,7 @@ export function newDesk(entry: Service): DeskState {
 }
 
 export function chooseDeskEntry(desk: DeskState, entry: Service): DeskState {
-  if (desk.entry === entry) return desk;
+  if (desk.entry === entry && desk.draft.service === entry) return desk;
   return {
     ...desk, entry, draft: { ...desk.draft, service: entry },
     dirty: desk.dirty || (!!desk.brief && desk.brief.service !== entry),

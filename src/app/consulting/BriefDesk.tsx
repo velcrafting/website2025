@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { ConsultingServices, serviceCardTitles } from "@/components/consulting/ConsultingResources";
 import ProcessTimeline, { type StageStatus } from "@/components/consulting/ProcessTimeline";
 import Button from "@/components/ui/Button";
 import { bookingLinkWithProblem, maxBookingProblemLength } from "@/consulting/booking-link";
@@ -66,6 +67,7 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
     return desk.visited?.includes(key) ? "unanswered" : "unvisited";
   });
   const heading = useRef<HTMLHeadingElement>(null);
+  const guide = useRef<HTMLDetailsElement>(null);
   const focusQuestion = useRef(false);
   const bookingDialog = useRef<HTMLDialogElement>(null);
 
@@ -82,16 +84,15 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
   useEffect(() => {
     try {
       const stored = readDesk(window.sessionStorage);
-      if (stored) setDesk(stored);
-      setStorage("available");
+      if (stored && stored.entry !== initialService) updateDesk(chooseDeskEntry(stored, initialService));
+      else {
+        if (stored) setDesk(stored);
+        setStorage("available");
+      }
     } catch {
       setStorage("unavailable");
     }
-  }, []);
-
-  useEffect(() => {
-    if (ready && desk.entry !== initialService) updateDesk(chooseDeskEntry(desk, initialService));
-  }, [desk, initialService, ready, updateDesk]);
+  }, [initialService, updateDesk]);
 
   useEffect(() => {
     if (focusQuestion.current) {
@@ -109,6 +110,15 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
   function goTo(next: GuideStep, moveFocus = true, current = desk) {
     if (next !== step) focusQuestion.current = moveFocus;
     updateDesk({ ...current, step: next, visited: [...new Set([...(current.visited ?? []), step, next])] });
+  }
+
+  function selectService(service: Exclude<Service, "unsure">) {
+    if (guide.current) guide.current.open = true;
+    const url = new URL(window.location.href);
+    url.searchParams.set("service", service);
+    url.hash = "explorer";
+    window.history.replaceState(null, "", url);
+    updateDesk(chooseDeskEntry(desk, service));
   }
 
   function reviewOutstanding(current = desk) {
@@ -192,7 +202,9 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
   const intake = (
     <section id="explorer" tabIndex={-1} aria-labelledby="intake-title" className="min-w-0 scroll-mt-6">
       <div id="schedule" tabIndex={-1} className="flex min-h-11 scroll-mt-6 flex-wrap items-center justify-between gap-x-3 font-sans text-sm font-medium text-muted">
-        <span id="intake-title" className="font-semibold">Your real problem</span>
+        <span id="intake-title" className="font-semibold" aria-live="polite">
+          {draft.service === "unsure" ? "Your real problem" : `Focus: ${serviceCardTitles[draft.service]}`}
+        </span>
         <div className="flex items-center gap-3">
           <span>{`Question ${stepIndex + 1} of ${guideSteps.length}`}</span>
           {ready && step !== "problem" && !isAnswered(step) && !isSkipped(step) && (
@@ -338,9 +350,12 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
     </section>
   );
   return (
-    <ProcessTimeline stages={stages} activeStage={stepIndex} statuses={statuses} attention={attention}
-      onStageChange={(index) => goTo(guideSteps[index], false)}>
-      {intake}
-    </ProcessTimeline>
+    <>
+      <ConsultingServices selectedService={draft.service} onSelect={selectService} />
+      <ProcessTimeline stages={stages} activeStage={stepIndex} statuses={statuses} attention={attention} guideRef={guide}
+        onStageChange={(index) => goTo(guideSteps[index], false)}>
+        {intake}
+      </ProcessTimeline>
+    </>
   );
 }
