@@ -46,6 +46,13 @@ try {
 
   const page = await context.newPage();
   await page.goto(new URL("/consulting?service=workflow", base).href);
+  assert.ok(await page.getByRole("heading", { name: "How Velcrafting can help" }).isVisible());
+  assert.ok(await page.getByText(/Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide/).isVisible());
+  assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
+  await page.getByRole("link", { name: "Communications and knowledge" }).click();
+  await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
+  assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).inputValue(), "communications");
+  await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png") });
   const stage = page.locator("summary").filter({ hasText: /^Delivery$/ });
   await stage.focus();
@@ -120,6 +127,7 @@ try {
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.emulateMedia({ reducedMotion: "reduce" });
   await mobile.goto(new URL("/consulting", base).href);
+  await mobile.screenshot({ path: join(out, "consulting-services-mobile.png"), fullPage: true });
   await mobile.getByRole("link", { name: "Explore your project" }).click();
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
@@ -154,6 +162,7 @@ try {
     cleanCheckout: status === "",
     chromium: browser.version(),
     target: base.origin,
+    services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     scheduling: "intercepted Cal link; no provider booking",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",

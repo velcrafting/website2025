@@ -11,10 +11,17 @@ import { stages } from "@/consulting/fixtures";
 import BriefDesk from "./BriefDesk";
 
 export const metadata: Metadata = {
-  title: "Consulting",
-  description: "Software, practical AI and clear communication, with scope, decisions and handoff kept in one place.",
+  title: "AI, Software & Communications Consulting",
+  description: "Velcrafting helps teams with AI workflows, custom software and communications. Based in Spring, Texas, serving The Woodlands, greater Houston and remote clients worldwide.",
   alternates: { canonical: `${SITE_URL}/consulting` },
 };
+
+const serviceIntents = [
+  ["review", "You need to decide what to automate, build or buy.", "Compare your options against the way your team works, with a recommendation and a first step you can test."],
+  ["build", "An off-the-shelf tool leaves a gap in your process.", "Prototype an internal tool or integration, test it with the people who will use it, and hand over the working software and documentation."],
+  ["workflow", "A recurring task takes too much manual work.", "Map the steps, test where automation or AI helps, and document where a person needs to check the result."],
+  ["communications", "Customers or AI search tools misunderstand what you offer.", "Review your public information, check which sources people and AI answers rely on, and prioritize updates to your service pages and supporting content."],
+] as const;
 
 export default async function ConsultingPage({
   searchParams,
@@ -30,7 +37,8 @@ export default async function ConsultingPage({
         <div>
           <p className="meta uppercase tracking-wide">Velcrafting · Consulting</p>
           <h1 className="mt-3 max-w-[21ch]">Turn complicated work into useful systems.</h1>
-          <p className="mt-4 max-w-prose text-lg">{metadata.description}</p>
+          <p className="mt-4 max-w-prose text-lg">Velcrafting helps teams decide what to build, make recurring work easier, and explain what they offer clearly to customers and search tools.</p>
+          <p className="mt-3 max-w-prose">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide. Remote work combines working sessions with written scope, decisions and handoff.</p>
         </div>
         <div className="flex flex-wrap items-start gap-2 md:justify-end">
           <Button asChild><a href="#explorer">Explore your project</a></Button>
@@ -39,14 +47,14 @@ export default async function ConsultingPage({
       </header>
 
       <section className="section-gap" aria-labelledby="services-title">
-        <p className="meta">Starting points</p>
-        <h2 id="services-title" className="mt-2">What would help right now?</h2>
-        <p className="mt-3">Choose the closest starting point. We can adjust it as we understand the work.</p>
+        <h2 id="services-title">How Velcrafting can help</h2>
+        <p className="mt-3">Choose the problem closest to yours to start a brief.</p>
         <ul className="mt-4 grid gap-x-8 md:grid-cols-2">
-          {Object.entries(services).filter(([key]) => key !== "unsure").map(([key, [label, description]]) => (
-            <li key={key} className="border-t border-rule py-3">
-              <Link href={`/consulting?service=${key}#explorer`} className="inline-flex min-h-11 items-center font-semibold">{label}</Link>
-              <p>{description}</p>
+          {serviceIntents.map(([key, problem, outcome]) => (
+            <li key={key} id={key} className="scroll-mt-6 border-t border-rule py-3">
+              <h3><Link href={`/consulting?service=${key}#explorer`} className="inline-flex min-h-11 items-center">{services[key][0]}</Link></h3>
+              <p className="font-semibold">{problem}</p>
+              <p className="mt-1">{outcome}</p>
             </li>
           ))}
         </ul>
