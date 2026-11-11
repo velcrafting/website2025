@@ -1,0 +1,54 @@
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-block-size: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::after {
+  content: "";
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: 0.25rem;
+  border-inline-end: 1.5px solid currentColor;
+  border-block-end: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+details[open] > .summary::after {
+  transform: translateY(-0.125rem) rotate(45deg);
+}
+
+.card {
+  min-inline-size: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-surface);
+  background: var(--paper-raised);
+}
+
+.card > .summary {
+  align-items: flex-start;
+  padding: 0.875rem 1rem;
+}
+
+.card > .summary::after {
+  margin-block-start: 0.4rem;
+}
+
+.card > .summary:hover {
+  color: var(--link);
+}
+
+.cardBody {
+  margin-inline: 1rem;
+  padding-block: 0.75rem 0.875rem;
+  border-block-start: 1px solid var(--rule);
+}

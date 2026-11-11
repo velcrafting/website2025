@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { stages as consultingStages } from "@/consulting/fixtures";
+import disclosure from "./disclosure.module.css";
 import styles from "./process-timeline.module.css";
 
 const statusLabels = {
@@ -20,11 +21,13 @@ export default function ProcessTimeline({ stages, activeStage, statuses, attenti
   children: ReactNode;
 }) {
   return (
-    <section id="process" className="scroll-mt-6 py-3" aria-labelledby="process-title">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h2 id="process-title" className="text-xl!">Explore the process</h2>
-        <p className="text-sm">Add what you know. A problem summary is required to book. You can skip the rest.</p>
-      </div>
+    <details id="process" className="scroll-mt-6 py-3 lg:py-4" open>
+      <summary className={disclosure.summary}>
+        <h2 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xl!">
+          <span>Explore the process</span>
+          <span className="text-sm font-normal tracking-normal">Add what you know. A problem summary is required to book. You can skip the rest.</span>
+        </h2>
+      </summary>
 
       <div className={styles.timeline}>
         <fieldset className={styles.rail}>
@@ -91,6 +94,6 @@ export default function ProcessTimeline({ stages, activeStage, statuses, attenti
           <div className={styles.intake}>{children}</div>
         </div>
       </div>
-    </section>
+    </details>
   );
 }

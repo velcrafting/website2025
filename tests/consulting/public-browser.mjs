@@ -35,8 +35,8 @@ async function save(page) {
 }
 
 async function openOptions(page) {
-  const details = page.locator("details").filter({ has: page.getByText("More options", { exact: true }) });
-  if (!(await details.evaluate((element) => element.open))) await details.locator(":scope > summary").click();
+  const summary = page.getByText("More options", { exact: true });
+  if (!(await summary.evaluate((element) => element.parentElement.open))) await summary.click();
 }
 
 try {
@@ -71,14 +71,47 @@ try {
   assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), "The collapsed desktop page fits at 1440×768");
   assert.equal(await stageStatus(page, "discovery").textContent(), "In progress");
   assert.equal(await stageStatus(page, "quote").textContent(), "Unvisited");
+  const process = page.locator("#process");
+  assert.equal(await process.evaluate((el) => el.open), true);
+  await problem(page).fill("Fictional draft while the process is minimized.");
+  const processSummary = process.locator(":scope > summary");
+  await processSummary.focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await process.evaluate((el) => el.open), false);
+  assert.equal(await problem(page).count(), 0);
+  await page.keyboard.press("Enter");
+  assert.equal(await problem(page).inputValue(), "Fictional draft while the process is minimized.");
+  await problem(page).fill("");
+  await processSummary.click();
+  await page.getByRole("link", { name: "Schedule a conversation", exact: true }).click();
+  assert.equal(await process.evaluate((el) => el.open), true, "The schedule link reveals the collapsed guide");
   assert.equal(await page.getByRole("heading", { name: "How Velcrafting can help" }).count(), 0);
   await page.getByText("Services and selected work", { exact: true }).click();
   assert.ok(await page.getByRole("heading", { name: "How Velcrafting can help" }).isVisible());
+  const resourceCards = page.locator("#services-title + ul details, #work-title + ul details");
+  assert.equal(await resourceCards.count(), 6);
+  assert.equal(await page.locator("#services-title + ul details[open], #work-title + ul details[open]").count(), 0);
+  assert.ok(await page.getByText("Spend less time on recurring manual work.", { exact: true }).isVisible());
+  assert.equal(await page.getByText("Map the steps, test where automation or AI helps", { exact: false }).isVisible(), false);
+  await page.locator("#workflow summary").click();
+  assert.ok(await page.getByText("Map the steps, test where automation or AI helps", { exact: false }).isVisible());
+  assert.equal(await page.locator("#review details[open]").count(), 0);
+  await page.locator("#workflow summary").click();
+  await page.locator("#veldesk summary").click();
+  assert.ok(await page.locator("#veldesk").getByText(/operator gets a calmer cockpit/).isVisible());
+  await page.locator("#veldesk summary").click();
+  await page.locator("#communications summary").click();
+  await page.locator("#main").screenshot({ path: join(out, "consulting-topic-cards.png"), animations: "disabled" });
   assert.ok(await page.getByText(/Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide/).isVisible());
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
-  await page.getByRole("link", { name: "Communications and knowledge" }).click();
+  await problem(page).fill("Fictional draft before choosing a service.");
+  await processSummary.click();
+  await page.getByRole("link", { name: "Start a brief for Communications and knowledge" }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
   await page.waitForFunction(() => document.querySelector('select[name="service"]')?.value === "communications");
+  assert.ok(await problem(page).isVisible());
+  assert.equal(await problem(page).inputValue(), "Fictional draft before choosing a service.");
+  await problem(page).fill("");
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();

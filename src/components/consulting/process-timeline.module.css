@@ -230,6 +230,7 @@
 
 @container (min-width: 48rem) {
   .columns {
+    --panel-inset: 1.375rem;
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr);
   }
