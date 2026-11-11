@@ -1,0 +1,30 @@
+---
+title: "What a Workflow Handoff Should Record"
+summary: "How to record ownership, approval and retries so someone else can pick up a workflow without guessing."
+pillar: systems-design
+status: published
+---
+
+## Start with what the next person needs
+
+A handoff should let the next person answer a practical question: what can I do now? A message that says the work is ready leaves several possibilities open. The draft may be ready to review, the reviewed file may be ready to publish, or the published page may be ready to check. Each state gives the next person a different job.
+
+For a small editorial workflow, record the current state, the exact artifact, who can take the next step, and the evidence behind the last change. The same record can work for a person or an automated worker. A teammate should be able to pick it up after a day away and resume from what has actually happened.
+
+## Bind a decision to the version it covers
+
+Suppose a writer hands an article to an editor. The editor approves revision four. The writer then changes a paragraph and saves revision five. The approval still tells the team what happened to revision four, and revision five needs its own review. A revision identifier or content hash makes that distinction available to both the people involved and the software moving the work along.
+
+The approval should also describe what it permits. Permission to prepare a public review branch covers a different action from permission to release the article. Give each decision an explicit scope so the person handling the next step can see where their authority begins and ends.
+
+## Leave enough evidence to recover from a timeout
+
+A retry is straightforward when the previous attempt clearly failed before it did any work. The harder case comes when a service accepts a request and the connection drops before the caller sees a response. The caller then has a timeout, and the service may already have created the preview or queued the job.
+
+Give each intended action a stable identifier and record the attempt before sending it. If the response is lost, use the identifier to look for an existing result before trying again. When the service cannot confirm the outcome, leave the attempt marked as uncertain and give the operator a way to reconcile it. This keeps a single intended action from turning into two jobs simply because a network response went missing.
+
+## Check the surface the recipient will use
+
+A successful build tells you that the build system produced an artifact. The reviewer still needs a page they can open. Verify the specific preview URL, check that it shows the expected article, and record the result with the revision that was reviewed. For a private handoff, use an account that represents the intended recipient and check access from that account.
+
+Try the same workflow with a late edit, a lost response, and a recipient who no longer has access. Those three cases show whether your record is sufficient to recover the current state, decide who may proceed, and finish the work without guessing.
