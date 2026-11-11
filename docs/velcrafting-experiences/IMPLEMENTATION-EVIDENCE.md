@@ -19,3 +19,20 @@ Checks on the public slice: Node 22 `npm run lint`, `npm run typecheck --
 `npm run test:component-contracts` (14/14), and
 `node --test tests/consulting/brief.test.mjs` (3/3). The browser run used the
 production build with no live integration credentials or real records.
+
+[Draft PR #13](https://github.com/velcrafting/website2025/pull/13) continues the
+public slice (Phase 1, PUB-01/PUB-11). Service cards set and display the focus
+inside the current brief without moving the open guide or losing the active
+question. The work cards share one desktop row height, with independent
+disclosures. Run `npm run test:consulting:browser` against the local review
+server on port 3139. It measures guide position and animation across all four
+keyboard selections, checks work card bounds and mobile reflow, and writes a
+commit-stamped receipt and fictional screenshots to
+`CONSULTING_BROWSER_ARTIFACTS` when set.
+
+## Next actions
+
+Review the interaction and work card alignment in the PR #13 preview. Carry
+the same behavior into the connected booking review and rerun its fixture
+journey. Live Cal/Meet and attachment acceptance (Phase 4, BOOK-03) still needs
+the authorized owner connection and controlled recipients.

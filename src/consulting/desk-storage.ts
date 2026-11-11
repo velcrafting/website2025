@@ -2,6 +2,8 @@ import { fieldLabels, maxFieldLength, scopeChoices, services, type BriefRevision
 
 export const fields = Object.keys(fieldLabels) as FieldKey[];
 export const scopeKeys = Object.keys(scopeChoices) as (keyof typeof scopeChoices)[];
+export const guideSteps = ["problem", "outcome", "audience", "constraints", "questions", "deliverables"] as const;
+export type GuideStep = (typeof guideSteps)[number];
 
 export type BriefDraft = {
   service: Service;
@@ -15,6 +17,9 @@ export type DeskState = {
   draft: BriefDraft;
   dirty: boolean;
   example: "software" | "communications" | null;
+  step?: GuideStep | "review";
+  visited?: GuideStep[];
+  skipped?: Exclude<GuideStep, "problem">[];
 };
 
 const storageKey = "velcrafting.consulting.desk.v1";
@@ -32,7 +37,7 @@ export function newDesk(entry: Service): DeskState {
 }
 
 export function chooseDeskEntry(desk: DeskState, entry: Service): DeskState {
-  if (desk.entry === entry) return desk;
+  if (desk.entry === entry && desk.draft.service === entry) return desk;
   return {
     ...desk, entry, draft: { ...desk.draft, service: entry },
     dirty: desk.dirty || (!!desk.brief && desk.brief.service !== entry),
@@ -57,6 +62,11 @@ function isFieldText(value: unknown): value is string {
   return typeof value === "string" && value.length <= maxFieldLength;
 }
 
+function isGuideStepList(value: unknown, allowProblem: boolean) {
+  return value === undefined || (Array.isArray(value) && value.length <= guideSteps.length &&
+    value.every((step) => guideSteps.includes(step) && (allowProblem || step !== "problem")));
+}
+
 function isBrief(value: unknown): boolean {
   if (!isRecord(value) || typeof value.id !== "string" || !value.id || !Number.isSafeInteger(value.version) ||
       Number(value.version) < 1 || !isService(value.service) || !isScope(value.scope) ||
@@ -79,6 +89,8 @@ export function readDesk(storage: Storage): DeskState | null {
   try {
     const value: unknown = JSON.parse(raw);
     if (isRecord(value) && isService(value.entry) && typeof value.dirty === "boolean" &&
+        (value.step === undefined || value.step === "review" || guideSteps.includes(value.step as GuideStep)) &&
+        isGuideStepList(value.visited, true) && isGuideStepList(value.skipped, false) &&
         [null, "software", "communications"].includes(value.example as DeskState["example"]) &&
         (value.brief === null || isBrief(value.brief)) &&
         isRecord(value.draft) && isService(value.draft.service) && isScope(value.draft.scope) &&
