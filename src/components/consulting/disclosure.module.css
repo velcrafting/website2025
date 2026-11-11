@@ -27,11 +27,27 @@ details[open] > .summary::after {
   transform: translateY(-0.125rem) rotate(45deg);
 }
 
-.card {
+.card,
+.serviceCard {
   min-inline-size: 0;
   border: 1px solid var(--rule);
   border-radius: var(--radius-surface);
   background: var(--paper-raised);
+}
+
+.serviceCard {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  block-size: 100%;
+  padding: 0.625rem 0.875rem;
+  color: var(--ink);
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.serviceCard:hover {
+  border-color: var(--link);
 }
 
 .card > .summary {
@@ -51,4 +67,10 @@ details[open] > .summary::after {
   margin-inline: 1rem;
   padding-block: 0.75rem 0.875rem;
   border-block-start: 1px solid var(--rule);
+}
+
+@media (min-width: 64rem) {
+  .card > .summary {
+    min-block-size: 7rem;
+  }
 }

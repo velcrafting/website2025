@@ -1,76 +1,84 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { services } from "@/consulting/brief";
-import { portfolioProjects } from "@/lib/portfolio-projects";
 import styles from "./disclosure.module.css";
 
-const serviceIntents = [
-  ["review", "Decide what to automate, build or buy.", "Compare your options against the way your team works, with a recommendation and a first step you can test."],
-  ["build", "Close a gap your current tools leave open.", "Prototype an internal tool or integration, test it with the people who will use it, and hand over the working software and documentation."],
-  ["workflow", "Spend less time on recurring manual work.", "Map the steps, test where automation or AI helps, and document where a person needs to check the result."],
-  ["communications", "Help people and AI search tools understand what you offer.", "Review your public information, check which sources people and AI answers rely on, and prioritize updates to your service pages and supporting content."],
+const services = [
+  ["review", "Choose a direction", "Decide what to build or buy."],
+  ["build", "Build a prototype", "Build what your tools are missing."],
+  ["workflow", "Improve a workflow", "Automate repetitive work."],
+  ["communications", "Clarify your message", "Make your offer easier to find."],
 ] as const;
 
-const workSummaries = new Map([
-  ["veldesk", "A desktop workbench for coding agents that run in the terminal."],
-  ["yolo26-mlx-swift", "On-device computer vision for Apple platforms."],
-]);
-const selectedWork = portfolioProjects.filter((project) => workSummaries.has(project.slug));
+const work = [
+  {
+    id: "companyos",
+    title: "CompanyOS",
+    category: "Enterprise work",
+    summary: "A knowledge system that helps teams find approved answers and keep them current.",
+    detail: "Steven built and maintains the system. It identifies trusted sources, shows who owns the information, and routes corrections for review. Teams use it to prepare briefs and answer questions using the latest guidance.",
+  },
+  {
+    id: "nutel-solutions",
+    title: "NUTEL Solutions",
+    category: "Client engagement",
+    summary: "An AI tutor prototype for onboarding finance managers.",
+    detail: "Steven led finance and management workshops, then built a tutor that draws on training materials and guides learners through a staged curriculum. An initial group of 12 finance managers used the working prototype. NUTEL staff received tools they could adapt and maintain.",
+  },
+  {
+    id: "still",
+    title: "Still",
+    category: "Velcrafting product",
+    summary: "An iPhone and web product for Scripture reading and reflection.",
+    detail: "Still gives readers a short passage in context and a place to reflect on it. The project brings together native iPhone design, a public web reader, and daily reflections in a product Velcrafting builds and operates.",
+    href: "https://stillfaithful.app/",
+  },
+] as const;
 
-function TopicCard({ id, title, summary, children }: { id: string; title: string; summary: string; children: ReactNode }) {
+export function ConsultingServices() {
   return (
-    <li id={id} className="min-w-0 scroll-mt-6">
-      <details className={styles.card}>
-        <summary className={styles.summary}>
-          <span className="min-w-0">
-            <span className="block font-semibold break-words">{title}</span>
-            <span className="mt-1 block text-sm text-muted">{summary}</span>
-          </span>
-        </summary>
-        <div className={styles.cardBody}>{children}</div>
-      </details>
-    </li>
+    <section aria-labelledby="services-title" className="pt-2">
+      <h2 id="services-title" className="text-xl!">How Velcrafting can help</h2>
+      <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {services.map(([key, title, summary]) => (
+          <li key={key} id={key} className="min-w-0 scroll-mt-6">
+            <a href={`/consulting?service=${key}#explorer`} className={styles.serviceCard}>
+              <span className="font-semibold">{title}</span>
+              <span className="text-sm text-muted">{summary}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-export default function ConsultingResources() {
+export function SelectedWork() {
   return (
-    <details className="min-w-0 flex-1">
+    <details id="selected-work">
       <summary className={styles.summary}>
-        <h2 className="text-xl!">Services and selected work</h2>
+        <h2 className="text-xl!">Selected work</h2>
       </summary>
-      <div className="space-y-5 pt-2 pb-4">
-        <section aria-labelledby="services-title">
-          <h3 id="services-title" className="text-base!">How Velcrafting can help</h3>
-          <ul className="mt-3 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {serviceIntents.map(([key, summary, outcome]) => (
-              <TopicCard key={key} id={key} title={services[key][0]} summary={summary}>
-                <p className="text-sm">{outcome}</p>
-                <a href={`/consulting?service=${key}#explorer`} aria-label={`Start a brief for ${services[key][0]}`}
-                  className="mt-1 inline-flex min-h-11 items-center text-sm">
-                  Start a brief
-                </a>
-              </TopicCard>
-            ))}
-          </ul>
-          <a href="/consulting?service=unsure#explorer" className="inline-flex min-h-11 items-center text-sm">Not sure yet</a>
-        </section>
-        <section aria-labelledby="work-title">
-          <h3 id="work-title" className="text-base!">Selected work</h3>
-          <ul className="mt-3 grid items-start gap-3 sm:grid-cols-2">
-            {selectedWork.map((project) => (
-              <TopicCard key={project.slug} id={project.slug} title={project.name} summary={workSummaries.get(project.slug) ?? project.summary}>
-                <p className="text-sm">{project.summary}</p>
-                <p className="mt-2 text-sm">{project.proves}</p>
-                {project.links.map(({ label, href }) => (
-                  <a key={href} href={href} className="inline-flex min-h-11 items-center text-sm">{label}</a>
-                ))}
-              </TopicCard>
-            ))}
-          </ul>
-          <Link className="mt-1 inline-flex min-h-11 items-center text-sm" href="/projects">See the project portfolio</Link>
-        </section>
-      </div>
+      <ul className="grid items-start gap-3 pt-2 sm:grid-cols-3">
+        {work.map((project) => (
+          <li key={project.id} id={project.id} className="min-w-0">
+            <details className={styles.card}>
+              <summary className={styles.summary}>
+                <span className="min-w-0">
+                  <span className="block font-sans text-xs text-muted">{project.category}</span>
+                  <span className="mt-1 block font-semibold">{project.title}</span>
+                  <span className="mt-1 block text-sm text-muted">{project.summary}</span>
+                </span>
+              </summary>
+              <div className={styles.cardBody}>
+                <p className="text-sm">{project.detail}</p>
+                {"href" in project && (
+                  <a href={project.href} className="mt-1 inline-flex min-h-11 items-center text-sm">Visit Still</a>
+                )}
+              </div>
+            </details>
+          </li>
+        ))}
+      </ul>
+      <Link className="mt-1 inline-flex min-h-11 items-center text-sm" href="/projects">See the project portfolio</Link>
     </details>
   );
 }

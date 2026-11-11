@@ -21,7 +21,7 @@ export default function ProcessTimeline({ stages, activeStage, statuses, attenti
   children: ReactNode;
 }) {
   return (
-    <details id="process" className="scroll-mt-6 py-3 lg:py-4" open>
+    <details id="process" className="scroll-mt-6 py-2" open>
       <summary className={disclosure.summary}>
         <h2 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xl!">
           <span>Explore the process</span>

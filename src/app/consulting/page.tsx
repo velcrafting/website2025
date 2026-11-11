@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ConsultingResources from "@/components/consulting/ConsultingResources";
+import { ConsultingServices, SelectedWork } from "@/components/consulting/ConsultingResources";
 import Button from "@/components/ui/Button";
 import { SITE } from "@/config/site";
 import { SITE_URL } from "@/lib/seo";
@@ -31,11 +31,10 @@ export default async function ConsultingPage({
         <p className="mt-1 text-sm">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide.</p>
       </header>
 
+      <ConsultingServices />
       <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} contactEmail={SITE.email} />
-
-      <div className="flex flex-wrap items-start justify-between gap-x-5 border-t border-rule pt-1">
-        <ConsultingResources />
-        <a href={`mailto:${SITE.email}`} className="inline-flex min-h-11 items-center">Email Steven</a>
+      <div className="border-t border-rule pt-1">
+        <SelectedWork />
       </div>
     </div>
   );

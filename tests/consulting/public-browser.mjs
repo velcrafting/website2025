@@ -68,7 +68,10 @@ try {
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.setViewportSize({ width: 1440, height: 768 });
   await page.evaluate(() => document.fonts.ready);
-  assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), "The collapsed desktop page fits at 1440×768");
+  assert.ok(await page.evaluate(() => document.querySelector("#brief-actions").getBoundingClientRect().bottom <= innerHeight),
+    "The guide and its primary action fit at 1440×768");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), "The default desktop page fits at 1440×900");
   assert.equal(await stageStatus(page, "discovery").textContent(), "In progress");
   assert.equal(await stageStatus(page, "quote").textContent(), "Unvisited");
   const process = page.locator("#process");
@@ -85,28 +88,36 @@ try {
   await processSummary.click();
   await page.getByRole("link", { name: "Schedule a conversation", exact: true }).click();
   assert.equal(await process.evaluate((el) => el.open), true, "The schedule link reveals the collapsed guide");
-  assert.equal(await page.getByRole("heading", { name: "How Velcrafting can help" }).count(), 0);
-  await page.getByText("Services and selected work", { exact: true }).click();
   assert.ok(await page.getByRole("heading", { name: "How Velcrafting can help" }).isVisible());
-  const resourceCards = page.locator("#services-title + ul details, #work-title + ul details");
-  assert.equal(await resourceCards.count(), 6);
-  assert.equal(await page.locator("#services-title + ul details[open], #work-title + ul details[open]").count(), 0);
-  assert.ok(await page.getByText("Spend less time on recurring manual work.", { exact: true }).isVisible());
-  assert.equal(await page.getByText("Map the steps, test where automation or AI helps", { exact: false }).isVisible(), false);
-  await page.locator("#workflow summary").click();
-  assert.ok(await page.getByText("Map the steps, test where automation or AI helps", { exact: false }).isVisible());
-  assert.equal(await page.locator("#review details[open]").count(), 0);
-  await page.locator("#workflow summary").click();
-  await page.locator("#veldesk summary").click();
-  assert.ok(await page.locator("#veldesk").getByText(/operator gets a calmer cockpit/).isVisible());
-  await page.locator("#veldesk summary").click();
-  await page.locator("#communications summary").click();
+  const serviceCards = page.locator("#services-title + ul a");
+  assert.equal(await serviceCards.count(), 4);
+  const cardBounds = await serviceCards.evaluateAll((cards) => cards.map((card) => {
+    const { top, height, bottom } = card.getBoundingClientRect();
+    return { top, height, bottom };
+  }));
+  assert.ok(cardBounds.every(({ top, height }) => top === cardBounds[0].top && height === cardBounds[0].height));
+  assert.ok(cardBounds[0].bottom <= (await process.boundingBox()).y, "Service cards sit above the process");
+  assert.equal(await page.locator("main").getByRole("link", { name: "Email Steven", exact: true }).count(), 0);
+  const selectedWork = page.locator("#selected-work");
+  assert.equal(await selectedWork.evaluate((el) => el.open), false);
+  await selectedWork.locator(":scope > summary").click();
+  const workCards = selectedWork.locator("li details");
+  assert.equal(await workCards.count(), 3);
+  assert.equal(await selectedWork.locator("li details[open]").count(), 0);
+  assert.ok(await selectedWork.getByText("CompanyOS", { exact: true }).isVisible());
+  assert.ok(await selectedWork.getByText("Velcrafting product", { exact: true }).isVisible());
+  await page.locator("#nutel-solutions summary").click();
+  assert.ok(await selectedWork.getByText(/12 finance managers used the working prototype/).isVisible());
+  assert.equal(await selectedWork.locator("li details[open]").count(), 1);
+  await page.locator("#nutel-solutions summary").click();
+  await page.locator("#still summary").click();
+  assert.equal(await selectedWork.getByRole("link", { name: "Visit Still" }).getAttribute("href"), "https://stillfaithful.app/");
   await page.locator("#main").screenshot({ path: join(out, "consulting-topic-cards.png"), animations: "disabled" });
   assert.ok(await page.getByText(/Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide/).isVisible());
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
   await problem(page).fill("Fictional draft before choosing a service.");
   await processSummary.click();
-  await page.getByRole("link", { name: "Start a brief for Communications and knowledge" }).click();
+  await page.getByRole("link", { name: /Clarify your message/ }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
   await page.waitForFunction(() => document.querySelector('select[name="service"]')?.value === "communications");
   assert.ok(await problem(page).isVisible());
@@ -400,7 +411,7 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
-    guide: "collapsed desktop page fits at 1440×768; answer and visit status, first unanswered redirect, explicit skip, and all-answered booking verified",
+    guide: "primary action fits at 1440×768 and default page fits at 1440×900; answer and visit status, first unanswered redirect, explicit skip, and all-answered booking verified",
     scheduling: "blank, whitespace, and legacy samples block booking; explicit Cal navigation sends only the encoded problem; exact PDF shared separately",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",
