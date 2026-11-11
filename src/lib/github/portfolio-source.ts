@@ -14,7 +14,7 @@
 //     can be exercised deterministically, which is why the live metadata read being unavailable does not
 //     block this work.
 
-import { extractReadmeIndex, ORG_README, PERSONAL_README, type ReadmeExtraction } from "./readme-index";
+import { extractReadmeIndex, ORG_README, PERSONAL_README, parseRepoUrl, type ReadmeExtraction } from "./readme-index";
 
 export const DAILY_REVALIDATE_SECONDS = 86_400;
 
@@ -39,8 +39,8 @@ function withFixtureBase(url: string): string {
 }
 
 export const README_URLS = {
-  personal: "https://raw.githubusercontent.com/velcrafting/velcrafting/main/README.md",
-  org: "https://raw.githubusercontent.com/Vel-Labs/.github/main/profile/README.md",
+  personal: "https://raw.githubusercontent.com/velcrafting/velcrafting/HEAD/README.md",
+  org: "https://raw.githubusercontent.com/Vel-Labs/.github/HEAD/profile/README.md",
 } as const;
 
 export type ReadOutcome =
@@ -87,6 +87,7 @@ export type RepoMetadata = {
   topics: string[];
   pushedAt: string | null;
   htmlUrl: string | null;
+  defaultBranch?: string | null;
 };
 
 export type MetadataRead = {
@@ -115,8 +116,11 @@ export async function readRepoMetadata(
   const unavailable: Array<{ key: string; reason: string }> = [];
   let complete = true;
 
+  const seen = new Set<string>();
   for (const ref of refs) {
     const key = `${ref.owner}/${ref.repo}`;
+    if (seen.has(key.toLowerCase())) continue;
+    seen.add(key.toLowerCase());
     try {
       const response = await fetchImpl(
         withFixtureBase(`https://api.github.com/repos/${ref.owner}/${ref.repo}`),
@@ -132,6 +136,13 @@ export async function readRepoMetadata(
         continue;
       }
       const parsed = JSON.parse(await response.text()) as Record<string, unknown>;
+      const canonical = typeof parsed.full_name === "string" ? parsed.full_name : "";
+      const htmlRef = typeof parsed.html_url === "string" ? parseRepoUrl(parsed.html_url) : null;
+      if (canonical.toLowerCase() !== key.toLowerCase() ||
+          !htmlRef || `${htmlRef.owner}/${htmlRef.repo}`.toLowerCase() !== key.toLowerCase()) {
+        unavailable.push({ key, reason: "canonical repository identity mismatch" });
+        continue;
+      }
       byRepo[key] = {
         owner: ref.owner,
         repo: ref.repo,
@@ -141,6 +152,8 @@ export async function readRepoMetadata(
         topics: Array.isArray(parsed.topics) ? parsed.topics.filter((t): t is string => typeof t === "string") : [],
         pushedAt: typeof parsed.pushed_at === "string" ? parsed.pushed_at : null,
         htmlUrl: typeof parsed.html_url === "string" ? parsed.html_url : null,
+        defaultBranch: typeof parsed.default_branch === "string" && parsed.default_branch.trim()
+          ? parsed.default_branch : null,
       };
     } catch {
       unknown.push(key);
@@ -161,12 +174,24 @@ export type ReadmeRead = {
 };
 
 export async function readReadmeIndexes(fetchImpl: FetchLike): Promise<ReadmeRead> {
-  const personal = await readPublicText(README_URLS.personal, fetchImpl);
-  const org = await readPublicText(README_URLS.org, fetchImpl);
+  const sources = await readRepoMetadata([
+    { owner: "velcrafting", repo: "velcrafting" },
+    { owner: "Vel-Labs", repo: ".github" },
+  ], fetchImpl);
+  async function readIndex(key: string, url: string): Promise<ReadOutcome> {
+    const metadata = sources.byRepo[key];
+    if (metadata?.private !== false || !metadata.defaultBranch) {
+      return { status: "transient", reason: "public index identity/default branch unconfirmed" };
+    }
+    return readPublicText(url.replace("/HEAD/", `/${encodeURIComponent(metadata.defaultBranch)}/`), fetchImpl);
+  }
+  const personal = await readIndex("velcrafting/velcrafting", README_URLS.personal);
+  const org = await readIndex("Vel-Labs/.github", README_URLS.org);
 
   const extractions: ReadmeExtraction[] = [];
   if (personal.status === "ok") extractions.push(extractReadmeIndex(personal.text, PERSONAL_README));
   if (org.status === "ok") extractions.push(extractReadmeIndex(org.text, ORG_README));
 
-  return { personal, org, extractions, complete: personal.status === "ok" && org.status === "ok" };
+  return { personal, org, extractions, complete:
+    personal.status === "ok" && org.status === "ok" && extractions.every((entry) => entry.found.length > 0) };
 }

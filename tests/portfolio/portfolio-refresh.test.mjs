@@ -83,13 +83,21 @@ function makeFetch(routes) {
     calls,
     impl: async (url, init) => {
       calls.push({ url, revalidate: init?.next?.revalidate });
-      const route = routes[url] ?? routes["*"];
+      const isMetadata = url.startsWith("https://api.github.com/repos/");
+      const route = routes[url] ?? (isMetadata && Object.keys(routes).some((key) => key.includes("raw.githubusercontent.com"))
+        ? { status: 200, body: metadataBody() } : routes["*"]);
+      let body = route?.body ?? "";
+      if (isMetadata && route?.status === 200) {
+        const identity = new URL(url).pathname.slice("/repos/".length);
+        body = JSON.stringify({ ...JSON.parse(body), full_name: identity,
+          html_url: `https://github.com/${identity}`, default_branch: "HEAD" });
+      }
       if (!route) return { ok: false, status: 404, text: async () => "Not Found" };
       if (route.throws) throw new Error(route.throws);
       return {
         ok: route.status >= 200 && route.status < 300,
         status: route.status,
-        text: async () => route.body ?? "",
+        text: async () => body,
       };
     },
   };
@@ -191,7 +199,7 @@ await test("the snapshot is labelled as a snapshot, never as fresh", async () =>
   );
 });
 
-await test("a PARTIAL read serves what it got and says it is partial", async () => {
+await test("a PARTIAL read serves the committed baseline for both indexes", async () => {
   const fetch = makeFetch({
     [README_URLS.personal]: { status: 200, body: PERSONAL_MD },
     [README_URLS.org]: { status: 503, body: "" },
@@ -217,8 +225,8 @@ await test("a PARTIAL read serves what it got and says it is partial", async () 
     editorial: EDITORIAL,
   });
   assert.ok(view.cards.some((card) => card.repo === "VelDesk"), "the good source still renders");
-  assert.match(view.freshness, /partial/i);
-  assert.notEqual(view.source, "snapshot");
+  assert.match(view.freshness, /committed baseline for both indexes/i);
+  assert.equal(view.source, "snapshot");
 });
 
 await test("COLD START renders a populated page from the committed fallback", async () => {
@@ -232,7 +240,7 @@ await test("COLD START renders a populated page from the committed fallback", as
   });
   assert.ok(view.cards.length >= 10, `cold start must be populated, got ${view.cards.length}`);
   assert.equal(view.source, "snapshot");
-  assert.ok(view.cards.every((card) => card.url.startsWith("https://github.com/")));
+  assert.ok(view.cards.every((card) => card.url === ""), "snapshot text stays, unknown public links stay withheld");
 });
 
 console.log("\nportfolio refresh: removals versus transient errors");
@@ -274,8 +282,8 @@ await test("a confirmed-absent entry is excluded and recorded, not silently drop
   });
   sameJson(view.cards.map((card) => card.repo), ["fine"]);
   assert.equal(view.pending.length, 1);
-  assert.equal(view.pending[0].key, "Vel-Labs/gone");
-  assert.match(view.pending[0].reason, /absent/i);
+  assert.equal(view.pending[0].key, "vel-labs/gone");
+  assert.match(view.pending[0].reason, /unavailable/i);
 });
 
 await test("an entry with UNCONFIRMED public status is withheld from new cards and recorded", async () => {
@@ -296,7 +304,7 @@ await test("an entry with UNCONFIRMED public status is withheld from new cards a
     editorial: [],
   });
   sameJson(view.cards.map((card) => card.repo), ["known-public"], "unknown status must not be exposed");
-  assert.equal(view.pending[0].key, "Vel-Labs/thc-leaderboard");
+  assert.equal(view.pending[0].key, "vel-labs/thc-leaderboard");
   assert.match(view.pending[0].reason, /unconfirmed/i);
   assert.equal(view.enrichmentPartial, true);
 });

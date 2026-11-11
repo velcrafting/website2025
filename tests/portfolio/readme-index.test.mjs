@@ -117,7 +117,7 @@ test("a section that belongs to another source is not read", () => {
     !repos.includes("thc-leaderboard") && !repos.includes("thc-methodology"),
     "an org-only section must not be read into the personal index",
   );
-  sameJson(personal.missing, ["Current Focus"]);
+  sameJson(personal.missing, ["Current Focus", "Public Builds"]);
 });
 
 test("duplicates are removed and first-seen order is preserved", () => {
@@ -192,14 +192,14 @@ test("a missing section is reported, and no entries are invented", () => {
   const result = extractReadmeIndex("# Nothing here", PERSONAL_README);
   sameJson(result.entries, []);
   sameJson(result.found, []);
-  sameJson(result.missing.sort(), ["Current Focus", "Start Here"]);
+  sameJson(result.missing.sort(), ["Current Focus", "Public Builds", "Start Here"]);
 });
 
 test("unparseable input yields an empty result rather than a throw", () => {
   for (const input of [null, undefined, 42, {}, []]) {
     const result = extractReadmeIndex(input, ORG_README);
     sameJson(result.entries, [], `input ${JSON.stringify(input)} must degrade, not throw`);
-    assert.equal(result.missing.length, 3);
+    assert.equal(result.missing.length, 4);
   }
 });
 
@@ -207,7 +207,7 @@ test("a section with no links is found but contributes nothing", () => {
   const result = extractReadmeIndex("## Start Here\n\nNothing yet.\n", ORG_README);
   sameJson(result.entries, []);
   sameJson(result.found, ["Start Here"]);
-  sameJson(result.missing.sort(), ["Recommended Pins", "What We Build"]);
+  sameJson(result.missing.sort(), ["Public Builds", "Recommended Pins", "What We Build"]);
 });
 
 test("the committed fallback is populated and inside the approved owners", async () => {
