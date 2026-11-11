@@ -30,6 +30,7 @@ const buttonVariants = cva(
       },
       size: {
         // min-height comes from the .btn-* class, so touch targets stay >= 44px
+        compact: "btn-compact",
         sm: "px-[var(--space-3)] py-[var(--space-1)]",
         md: "px-[var(--space-4)] py-[var(--space-2)]",
         lg: "px-[var(--space-5)] py-[var(--space-3)]",
@@ -43,7 +44,7 @@ const buttonVariants = cva(
 );
 
 type Variant = "accent" | "default" | "outline" | "ghost";
-type Size = "sm" | "md" | "lg";
+type Size = "compact" | "sm" | "md" | "lg";
 
 /** Kept for callers that need the class string (for example a non-React href). */
 export function buttonClasses({

@@ -18,8 +18,14 @@ const saved = "Fictional saved context for Marisol Rivera";
 const unsaved = "Fictional: Renée García needs intake & ownership help.";
 const problem = (page) => page.getByRole("textbox", { name: "Problem or current context" });
 const scheduling = (page) => page.getByRole("link", { name: "Choose a time on Cal.com (new tab)", exact: true });
-const review = (page) => page.getByRole("button", { name: "Review & book meeting", exact: true }).click();
 const next = (page) => page.getByRole("button", { name: "Continue", exact: true }).click();
+const submit = (page) => page.getByRole("button", { name: "Submit & Book", exact: true });
+const bookingReview = (page) => page.getByRole("dialog", { name: "Review & book a meeting" });
+async function review(page) {
+  if (await problem(page).isVisible()) await next(page);
+  await submit(page).click();
+  await bookingReview(page).waitFor();
+}
 const edit = (page) => page.getByRole("button", { name: "Edit answers", exact: true }).click();
 async function save(page) {
   const disclosure = page.getByText("Download or share the full brief", { exact: true });
@@ -66,7 +72,7 @@ try {
   assert.equal(new URL(await page.locator('link[rel="canonical"]').getAttribute("href")).pathname, "/consulting");
   await page.getByRole("link", { name: "Communications and knowledge" }).click();
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
-  assert.equal(await page.locator('select[name="service"]').inputValue(), "communications");
+  await page.waitForFunction(() => document.querySelector('select[name="service"]')?.value === "communications");
   await page.goto(new URL("/consulting?service=workflow", base).href);
   await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();
@@ -100,10 +106,15 @@ try {
   await problem(page).fill(saved);
   await page.locator('label[for="stage-discovery"]').click();
   assert.equal(await problem(page).inputValue(), saved, "Switching timeline stages preserves the intake");
+  const footer = page.locator("#brief-actions");
+  assert.deepEqual(await footer.getByRole("button").allTextContents(), ["Continue"]);
+  const firstFooter = await footer.boundingBox();
   await next(page);
+  assert.deepEqual((await footer.getByRole("button").allTextContents()).map((s) => s.trim()), ["Back", "Submit & Book", "Continue"]);
+  assert.equal((await footer.boundingBox()).y, firstFooter.y, "The footer keeps its vertical position across questions");
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), "What would better look like?");
   await page.getByRole("textbox", { name: "Desired outcome" }).fill("Fictional outcome for the guided brief");
-  assert.equal(await page.locator("#your-brief").count(), 0);
+  assert.equal(await bookingReview(page).count(), 0);
   assert.equal(await page.getByRole("button", { name: "Download PDF" }).count(), 0);
   await page.locator("#process").screenshot({
     path: join(out, "consulting-guided-brief-desktop.png"), caret: "initial", animations: "disabled",
@@ -111,10 +122,14 @@ try {
   await page.getByRole("button", { name: "Back", exact: true }).click();
   assert.equal(await problem(page).inputValue(), saved);
   await review(page);
-  assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 0);
+  await page.keyboard.press("Escape");
+  await bookingReview(page).waitFor({ state: "hidden" });
+  assert.ok(await submit(page).evaluate((button) => document.activeElement === button), "Escape restores focus to Submit & Book");
+  await review(page);
+  assert.equal(await bookingReview(page).getByRole("textbox").count(), 0);
   assert.ok(await page.locator("#your-brief").getByText("Fictional outcome for the guided brief", { exact: true }).isVisible());
   assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).count(), 0);
-  await page.locator("#explorer").screenshot({
+  await bookingReview(page).screenshot({
     path: join(out, "consulting-brief-review-desktop.png"), caret: "initial", animations: "disabled",
   });
   await save(page);
@@ -170,26 +185,26 @@ try {
   assert.equal(await problem(otherTab).inputValue(), "");
   await problem(otherTab).fill(" \t\n ");
   await next(otherTab);
+  assert.equal(await submit(otherTab).count(), 0);
   await otherTab.getByRole("textbox", { name: "Desired outcome" }).fill("Another tab, another outcome");
   await next(otherTab);
   await otherTab.reload();
   await otherTab.getByRole("textbox", { name: "Audience" }).waitFor();
   await next(otherTab);
-  await review(otherTab);
-  assert.ok(await otherTab.getByText("Describe your problem to save the brief or book a call.").isVisible());
+  await next(otherTab);
+  assert.ok(await otherTab.getByText("Add a sentence about your problem to book.").isVisible());
   assert.equal(await scheduling(otherTab).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Save brief", exact: true }).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
-  await openOptions(otherTab);
-  await otherTab.getByText("Add more context or scope choices", { exact: true }).click();
-  await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
-  await otherTab.getByRole("button", { name: "Add your problem" }).click();
   await problem(otherTab).fill("A new request has no owner.");
   assert.equal(await scheduling(otherTab).count(), 0);
   await next(otherTab);
   assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
   await review(otherTab);
   assert.ok(await scheduling(otherTab).isVisible());
+  await openOptions(otherTab);
+  await otherTab.getByText("Add more context or scope choices", { exact: true }).click();
+  await otherTab.getByRole("combobox", { name: "Delivery level" }).selectOption("Prototype");
   await save(otherTab);
   await otherTab.getByText("Revision 1 saved.", { exact: true }).waitFor();
   await openOptions(otherTab);
@@ -197,8 +212,9 @@ try {
   assert.ok(await otherTab.getByText(/Delivery level: Prototype/).isVisible());
   await edit(otherTab);
   await problem(otherTab).fill("");
+  await next(otherTab);
   assert.equal(await scheduling(otherTab).count(), 0);
-  await review(otherTab);
+  assert.equal(await submit(otherTab).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await otherTab.close();
 
@@ -234,6 +250,7 @@ try {
   const legacySample = await page.evaluate(() => {
     const desk = JSON.parse(sessionStorage.getItem("velcrafting.consulting.desk.v1"));
     desk.example = "software";
+    desk.step = "review";
     desk.brief.example = true;
     desk.brief.fields.problem.source = "fictional_example";
     return JSON.stringify(desk);
@@ -241,7 +258,8 @@ try {
   const legacyTab = await context.newPage();
   await legacyTab.addInitScript((value) => sessionStorage.setItem("velcrafting.consulting.desk.v1", value), legacySample);
   await legacyTab.goto(new URL("/consulting?service=workflow", base).href);
-  await legacyTab.getByRole("button", { name: "Add your problem" }).waitFor();
+  await legacyTab.getByRole("textbox", { name: "Constraints" }).waitFor();
+  assert.equal(await submit(legacyTab).count(), 0);
   assert.equal(await scheduling(legacyTab).count(), 0);
   assert.equal(await legacyTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await legacyTab.close();
@@ -263,6 +281,14 @@ try {
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await mobile.locator("#explorer").screenshot({ path: join(out, "consulting-mobile.png") });
+  await problem(mobile).fill("Requests need a single owner.");
+  const mobileFooter = mobile.locator("#brief-actions");
+  const firstMobileHeight = (await mobileFooter.boundingBox()).height;
+  await next(mobile);
+  assert.equal((await mobileFooter.boundingBox()).height, firstMobileHeight, "All three actions fit on one mobile row");
+  await review(mobile);
+  await bookingReview(mobile).screenshot({ path: join(out, "consulting-review-mobile.png") });
+  await mobile.keyboard.press("Escape");
   const session = await context.newCDPSession(mobile);
   await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
   await mobile.waitForFunction(() => window.visualViewport?.scale === 2);
