@@ -53,7 +53,7 @@ try {
   await page.waitForURL(new URL("/consulting?service=communications#explorer", base).href);
   assert.equal(await page.getByRole("combobox", { name: "Service starting point" }).inputValue(), "communications");
   await page.goto(new URL("/consulting?service=workflow", base).href);
-  await page.screenshot({ path: join(out, "consulting-desktop.png") });
+  await page.screenshot({ path: join(out, "consulting-desktop.png"), caret: "initial", animations: "disabled" });
   await page.getByRole("radio", { name: "Discovery" }).focus();
   await page.keyboard.press("ArrowRight");
   assert.ok(await page.getByRole("radio", { name: "Quote" }).isChecked());
@@ -68,7 +68,9 @@ try {
     assert.ok(await panel.getByText(artifact, { exact: true }).last().isVisible());
     assert.equal(await page.locator("[data-stage-panel]:visible").count(), 1);
   }
-  await page.locator("#process").screenshot({ path: join(out, "consulting-timeline-desktop.png") });
+  await page.locator("#process").screenshot({
+    path: join(out, "consulting-timeline-desktop.png"), caret: "initial", animations: "disabled",
+  });
 
   await problem(page).fill(saved);
   await page.getByRole("button", { name: "Save draft revision" }).click();
@@ -137,10 +139,14 @@ try {
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.emulateMedia({ reducedMotion: "reduce" });
   await mobile.goto(new URL("/consulting", base).href);
-  await mobile.screenshot({ path: join(out, "consulting-services-mobile.png"), fullPage: true });
+  await mobile.screenshot({
+    path: join(out, "consulting-services-mobile.png"), fullPage: true, caret: "initial", animations: "disabled",
+  });
   await mobile.locator('label[for="stage-proposal"]').click();
   assert.ok(await mobile.locator('[data-stage-panel="proposal"]').getByText("Out of scope").isVisible());
-  await mobile.locator("#process").screenshot({ path: join(out, "consulting-timeline-mobile.png") });
+  await mobile.locator("#process").screenshot({
+    path: join(out, "consulting-timeline-mobile.png"), caret: "initial", animations: "disabled",
+  });
   await mobile.getByRole("link", { name: "Explore your project" }).click();
   await mobile.locator("#explorer").scrollIntoViewIfNeeded();
   assert.equal(await mobile.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches), true);
