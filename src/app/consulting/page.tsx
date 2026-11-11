@@ -29,25 +29,22 @@ export default async function ConsultingPage({
   const work = portfolioProjects.filter(({ slug }) => slug === "veldesk" || slug === "yolo26-mlx-swift");
 
   return (
-    <div className="container-page pt-8 md:pt-10">
-      <header className="grid items-end gap-4 border-b border-rule pb-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div>
-          <p className="meta uppercase tracking-wide">Velcrafting · Consulting</p>
-          <h1 className="mt-3 max-w-[21ch]">Fix the work that keeps getting stuck.</h1>
-          <p className="mt-4 max-w-prose text-lg">Steven helps you find what’s slowing your team down, fix the workflow, software, or messaging with you, and hand over a solution your team can run.</p>
-          <p className="mt-3 max-w-prose">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide. Remote work combines working sessions with written scope, decisions and handoff.</p>
+    <div data-consulting-page className="container-page pt-2 md:pt-3">
+      <header className="border-b border-rule pb-2">
+        <p className="meta uppercase tracking-wide">Velcrafting · Consulting</p>
+        <div className="flex flex-wrap items-center justify-between gap-x-4">
+          <h1 className="text-[clamp(1.875rem,3.2vw,2.625rem)]!">Fix the work that keeps getting stuck.</h1>
+          <Button asChild variant="ghost" size="sm"><a href="#schedule">Schedule a conversation</a></Button>
         </div>
-        <div className="flex flex-wrap items-start gap-2 md:justify-end">
-          <Button asChild><a href="#process">Explore your project</a></Button>
-          <Button asChild variant="outline"><a href="#schedule">Schedule a conversation</a></Button>
-        </div>
+        <p className="mt-1">Steven helps fix the workflow, software, or messaging slowing you down and leaves your team with a solution it can run.</p>
+        <p className="mt-1 text-sm">Based in Spring, Texas, serving The Woodlands and greater Houston, with remote engagements worldwide.</p>
       </header>
 
       <BriefDesk initialService={selectedService} bookingUrl={SITE.bookingUrl} contactEmail={SITE.email} />
 
-      <div className="border-t border-rule">
-        <details className="border-b border-rule">
-          <summary className="min-h-11 cursor-pointer py-3 font-medium">Services and selected work</summary>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 border-t border-rule">
+        <details className="min-w-0 flex-1">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium">Services and selected work</summary>
           <div className="space-y-6 pb-4">
             <section aria-labelledby="services-title">
               <h2 id="services-title">How Velcrafting can help</h2>

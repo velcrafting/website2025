@@ -287,6 +287,7 @@ label {
    projects and labs instead of each page inventing its own width. */
 .container-index,
 .container-page { margin-inline: auto; width: 100%; max-width: var(--measure-index); }
+#main:has([data-consulting-page]) { padding-block-end: 0.75rem; }
 /* Wide page shell for composed desktop layouts. VELCRAFTING_DESIGN_PRINCIPLES.md
    (Spacing scale) requires Connect to use "a responsive desktop composition within
    the shared wide shell"; approximately 440px may constrain an ACTION GROUP, never

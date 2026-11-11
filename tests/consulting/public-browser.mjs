@@ -20,6 +20,7 @@ const problem = (page) => page.getByRole("textbox", { name: "Problem or current 
 const scheduling = (page) => page.getByRole("link", { name: "Choose a time on Cal.com (new tab)", exact: true });
 const next = (page) => page.getByRole("button", { name: "Continue", exact: true }).click();
 const submit = (page) => page.getByRole("button", { name: "Submit & Book", exact: true });
+const stageStatus = (page, stage) => page.locator(`#stage-status-${stage}`);
 const bookingReview = (page) => page.getByRole("dialog", { name: "Review & book a meeting" });
 async function review(page) {
   if (await problem(page).isVisible()) await next(page);
@@ -65,6 +66,11 @@ try {
 
   const page = await context.newPage();
   await page.goto(new URL("/consulting?service=workflow", base).href);
+  await page.setViewportSize({ width: 1440, height: 768 });
+  await page.evaluate(() => document.fonts.ready);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight), "The collapsed desktop page fits at 1440×768");
+  assert.equal(await stageStatus(page, "discovery").textContent(), "In progress");
+  assert.equal(await stageStatus(page, "quote").textContent(), "Unvisited");
   assert.equal(await page.getByRole("heading", { name: "How Velcrafting can help" }).count(), 0);
   await page.getByText("Services and selected work", { exact: true }).click();
   assert.ok(await page.getByRole("heading", { name: "How Velcrafting can help" }).isVisible());
@@ -81,6 +87,8 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.id), "stage-quote");
   assert.ok(await page.getByRole("region", { name: "Quote" }).getByText("Quote outline").isVisible());
   assert.ok(await page.getByRole("textbox", { name: "Desired outcome" }).isVisible());
+  assert.equal(await stageStatus(page, "discovery").textContent(), "Unanswered");
+  assert.equal(await stageStatus(page, "quote").textContent(), "In progress");
   for (const [id, artifact] of [
     ["delivery", "Handoff packet"], ["proposal", "Proposal"], ["updates", "Progress note"],
     ["start", "Kickoff checklist"], ["discovery", "Discussion brief"], ["delivery", "Handoff packet"],
@@ -106,6 +114,7 @@ try {
   await page.locator('label[for="stage-discovery"]').click();
   assert.equal(await page.locator("#brief-editor").getByRole("textbox").count(), 1);
   await problem(page).fill(saved);
+  assert.equal(await stageStatus(page, "discovery").textContent(), "Answered");
   await page.locator('label[for="stage-updates"]').click();
   assert.ok(await page.getByRole("textbox", { name: "Open questions" }).isVisible());
   await page.locator('label[for="stage-discovery"]').click();
@@ -204,13 +213,24 @@ try {
   }
   await next(otherTab);
   assert.ok(await otherTab.getByText("Add a sentence about your problem to book.").isVisible());
+  assert.equal(await otherTab.locator('label[for="stage-discovery"] [data-attention]').count(), 1);
   assert.equal(await scheduling(otherTab).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Save brief", exact: true }).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await problem(otherTab).fill("A new request has no owner.");
   assert.equal(await scheduling(otherTab).count(), 0);
+  assert.equal(await stageStatus(otherTab, "quote").textContent(), "Answered");
   await next(otherTab);
-  assert.equal(await otherTab.getByRole("textbox", { name: "Desired outcome" }).inputValue(), "Another tab, another outcome");
+  assert.ok(await otherTab.getByRole("radio", { name: "Proposal" }).isChecked());
+  assert.equal(await otherTab.locator('label[for="stage-proposal"] [data-attention]').count(), 1);
+  await otherTab.locator("#process").screenshot({ path: join(out, "consulting-answer-status.png"), animations: "disabled" });
+  for (const stage of ["Proposal", "Start", "Updates", "Delivery"]) {
+    assert.ok(await otherTab.getByRole("radio", { name: stage, exact: true }).isChecked());
+    assert.equal(await submit(otherTab).count(), 0);
+    await otherTab.getByRole("button", { name: "Skip", exact: true }).click();
+    assert.equal(await stageStatus(otherTab, stage.toLowerCase()).textContent(), "Skipped");
+  }
+  assert.equal(await otherTab.getByRole("button", { name: "Continue", exact: true }).count(), 0);
   await review(otherTab);
   assert.ok(await scheduling(otherTab).isVisible());
   await openOptions(otherTab);
@@ -228,6 +248,18 @@ try {
   assert.equal(await submit(otherTab).count(), 0);
   assert.equal(await otherTab.getByRole("button", { name: "Download PDF" }).count(), 0);
   await otherTab.close();
+
+  const completeTab = await context.newPage();
+  await completeTab.goto(new URL("/consulting", base).href);
+  for (const stage of ["discovery", "quote", "proposal", "start", "updates", "delivery"]) {
+    await completeTab.locator(`label[for="stage-${stage}"]`).click();
+    await completeTab.locator("#brief-editor textarea:visible").fill(`Fictional ${stage} answer.`);
+    assert.equal(await stageStatus(completeTab, stage).textContent(), "Answered");
+  }
+  assert.equal(await completeTab.getByRole("button", { name: "Continue", exact: true }).count(), 0);
+  await submit(completeTab).click();
+  assert.ok(await bookingReview(completeTab).isVisible());
+  await completeTab.close();
 
   await review(page);
   await save(page);
@@ -335,7 +367,7 @@ try {
     target: base.origin,
     services: "local and remote coverage, canonical URL, and a service link opening the matching brief",
     process: "all six deliverables, arrow-key navigation, mobile selection, and selection without JavaScript",
-    guide: "intake open by default in the third column, stays mounted across stages, supports skipping and refresh",
+    guide: "collapsed desktop page fits at 1440×768; answer and visit status, first unanswered redirect, explicit skip, and all-answered booking verified",
     scheduling: "blank, whitespace, and legacy samples block booking; explicit Cal navigation sends only the encoded problem; exact PDF shared separately",
     backForwardCache: "disabled; verified fresh document",
     zoom: "Chromium visual viewport scale 2",

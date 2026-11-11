@@ -2,22 +2,35 @@ import type { ReactNode } from "react";
 import type { stages as consultingStages } from "@/consulting/fixtures";
 import styles from "./process-timeline.module.css";
 
-export default function ProcessTimeline({ stages, activeStage, onStageChange, children }: {
+const statusLabels = {
+  unvisited: "Unvisited",
+  active: "In progress",
+  answered: "Answered",
+  unanswered: "Unanswered",
+  skipped: "Skipped",
+};
+export type StageStatus = keyof typeof statusLabels;
+
+export default function ProcessTimeline({ stages, activeStage, statuses, attention, onStageChange, children }: {
   stages: typeof consultingStages;
   activeStage: number;
+  statuses: readonly StageStatus[];
+  attention: { index: number; count: number } | null;
   onStageChange: (index: number) => void;
   children: ReactNode;
 }) {
   return (
-    <section id="process" className="scroll-mt-6 py-8 md:py-10" aria-labelledby="process-title">
-      <h2 id="process-title">Explore the process</h2>
-      <p className="mt-2 max-w-prose">Explore each stage or start with what you need help with.</p>
+    <section id="process" className="scroll-mt-6 py-3" aria-labelledby="process-title">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h2 id="process-title" className="text-xl!">Explore the process</h2>
+        <p className="text-sm">Add what you know. A problem summary is required to book. You can skip the rest.</p>
+      </div>
 
       <div className={styles.timeline}>
         <fieldset className={styles.rail}>
           <legend className="sr-only">Consulting stages</legend>
           {stages.map((stage, index) => (
-            <div className={styles.stop} key={stage.id}>
+            <div className={styles.stop} key={stage.id} data-status={statuses[index]}>
               <input
                 className={`sr-only ${styles.radio}`}
                 type="radio"
@@ -26,11 +39,17 @@ export default function ProcessTimeline({ stages, activeStage, onStageChange, ch
                 value={stage.id}
                 checked={index === activeStage}
                 onChange={() => onStageChange(index)}
+                aria-label={stage.title}
+                aria-describedby={`stage-status-${stage.id}`}
                 aria-controls={`stage-panel-${stage.id}`}
               />
               <label className={styles.control} htmlFor={`stage-${stage.id}`}>
-                <span className={styles.marker} aria-hidden="true">{index + 1}</span>
+                <span className={styles.marker} key={attention?.index === index ? attention.count : 0}
+                  data-attention={attention?.index === index ? "" : undefined} aria-hidden="true">
+                  {statuses[index] === "answered" ? "✓" : statuses[index] === "skipped" ? "–" : index + 1}
+                </span>
                 <span>{stage.title}</span>
+                <span id={`stage-status-${stage.id}`} className={styles.status}>{statusLabels[statuses[index]]}</span>
               </label>
             </div>
           ))}
@@ -49,7 +68,7 @@ export default function ProcessTimeline({ stages, activeStage, onStageChange, ch
                 <div className={styles.intro}>
                   <p className={styles.caption}>What it is</p>
                   <h3 className={styles.stageTitle} id={`stage-title-${stage.id}`}>{stage.title}</h3>
-                  <p className="mt-2">{stage.purpose}</p>
+                  <p className="mt-1">{stage.purpose}</p>
                   <dl className={styles.roles}>
                     <div><dt>How Steven helps</dt><dd>{stage.studio}</dd></div>
                     <div><dt>You</dt><dd>{stage.client}</dd></div>

@@ -18,6 +18,8 @@ export type DeskState = {
   dirty: boolean;
   example: "software" | "communications" | null;
   step?: GuideStep | "review";
+  visited?: GuideStep[];
+  skipped?: Exclude<GuideStep, "problem">[];
 };
 
 const storageKey = "velcrafting.consulting.desk.v1";
@@ -60,6 +62,11 @@ function isFieldText(value: unknown): value is string {
   return typeof value === "string" && value.length <= maxFieldLength;
 }
 
+function isGuideStepList(value: unknown, allowProblem: boolean) {
+  return value === undefined || (Array.isArray(value) && value.length <= guideSteps.length &&
+    value.every((step) => guideSteps.includes(step) && (allowProblem || step !== "problem")));
+}
+
 function isBrief(value: unknown): boolean {
   if (!isRecord(value) || typeof value.id !== "string" || !value.id || !Number.isSafeInteger(value.version) ||
       Number(value.version) < 1 || !isService(value.service) || !isScope(value.scope) ||
@@ -83,6 +90,7 @@ export function readDesk(storage: Storage): DeskState | null {
     const value: unknown = JSON.parse(raw);
     if (isRecord(value) && isService(value.entry) && typeof value.dirty === "boolean" &&
         (value.step === undefined || value.step === "review" || guideSteps.includes(value.step as GuideStep)) &&
+        isGuideStepList(value.visited, true) && isGuideStepList(value.skipped, false) &&
         [null, "software", "communications"].includes(value.example as DeskState["example"]) &&
         (value.brief === null || isBrief(value.brief)) &&
         isRecord(value.draft) && isService(value.draft.service) && isScope(value.draft.scope) &&

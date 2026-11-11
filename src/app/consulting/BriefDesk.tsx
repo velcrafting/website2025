@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import ProcessTimeline from "@/components/consulting/ProcessTimeline";
+import ProcessTimeline, { type StageStatus } from "@/components/consulting/ProcessTimeline";
 import Button from "@/components/ui/Button";
 import { bookingLinkWithProblem, maxBookingProblemLength } from "@/consulting/booking-link";
 import {
@@ -43,6 +43,8 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
   const [storage, setStorage] = useState<"loading" | "available" | "unavailable">("loading");
   const [notice, setNotice] = useState("");
   const [problemNeeded, setProblemNeeded] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [attention, setAttention] = useState<{ index: number; count: number } | null>(null);
   const { brief, dirty, draft, example } = desk;
   const ready = storage !== "loading";
   const step = desk.step === "review" ? "constraints" : desk.step ?? "problem";
@@ -53,6 +55,16 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
   const savedProblem = brief?.fields.problem;
   const hasProblem = !!problem && (!savedProblem || savedProblem.source === "visitor" || problem !== normalizeBriefField(savedProblem.text));
   const scheduleUrl = hasProblem ? bookingLinkWithProblem(bookingUrl, problem) : null;
+  const isAnswered = (key: GuideStep) => key === "problem" ? !!scheduleUrl : !!normalizeBriefField(draft.fields[key] ?? "");
+  const isSkipped = (key: GuideStep, current = desk) => key !== "problem" && !!current.skipped?.includes(key);
+  const firstOutstanding = (current = desk) => guideSteps.find((key) => !isAnswered(key) && !isSkipped(key, current));
+  const outstanding = firstOutstanding();
+  const statuses = guideSteps.map((key): StageStatus => {
+    if (isAnswered(key)) return "answered";
+    if (isSkipped(key)) return "skipped";
+    if (key === step) return "active";
+    return desk.visited?.includes(key) ? "unanswered" : "unvisited";
+  });
   const heading = useRef<HTMLHeadingElement>(null);
   const focusQuestion = useRef(false);
   const bookingDialog = useRef<HTMLDialogElement>(null);
@@ -94,30 +106,43 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
     }
   }, [step]);
 
-  function goTo(next: GuideStep, moveFocus = true) {
-    if (next === step) return;
-    focusQuestion.current = moveFocus;
-    updateDesk({ ...desk, step: next });
+  function goTo(next: GuideStep, moveFocus = true, current = desk) {
+    if (next !== step) focusQuestion.current = moveFocus;
+    updateDesk({ ...current, step: next, visited: [...new Set([...(current.visited ?? []), step, next])] });
+  }
+
+  function reviewOutstanding(current = desk) {
+    const first = firstOutstanding(current);
+    setChecking(!!first);
+    if (first) {
+      setAttention((previous) => ({ index: guideSteps.indexOf(first), count: (previous?.count ?? 0) + 1 }));
+      if (first === "problem") setProblemNeeded(true);
+      if (first === step) heading.current?.focus({ preventScroll: true });
+    }
+    goTo(first ?? "deliverables", true, current);
   }
 
   function continueIntake() {
-    if (nextStep) {
-      goTo(nextStep);
-    } else if (hasProblem) {
-      bookingDialog.current?.showModal();
-    } else {
-      setProblemNeeded(true);
-      goTo("problem");
-    }
+    if (nextStep && !checking) goTo(nextStep);
+    else reviewOutstanding();
+  }
+
+  function skipQuestion() {
+    if (step === "problem" || isAnswered(step)) return;
+    const current = { ...desk, skipped: [...new Set([...(desk.skipped ?? []), step])] };
+    if (nextStep && !checking) goTo(nextStep, true, current);
+    else reviewOutstanding(current);
   }
 
   function changeDraft(event: ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) {
     if (!event.currentTarget.form) return;
     if (event.currentTarget.name === "problem") setProblemNeeded(false);
     const form = new FormData(event.currentTarget.form);
+    const editedField = event.currentTarget.name;
     updateDesk({
       ...desk,
       dirty: true,
+      skipped: desk.skipped?.filter((key) => key !== editedField),
       draft: {
         service: parseService(form.get("service")),
         fields: Object.fromEntries(fields.map((key) => [key, String(form.get(key) ?? "")])),
@@ -166,14 +191,23 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
 
   const intake = (
     <section id="explorer" tabIndex={-1} aria-labelledby="intake-title" className="min-w-0 scroll-mt-6">
-      <div id="schedule" tabIndex={-1} className="flex scroll-mt-6 flex-wrap justify-between gap-x-3 font-sans text-sm font-medium text-muted">
+      <div id="schedule" tabIndex={-1} className="flex min-h-11 scroll-mt-6 flex-wrap items-center justify-between gap-x-3 font-sans text-sm font-medium text-muted">
         <span id="intake-title" className="font-semibold">Your real problem</span>
-        <span>{`Question ${stepIndex + 1} of ${guideSteps.length}`}</span>
+        <div className="flex items-center gap-3">
+          <span>{`Question ${stepIndex + 1} of ${guideSteps.length}`}</span>
+          {ready && step !== "problem" && !isAnswered(step) && !isSkipped(step) && (
+            <button type="button" onClick={skipQuestion} className="min-h-11 px-1 text-ink underline underline-offset-2">Skip</button>
+          )}
+        </div>
       </div>
       <div id="brief-editor">
-        <div className="mt-3 min-h-[5.5rem]">
+        <div className="min-h-[4.875rem]">
           <h3 id="brief-question" ref={heading} tabIndex={-1} className="scroll-mt-6 text-xl">{prompts[step].question}</h3>
-          <p id="brief-question-hint" className="mt-2">{step === "problem" && problemNeeded ? "Add a sentence about your problem to book." : prompts[step].hint}</p>
+          <p id="brief-question-hint" className="mt-1 text-sm">{step === "problem" && problemNeeded
+            ? problem.length > maxBookingProblemLength
+              ? `Shorten the summary to ${maxBookingProblemLength} characters or fewer to book.`
+              : "Add a sentence about your problem to book."
+            : prompts[step].hint}</p>
         </div>
         <noscript><p className="mt-3 text-sm">The brief and scheduling require JavaScript. You can still explore the stages or email Steven.</p></noscript>
         {storage === "unavailable" && (
@@ -187,7 +221,7 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
                 <textarea
                   id={`guide-${key}`}
                   name={key}
-                  rows={4}
+                  rows={3}
                   maxLength={key === "problem" ? maxBookingProblemLength : maxFieldLength}
                   className={control}
                   value={draft.fields[key] ?? ""}
@@ -198,14 +232,14 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
               </div>
             ))}
 
-            <div id="brief-actions" className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <div id="brief-actions" className="mt-3 flex flex-wrap items-center justify-between gap-2">
               {previousStep && <Button type="button" variant="ghost" size="sm" onClick={() => goTo(previousStep)}>Back</Button>}
-              {previousStep && scheduleUrl && (
+              {previousStep && scheduleUrl && (nextStep ? !checking : !outstanding) && (
                 <Button type="button" variant={nextStep ? "outline" : "default"} size="compact" onClick={() => bookingDialog.current?.showModal()}>
                   Submit &amp; Book
                 </Button>
               )}
-              {(nextStep || !scheduleUrl) && (
+              {(nextStep || outstanding) && (
                 <Button type="button" size="compact" className="ml-auto" onClick={continueIntake}>Continue</Button>
               )}
             </div>
@@ -304,7 +338,8 @@ export default function BriefDesk({ initialService, bookingUrl, contactEmail }: 
     </section>
   );
   return (
-    <ProcessTimeline stages={stages} activeStage={stepIndex} onStageChange={(index) => goTo(guideSteps[index], false)}>
+    <ProcessTimeline stages={stages} activeStage={stepIndex} statuses={statuses} attention={attention}
+      onStageChange={(index) => goTo(guideSteps[index], false)}>
       {intake}
     </ProcessTimeline>
   );
